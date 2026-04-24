@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `network_events` (`id` int AUTO_INCREMENT NOT NULL, `userId` int NOT NULL, `eventType` enum('connection','threat','alert','scan') NOT NULL, `severity` enum('low','medium','high','critical') NOT NULL DEFAULT 'low', `sourceIp` varchar(45), `destIp` varchar(45), `port` int, `protocol` varchar(16), `description` text NOT NULL, `metadata` json, `resolved` boolean DEFAULT false, `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `network_events_id` PRIMARY KEY(`id`));",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3wfjiP7eWcFoEV3.707234e7c9de --database gbR265kVq9yq25447CCetY --execute CREATE TABLE `network_events` (`id` int AUTO_INCREMENT NOT NULL, `userId` int NOT NULL, `eventType` enum('connection','threat','alert','scan') NOT NULL, `severity` enum('low','medium','high','critical') NOT NULL DEFAULT 'low', `sourceIp` varchar(45), `destIp` varchar(45), `port` int, `protocol` varchar(16), `description` text NOT NULL, `metadata` json, `resolved` boolean DEFAULT false, `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `network_events_id` PRIMARY KEY(`id`));",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 118
+}

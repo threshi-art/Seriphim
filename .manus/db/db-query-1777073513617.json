@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `memory_entries` (`id` int AUTO_INCREMENT NOT NULL, `userId` int NOT NULL, `category` varchar(64) NOT NULL DEFAULT 'general', `key` varchar(255) NOT NULL, `value` text NOT NULL, `source` varchar(128) DEFAULT 'manual', `createdAt` timestamp NOT NULL DEFAULT (now()), `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `memory_entries_id` PRIMARY KEY(`id`));",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3wfjiP7eWcFoEV3.707234e7c9de --database gbR265kVq9yq25447CCetY --execute CREATE TABLE `memory_entries` (`id` int AUTO_INCREMENT NOT NULL, `userId` int NOT NULL, `category` varchar(64) NOT NULL DEFAULT 'general', `key` varchar(255) NOT NULL, `value` text NOT NULL, `source` varchar(128) DEFAULT 'manual', `createdAt` timestamp NOT NULL DEFAULT (now()), `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `memory_entries_id` PRIMARY KEY(`id`));",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 116
+}

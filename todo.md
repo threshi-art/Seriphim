@@ -1,0 +1,23 @@
+# Seraphim TODO
+
+- [x] Dark theme setup (OKLCH colors, Copilot-style dark UI)
+- [x] Dashboard layout with sidebar navigation and multi-tab structure
+- [x] Chat tab — Copilot-style LLM chat with markdown rendering and message history
+- [x] Network Defense tab — connection monitoring, threat alerts, suspicious activity log
+- [x] Code tab — coding assistant with execution output
+- [x] Engineering tab — unit conversions, calculations, technical analysis utilities
+- [x] Analysis tab — EiRAM narrative analysis (ideological signals, escalation risk, emotional scoring)
+- [x] Memory tab — persistent conversation history and knowledge stored in database
+- [x] Plugins tab — self-improvement plugin system with autonomous skill registration
+- [x] Audit tab — agent activity log surfacing all tool calls, decisions, and self-improvement actions
+- [x] Database schema for conversations, messages, memory, plugins, audit logs, network events, analysis results
+- [x] tRPC routers for all features (chat, network, code, engineering, analysis, memory, plugins, audit)
+- [x] LLM integration via built-in Forge API for reasoning and conversation
+- [x] EiRAM analysis engine (server-side module with keyword lexicon and scoring modules)
+- [x] Persistent memory system storing knowledge across sessions
+- [x] Self-improvement audit trail for all autonomous actions
+- [x] Vitest tests for backend procedures
+- [x] Fix chat send flow — first message should create conversation AND send message in one action
+- [x] Add LLM error handling and user-visible error states for chat, engineering, and plugin flows
+- [ ] Add syntax highlighting to code editor (future enhancement)
+- [x] Expand vitest coverage for actual procedure behavior

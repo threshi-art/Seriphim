@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `audit_logs` (`id` int AUTO_INCREMENT NOT NULL, `userId` int NOT NULL, `action` varchar(128) NOT NULL, `category` enum('chat','network','code','engineering','analysis','memory','plugin','system') NOT NULL, `details` text, `metadata` json, `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `audit_logs_id` PRIMARY KEY(`id`));",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3wfjiP7eWcFoEV3.707234e7c9de --database gbR265kVq9yq25447CCetY --execute CREATE TABLE `audit_logs` (`id` int AUTO_INCREMENT NOT NULL, `userId` int NOT NULL, `action` varchar(128) NOT NULL, `category` enum('chat','network','code','engineering','analysis','memory','plugin','system') NOT NULL, `details` text, `metadata` json, `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `audit_logs_id` PRIMARY KEY(`id`));",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 127
+}

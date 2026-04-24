@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `analysis_results` (`id` int AUTO_INCREMENT NOT NULL, `userId` int NOT NULL, `inputText` text NOT NULL, `summary` text, `moduleScores` json, `extractedFeatures` json, `riskVector` json, `evidence` json, `forecast` text, `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `analysis_results_id` PRIMARY KEY(`id`));",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3wfjiP7eWcFoEV3.707234e7c9de --database gbR265kVq9yq25447CCetY --execute CREATE TABLE `analysis_results` (`id` int AUTO_INCREMENT NOT NULL, `userId` int NOT NULL, `inputText` text NOT NULL, `summary` text, `moduleScores` json, `extractedFeatures` json, `riskVector` json, `evidence` json, `forecast` text, `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `analysis_results_id` PRIMARY KEY(`id`));",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 148
+}
