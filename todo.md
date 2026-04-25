@@ -95,6 +95,14 @@
 - [x] Integrate Cursor changes: Updated env.ts with terra env vars
 - [x] Integrate Cursor changes: Updated CommandDeckPage, TopNav, App.tsx with new routes
 - [x] Tests updated for terra router and types (36 tests passing)
-- [ ] Argus Terra: Globe is placeholder until Cesium is installed — document as intentional scope (Cesium is a heavy 3D library requiring API key)
-- [ ] Argus Vigil: Local-only module requiring companion backend on localhost:8765 — UI gate messaging is correct
+- [x] Argus Terra: Globe is placeholder until Cesium is installed — intentional scope (Cesium is a heavy 3D library requiring API key)
+- [x] Argus Vigil: Local-only module requiring companion backend on localhost:8765 — intentional scope, UI gate messaging is correct
 - [x] Add meaningful Vitest coverage for terra router (10 procedure assertions + types import, 37 tests passing)
+- [x] Full project sync to local drive for v7.0 (184 files synced for Cursor handoff)
+- [x] Integrate Cursor v8 changes: MarineTrafficPage.tsx (new page — live vessel tracking iframe)
+- [x] Integrate Cursor v8 changes: App.tsx route for /marine-traffic
+- [x] Integrate Cursor v8 changes: DashboardLayout.tsx sidebar entry for Marine Traffic (Ship icon)
+- [x] Integrate Cursor v8 changes: TopNav.tsx — add /marine-traffic to DASHBOARD_ROUTES, add News nav item
+- [x] Integrate Cursor v8 changes: TerraGlobe.tsx — Google Maps JS API integration with fallback
+- [x] Integrate Cursor v8 changes: ArgusTerraPage.tsx — pass googleTilesEnabled prop to TerraGlobe
+- [x] Integrate Cursor v8 changes: tsconfig.json — kept types array (needed for import.meta.env)

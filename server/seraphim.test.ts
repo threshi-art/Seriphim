@@ -148,6 +148,27 @@ describe("Router Structure", () => {
   });
 });
 
+// ── v8.0: Cursor Integration — MarineTraffic + TerraGlobe upgrade ──
+describe("v8.0 Cursor Integration", () => {
+  it("MarineTrafficPage module exists and exports a default component", async () => {
+    const mod = await import("../client/src/pages/MarineTrafficPage");
+    expect(mod.default).toBeDefined();
+    expect(typeof mod.default).toBe("function");
+  });
+
+  it("TerraGlobe module exists and exports a default component", async () => {
+    const mod = await import("../client/src/components/terra/TerraGlobe");
+    expect(mod.default).toBeDefined();
+    expect(typeof mod.default).toBe("function");
+  });
+
+  it("terra.config procedure exists for googleTilesEnabled prop", async () => {
+    const { appRouter } = await import("./routers");
+    const procedures = appRouter._def.procedures;
+    expect(procedures).toHaveProperty("terra.config");
+  });
+});
+
 // ── Mode System Tests ──
 describe("Mode System", () => {
   it("exports all 12 modes with required fields", async () => {

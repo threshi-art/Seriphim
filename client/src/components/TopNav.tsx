@@ -21,6 +21,7 @@ const DASHBOARD_ROUTES = new Set([
   "/discover",
   "/weather",
   "/flights",
+  "/marine-traffic",
   "/settings",
   "/instagram",
   "/sentinel",

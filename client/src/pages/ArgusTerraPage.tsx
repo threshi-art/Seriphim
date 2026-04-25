@@ -107,6 +107,7 @@ export default function ArgusTerraPage() {
         <div className="space-y-3">
           <TerraGlobe
             sensorModeClass={SENSOR_CLASS[sensorMode]}
+            googleTilesEnabled={Boolean(configQuery.data?.hasGoogleTilesKey)}
             onSelectMockObject={kind => {
               if (kind === "aircraft") {
                 const aircraft = aircraftQuery.data?.tracks?.[0];

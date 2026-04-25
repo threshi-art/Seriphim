@@ -20,6 +20,7 @@ import DiscoverPage from "./pages/DiscoverPage";
 import NewsPage from "./pages/NewsPage";
 import WeatherPage from "./pages/WeatherPage";
 import FlightsPage from "./pages/FlightsPage";
+import MarineTrafficPage from "./pages/MarineTrafficPage";
 import SettingsPage from "./pages/SettingsPage";
 import InstagramPage from "./pages/InstagramPage";
 import SentinelPage from "./pages/SentinelPage";
@@ -47,6 +48,7 @@ function DashboardRouter() {
         <Route path="/news" component={NewsPage} />
         <Route path="/weather" component={WeatherPage} />
         <Route path="/flights" component={FlightsPage} />
+        <Route path="/marine-traffic" component={MarineTrafficPage} />
         <Route path="/settings" component={SettingsPage} />
         <Route path="/instagram" component={InstagramPage} />
         <Route path="/sentinel" component={SentinelPage} />

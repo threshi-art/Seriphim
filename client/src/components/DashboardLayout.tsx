@@ -16,7 +16,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import {
   MessageSquare, Shield, Code2, Wrench, Brain,
   Database, Puzzle, ScrollText, PanelLeft, Sparkles,
-  Compass, Newspaper, Cloud, Plane, Instagram, Settings, Monitor, Wifi, Eye, Satellite,
+  Compass, Newspaper, Cloud, Plane, Ship, Instagram, Settings, Monitor, Wifi, Eye, Satellite,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -33,6 +33,7 @@ const menuItems = [
   { icon: Newspaper, label: "News", path: "/news" },
   { icon: Cloud, label: "Weather", path: "/weather" },
   { icon: Plane, label: "Flights", path: "/flights" },
+  { icon: Ship, label: "Marine Traffic", path: "/marine-traffic" },
   { icon: Database, label: "Memory", path: "/memory" },
   { icon: Puzzle, label: "Plugins", path: "/plugins" },
   { icon: Instagram, label: "Instagram", path: "/instagram" },
