@@ -138,6 +138,13 @@ describe("Router Structure", () => {
     expect(procedures).toHaveProperty("netIntel.quiz");
     expect(procedures).toHaveProperty("netIntel.design");
     expect(procedures).toHaveProperty("netIntel.generateDocs");
+    // v7.0: Argus Terra (Cursor integration)
+    expect(procedures).toHaveProperty("terra.health");
+    expect(procedures).toHaveProperty("terra.config");
+    expect(procedures).toHaveProperty("terra.aircraft");
+    expect(procedures).toHaveProperty("terra.satellitePositions");
+    expect(procedures).toHaveProperty("terra.locationSearch");
+    expect(procedures).toHaveProperty("terra.report");
   });
 });
 
@@ -233,5 +240,28 @@ describe("Network Intelligence Knowledge Bases", () => {
     expect(numToIp(broadcast)).toBe("192.168.1.255");
     expect(numToIp(mask)).toBe("255.255.255.0");
     expect(Math.pow(2, 32 - cidr) - 2).toBe(254); // usable hosts
+  });
+});
+
+// ── Argus Terra Router Tests ──
+describe("Argus Terra Router", () => {
+  it("shared/terra.ts module loads as a types-only module", async () => {
+    const terra = await import("../shared/terra");
+    expect(terra).toBeDefined();
+  });
+
+  it("terra router has all expected procedures", async () => {
+    const { appRouter } = await import("./routers");
+    const procedures = appRouter._def.procedures;
+    expect(procedures).toHaveProperty("terra.health");
+    expect(procedures).toHaveProperty("terra.config");
+    expect(procedures).toHaveProperty("terra.aircraft");
+    expect(procedures).toHaveProperty("terra.satellitePositions");
+    expect(procedures).toHaveProperty("terra.satelliteGroups");
+    expect(procedures).toHaveProperty("terra.locationSearch");
+    expect(procedures).toHaveProperty("terra.createSession");
+    expect(procedures).toHaveProperty("terra.getSession");
+    expect(procedures).toHaveProperty("terra.addManualCamera");
+    expect(procedures).toHaveProperty("terra.report");
   });
 });

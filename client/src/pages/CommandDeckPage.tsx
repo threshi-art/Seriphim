@@ -4,7 +4,7 @@ import {
   Brain, Shield, Code2, Globe, Newspaper, Cloud, Plane, Eye, Zap, Lock,
   Activity, Monitor, Instagram, Settings, Sparkles, ArrowRight, Clock,
   AlertTriangle, CheckCircle2, XCircle, TrendingUp, BarChart3, Cpu,
-  Satellite, RefreshCw,
+  Satellite, RefreshCw, Wrench, Wifi, ScrollText,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 
@@ -12,16 +12,22 @@ import { useState, useEffect, useMemo } from "react";
 const MODULES = [
   { id: "chat", label: "AI Copilot", icon: Brain, path: "/chat", color: "#55d9ff", desc: "GPT-powered reasoning engine" },
   { id: "network", label: "Network Defense", icon: Shield, path: "/network", color: "#ff6b6b", desc: "Threat monitoring & analysis" },
+  { id: "argus", label: "Argus Vigil", icon: Eye, path: "/argus-vigil", color: "#55d9ff", desc: "Browser packet analysis dashboard" },
+  { id: "terra", label: "Argus Terra", icon: Satellite, path: "/argus-terra", color: "#5f8dff", desc: "3D spatial intelligence dashboard" },
   { id: "code", label: "Code Engine", icon: Code2, path: "/code", color: "#ae7dff", desc: "Multi-language code assistant" },
+  { id: "engineering", label: "Engineering", icon: Wrench, path: "/engineering", color: "#5f8dff", desc: "Technical calculators and analysis" },
   { id: "analysis", label: "EiRAM Analysis", icon: Eye, path: "/analysis", color: "#ffca56", desc: "Narrative intelligence engine" },
   { id: "discover", label: "Web Discovery", icon: Globe, path: "/discover", color: "#5ef0a2", desc: "Interest-based exploration" },
   { id: "news", label: "News Intel", icon: Newspaper, path: "/news", color: "#5f8dff", desc: "Multi-source aggregation" },
   { id: "weather", label: "Weather Radar", icon: Cloud, path: "/weather", color: "#55d9ff", desc: "Live conditions & forecast" },
   { id: "flights", label: "Flight Monitor", icon: Plane, path: "/flights", color: "#ae7dff", desc: "Real-time flight tracking" },
   { id: "sentinel", label: "System Sentinel", icon: Monitor, path: "/sentinel", color: "#ff6b6b", desc: "Local integrity console" },
+  { id: "netintel", label: "Net Intel", icon: Wifi, path: "/netintel", color: "#55d9ff", desc: "Network labs and command reference" },
   { id: "memory", label: "Memory Bank", icon: Cpu, path: "/memory", color: "#5ef0a2", desc: "Persistent knowledge store" },
   { id: "plugins", label: "Plugin System", icon: Zap, path: "/plugins", color: "#ffca56", desc: "Self-improvement modules" },
   { id: "instagram", label: "Instagram Intel", icon: Instagram, path: "/instagram", color: "#ae7dff", desc: "Social media intelligence" },
+  { id: "audit", label: "Audit Log", icon: ScrollText, path: "/audit", color: "#ffca56", desc: "Activity and decision trail" },
+  { id: "settings", label: "Settings", icon: Settings, path: "/settings", color: "#a9bfd6", desc: "Operator preferences" },
 ] as const;
 
 /* ── Live clock ── */
@@ -180,7 +186,10 @@ export default function CommandDeckPage() {
     return {
       chat: "12 modes active · Seraphim online",
       network: "Monitoring active · 0 threats detected",
+      argus: "NetScope dashboard ready · Local backend optional",
+      terra: "Spatial intelligence layer ready",
       code: "9 languages supported · Ready",
+      engineering: "Technical calculator ready",
       analysis: "EiRAM pipeline ready · 6 modules loaded",
       discover: "Interest engine primed · Awaiting query",
       news: "Multi-source feed active",
@@ -189,9 +198,12 @@ export default function CommandDeckPage() {
       sentinel: sentinelResults.length > 0
         ? `${passCount} pass · ${warnCount} warn · ${failCount} fail`
         : "28 checks pending · Ready to scan",
+      netintel: "Labs and command library loaded",
       memory: memCount > 0 ? `${memCount} entries stored` : "Memory bank initialized",
       plugins: "Self-improvement engine active",
       instagram: "Social intel module ready",
+      audit: auditCount > 0 ? `${auditCount} recent audit events` : "Audit trail ready",
+      settings: "Operator profile configurable",
     } as Record<string, string>;
   }, [memoryQuery.data, auditQuery.data, sentinelQuery.data]);
 
@@ -308,8 +320,12 @@ export default function CommandDeckPage() {
               <div className="space-y-2.5">
                 {[
                   { icon: Brain, label: "AI Copilot", desc: "Start a conversation", path: "/chat", color: "#55d9ff" },
+                  { icon: Newspaper, label: "News Intel", desc: "Open the news desk", path: "/news", color: "#5f8dff" },
+                  { icon: Eye, label: "Argus Vigil", desc: "Packet analysis dashboard", path: "/argus-vigil", color: "#55d9ff" },
+                  { icon: Satellite, label: "Argus Terra", desc: "3D world intelligence", path: "/argus-terra", color: "#5f8dff" },
                   { icon: Eye, label: "EiRAM Analysis", desc: "Deep narrative analysis", path: "/analysis", color: "#ffca56" },
                   { icon: Monitor, label: "System Sentinel", desc: "Run integrity checks", path: "/sentinel", color: "#ff6b6b" },
+                  { icon: Wifi, label: "Net Intel", desc: "Labs and references", path: "/netintel", color: "#55d9ff" },
                   { icon: Plane, label: "Flight Monitor", desc: "Track live flights", path: "/flights", color: "#ae7dff" },
                   { icon: Shield, label: "Network Defense", desc: "Threat monitoring", path: "/network", color: "#ff6b6b" },
                 ].map((item) => (

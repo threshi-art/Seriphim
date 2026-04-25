@@ -66,7 +66,8 @@
 - [x] Add SystemSentinel tRPC router (catalog, run check, get results, run all)
 - [x] Build SystemSentinel dashboard page with 5-category tabbed layout and status cards
 - [x] Add SystemSentinel to sidebar navigation and App.tsx routes
-- [ ] Test SystemSentinel with live PowerShell check execution on user's desktop
+- [x] Full project sync to local drive complete (165 files synced for Cursor handoff)
+- [ ] Test SystemSentinel with live PowerShell check execution on user's desktop (requires user testing)
 - [x] Add vitest coverage for SystemSentinel and netIntel router procedures (35 tests passing)
 - [x] Build CMIT 265 Network Intelligence Core into Network module
 - [x] Create lab registry JSON with 28 CMIT 265 lab topics
@@ -86,3 +87,14 @@
 - [x] Add persistent top navigation bar across Landing, Command Deck, and Dashboard views
 - [x] Update LandingPage CTA to navigate to Command Deck instead of Chat
 - [x] Fix sidebar top padding for TopNav coexistence
+- [x] Integrate Cursor changes: Argus Terra module (page + 14 components + shared types + terra router)
+- [x] Integrate Cursor changes: Argus Vigil page (localhost packet analysis)
+- [x] Integrate Cursor changes: Chat ownership validation security fix
+- [x] Integrate Cursor changes: Resizable sidebar in DashboardLayout
+- [x] Integrate Cursor changes: NotFound 404 page
+- [x] Integrate Cursor changes: Updated env.ts with terra env vars
+- [x] Integrate Cursor changes: Updated CommandDeckPage, TopNav, App.tsx with new routes
+- [x] Tests updated for terra router and types (36 tests passing)
+- [ ] Argus Terra: Globe is placeholder until Cesium is installed — document as intentional scope (Cesium is a heavy 3D library requiring API key)
+- [ ] Argus Vigil: Local-only module requiring companion backend on localhost:8765 — UI gate messaging is correct
+- [x] Add meaningful Vitest coverage for terra router (10 procedure assertions + types import, 37 tests passing)

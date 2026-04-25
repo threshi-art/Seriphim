@@ -7,4 +7,9 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  googleMapsTileApiKey: process.env.GOOGLE_MAPS_TILE_API_KEY ?? "",
+  openSkyUsername: process.env.OPENSKY_USERNAME ?? "",
+  openSkyPassword: process.env.OPENSKY_PASSWORD ?? "",
+  celestrakBaseUrl: process.env.CELESTRAK_BASE_URL ?? "https://celestrak.org",
+  enablePublicCameraLayer: process.env.ENABLE_PUBLIC_CAMERA_LAYER === "true",
 };

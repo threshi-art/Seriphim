@@ -19,7 +19,7 @@ export default function NotFound() {
           The requested resource does not exist or has been relocated.
         </p>
         <Button
-          onClick={() => setLocation("/")}
+          onClick={() => setLocation("/chat")}
           size="sm"
           className="gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
         >

@@ -112,6 +112,15 @@ export async function getUserConversations(userId: number) {
   return db.select().from(conversations).where(eq(conversations.userId, userId)).orderBy(desc(conversations.updatedAt));
 }
 
+export async function getConversationForUser(conversationId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(conversations).where(
+    and(eq(conversations.id, conversationId), eq(conversations.userId, userId))
+  ).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
 export async function deleteConversation(id: number, userId: number) {
   const db = await getDb();
   if (!db) return;

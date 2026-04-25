@@ -16,7 +16,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import {
   MessageSquare, Shield, Code2, Wrench, Brain,
   Database, Puzzle, ScrollText, PanelLeft, Sparkles,
-  Compass, Newspaper, Cloud, Plane, Instagram, Settings, Monitor, Wifi,
+  Compass, Newspaper, Cloud, Plane, Instagram, Settings, Monitor, Wifi, Eye, Satellite,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -24,6 +24,8 @@ import { useLocation } from "wouter";
 const menuItems = [
   { icon: MessageSquare, label: "Chat", path: "/chat" },
   { icon: Shield, label: "Network Defense", path: "/network" },
+  { icon: Eye, label: "Argus Vigil", path: "/argus-vigil" },
+  { icon: Satellite, label: "Argus Terra", path: "/argus-terra" },
   { icon: Code2, label: "Code", path: "/code" },
   { icon: Wrench, label: "Engineering", path: "/engineering" },
   { icon: Brain, label: "Analysis", path: "/analysis" },
@@ -45,18 +47,28 @@ const DEFAULT_WIDTH = 240;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 360;
 
+function readSavedSidebarWidth() {
+  try {
+    const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+    return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
+  } catch {
+    return DEFAULT_WIDTH;
+  }
+}
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
-    return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
-  });
+  const [sidebarWidth, setSidebarWidth] = useState(readSavedSidebarWidth);
 
   useEffect(() => {
-    localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
+    try {
+      localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
+    } catch {
+      // Storage can be unavailable in hardened browser modes.
+    }
   }, [sidebarWidth]);
 
   return (

@@ -24,6 +24,9 @@ import SettingsPage from "./pages/SettingsPage";
 import InstagramPage from "./pages/InstagramPage";
 import SentinelPage from "./pages/SentinelPage";
 import NetworkIntelPage from "./pages/NetworkIntelPage";
+import ArgusVigilPage from "./pages/ArgusVigilPage";
+import ComponentShowcase from "./pages/ComponentShowcase";
+import ArgusTerraPage from "./pages/ArgusTerraPage";
 
 function DashboardRouter() {
   return (
@@ -31,6 +34,9 @@ function DashboardRouter() {
       <Switch>
         <Route path="/chat" component={ChatPage} />
         <Route path="/network" component={NetworkPage} />
+        <Route path="/argus-vigil" component={ArgusVigilPage} />
+        <Route path="/argus-terra" component={ArgusTerraPage} />
+        <Route path="/argus-terra/session/:id" component={ArgusTerraPage} />
         <Route path="/code" component={CodePage} />
         <Route path="/engineering" component={EngineeringPage} />
         <Route path="/analysis" component={AnalysisPage} />
@@ -56,6 +62,7 @@ function Router() {
     <Switch>
       <Route path="/" component={LandingPage} />
       <Route path="/deck" component={CommandDeckPage} />
+      <Route path="/components" component={ComponentShowcase} />
       <Route path="/404" component={NotFound} />
       {/* All dashboard routes */}
       <Route component={DashboardRouter} />

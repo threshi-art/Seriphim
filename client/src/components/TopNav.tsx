@@ -1,22 +1,45 @@
 import { useLocation } from "wouter";
-import { Sparkles, LayoutDashboard, Home, ArrowLeft } from "lucide-react";
+import { Sparkles, LayoutDashboard, Home, Newspaper } from "lucide-react";
 
 const NAV_ITEMS = [
   { label: "Home", path: "/", icon: Home },
   { label: "Command Deck", path: "/deck", icon: LayoutDashboard },
+  { label: "News", path: "/news", icon: Newspaper },
   { label: "Dashboard", path: "/chat", icon: Sparkles },
 ] as const;
+
+const DASHBOARD_ROUTES = new Set([
+  "/chat",
+  "/network",
+  "/argus-vigil",
+  "/code",
+  "/engineering",
+  "/analysis",
+  "/memory",
+  "/plugins",
+  "/audit",
+  "/discover",
+  "/weather",
+  "/flights",
+  "/settings",
+  "/instagram",
+  "/sentinel",
+  "/netintel",
+]);
+
+function isNavItemActive(path: string, location: string) {
+  if (path === "/chat") {
+    return DASHBOARD_ROUTES.has(location);
+  }
+
+  return location === path;
+}
 
 export default function TopNav() {
   const [location, setLocation] = useLocation();
 
   // Don't show on the landing page itself (it has its own CTA)
   if (location === "/") return null;
-
-  // Determine which nav item is active
-  const isDeck = location === "/deck";
-  const isLanding = location === "/";
-  const isDashboard = !isDeck && !isLanding;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-[60] h-11 bg-[rgba(7,17,29,0.92)] backdrop-blur-xl border-b border-[rgba(123,193,255,0.12)]">
@@ -35,10 +58,7 @@ export default function TopNav() {
         {/* Center — Nav links */}
         <div className="flex items-center gap-1">
           {NAV_ITEMS.map((item) => {
-            const isActive =
-              item.path === "/" ? isLanding :
-              item.path === "/deck" ? isDeck :
-              isDashboard;
+            const isActive = isNavItemActive(item.path, location);
 
             return (
               <button

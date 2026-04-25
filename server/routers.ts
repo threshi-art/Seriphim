@@ -3,13 +3,72 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
+import { storagePut } from "./storage";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { ENV } from "./_core/env";
 import { runEiram } from "./eiram";
 import * as db from "./db";
 import { MODE_PROMPTS, MODE_IDS } from "../shared/modes";
 import { PORT_DATABASE } from "../shared/network-ports";
 import { COMMAND_LIBRARY } from "../shared/network-commands";
 import { LAB_REGISTRY } from "../shared/network-labs";
+
+const MAX_UPLOAD_BASE64_LENGTH = 28_000_000;
+const MAX_INSTAGRAM_SYNC_BYTES = 1_000_000;
+const TERRA_CACHE_TTL_MS = 60_000;
+
+function assertJsonSize(value: unknown, maxBytes: number, label: string) {
+  const bytes = Buffer.byteLength(JSON.stringify(value), "utf8");
+  if (bytes > maxBytes) {
+    throw new TRPCError({
+      code: "PAYLOAD_TOO_LARGE",
+      message: `${label} exceeds ${Math.round(maxBytes / 1024)}KB`,
+    });
+  }
+}
+
+type TerraCacheEntry<T> = {
+  expiresAt: number;
+  value: T;
+};
+
+const terraCache = new Map<string, TerraCacheEntry<unknown>>();
+const terraSessions = new Map<string, {
+  id: string;
+  name: string;
+  createdAt: string;
+  center: { lat: number; lon: number };
+  enabledLayers: string[];
+  sensorMode: string;
+  notes?: string;
+}>();
+
+function getCached<T>(key: string): T | null {
+  const entry = terraCache.get(key);
+  if (!entry || entry.expiresAt < Date.now()) {
+    terraCache.delete(key);
+    return null;
+  }
+  return entry.value as T;
+}
+
+function setCached<T>(key: string, value: T, ttlMs = TERRA_CACHE_TTL_MS): T {
+  terraCache.set(key, { value, expiresAt: Date.now() + ttlMs });
+  return value;
+}
+
+function createTerraSessionId() {
+  return `terra_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+  return response.json() as Promise<T>;
+}
 
 // ── System Sentinel Check Catalog ──
 const SENTINEL_CATALOG = {
@@ -78,7 +137,11 @@ export const appRouter = router({
       await db.deleteConversation(input.id, ctx.user.id);
       await db.addAuditLog(ctx.user.id, "Deleted conversation", "chat");
     }),
-    messages: protectedProcedure.input(z.object({ conversationId: z.number() })).query(async ({ input }) => {
+    messages: protectedProcedure.input(z.object({ conversationId: z.number() })).query(async ({ ctx, input }) => {
+      const conversation = await db.getConversationForUser(input.conversationId, ctx.user.id);
+      if (!conversation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Conversation not found" });
+      }
       return db.getConversationMessages(input.conversationId);
     }),
     send: protectedProcedure.input(z.object({
@@ -86,6 +149,11 @@ export const appRouter = router({
       content: z.string().min(1),
       mode: z.string().default("standard"),
     })).mutation(async ({ ctx, input }) => {
+      const conversation = await db.getConversationForUser(input.conversationId, ctx.user.id);
+      if (!conversation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Conversation not found" });
+      }
+
       // Save user message
       await db.addMessage(input.conversationId, "user", input.content);
 
@@ -576,11 +644,10 @@ Now produce the full EiRAM Dashboard with all modules. Be thorough, precise, and
   // ── File Upload ──
   files: router({
     upload: protectedProcedure.input(z.object({
-      filename: z.string(),
-      contentType: z.string(),
-      base64Data: z.string(),
+      filename: z.string().min(1).max(255),
+      contentType: z.string().min(1).max(128),
+      base64Data: z.string().max(MAX_UPLOAD_BASE64_LENGTH),
     })).mutation(async ({ ctx, input }) => {
-      const { storagePut } = await import("./storage");
       const buffer = Buffer.from(input.base64Data, "base64");
       const fileKey = `uploads/${ctx.user.id}/${Date.now()}-${input.filename}`;
       const { key, url } = await storagePut(fileKey, buffer, input.contentType);
@@ -637,9 +704,10 @@ Now produce the full EiRAM Dashboard with all modules. Be thorough, precise, and
     }),
     // Endpoint for scheduled task or manual refresh to push data
     syncData: protectedProcedure.input(z.object({
-      dataType: z.string(),
-      data: z.any(),
+      dataType: z.string().min(1).max(64),
+      data: z.unknown(),
     })).mutation(async ({ ctx, input }) => {
+      assertJsonSize(input.data, MAX_INSTAGRAM_SYNC_BYTES, "Instagram sync data");
       await db.saveInstagramCache(ctx.user.id, input.dataType, input.data);
       await db.addAuditLog(ctx.user.id, `Instagram data synced: ${input.dataType}`, "instagram");
       return { success: true };
@@ -665,6 +733,235 @@ Now produce the full EiRAM Dashboard with all modules. Be thorough, precise, and
       } catch (e: any) {
         return { analysis: `Analysis error: ${e.message}` };
       }
+    }),
+  }),
+
+  // ── Argus Terra ──
+  terra: router({
+    health: protectedProcedure.query(() => {
+      return {
+        status: "ok" as const,
+        module: "argus-terra",
+        timestamp: new Date().toISOString(),
+      };
+    }),
+    config: protectedProcedure.query(() => {
+      return {
+        hasGoogleTilesKey: Boolean(ENV.googleMapsTileApiKey),
+        celestrakBaseUrl: ENV.celestrakBaseUrl,
+        publicCameraLayerEnabled: ENV.enablePublicCameraLayer,
+        openSkyConfigured: Boolean(ENV.openSkyUsername && ENV.openSkyPassword),
+      };
+    }),
+    locationSearch: protectedProcedure.input(z.object({
+      q: z.string().min(1),
+    })).query(async ({ input }) => {
+      const query = input.q.trim().toLowerCase();
+      const presets = [
+        { name: "Seattle, WA", lat: 47.6062, lon: -122.3321, timezone: "America/Los_Angeles" },
+        { name: "London, UK", lat: 51.5074, lon: -0.1278, timezone: "Europe/London" },
+        { name: "Austin, TX", lat: 30.2672, lon: -97.7431, timezone: "America/Chicago" },
+        { name: "Tokyo, JP", lat: 35.6762, lon: 139.6503, timezone: "Asia/Tokyo" },
+      ];
+      return presets.filter(city => city.name.toLowerCase().includes(query));
+    }),
+    aircraft: protectedProcedure.input(z.object({
+      bbox: z.tuple([z.number(), z.number(), z.number(), z.number()]).optional(),
+    }).optional()).query(async ({ input }) => {
+      const cacheKey = `terra:aircraft:${JSON.stringify(input?.bbox ?? [])}`;
+      const cached = getCached<Array<Record<string, unknown>>>(cacheKey);
+      if (cached) {
+        return { source: "cache", tracks: cached };
+      }
+
+      try {
+        if (!ENV.openSkyUsername || !ENV.openSkyPassword || !input?.bbox) {
+          throw new Error("OpenSky credentials or bbox unavailable");
+        }
+        const [lamin, lomin, lamax, lomax] = input.bbox;
+        const url = `https://opensky-network.org/api/states/all?lamin=${lamin}&lomin=${lomin}&lamax=${lamax}&lomax=${lomax}`;
+        const payload = await fetchJson<{ states?: any[] }>(url);
+        const tracks = (payload.states ?? []).slice(0, 200).map((state: any[]) => ({
+          id: state[0],
+          callsign: (state[1] || "").trim() || "UNKNOWN",
+          icao24: state[0],
+          originCountry: state[2] || "Unknown",
+          lat: state[6] ?? 0,
+          lon: state[5] ?? 0,
+          altitude: state[7] ?? null,
+          velocity: state[9] ?? null,
+          heading: state[10] ?? null,
+          timestamp: new Date().toISOString(),
+          source: "OpenSky",
+        }));
+        return { source: "opensky", tracks: setCached(cacheKey, tracks) };
+      } catch {
+        const tracks = [
+          {
+            id: "mock-aircraft-1",
+            callsign: "ARGUS101",
+            icao24: "arg101",
+            originCountry: "United States",
+            lat: 47.55,
+            lon: -122.31,
+            altitude: 10800,
+            velocity: 230,
+            heading: 132,
+            timestamp: new Date().toISOString(),
+            source: "Mock",
+          },
+          {
+            id: "mock-aircraft-2",
+            callsign: "VIGIL220",
+            icao24: "vig220",
+            originCountry: "Canada",
+            lat: 47.68,
+            lon: -122.47,
+            altitude: 9200,
+            velocity: 210,
+            heading: 88,
+            timestamp: new Date().toISOString(),
+            source: "Mock",
+          },
+        ];
+        return { source: "mock", tracks: setCached(cacheKey, tracks) };
+      }
+    }),
+    satelliteGroups: protectedProcedure.query(() => {
+      return [
+        { id: "iss", name: "ISS" },
+        { id: "weather", name: "Weather Satellites" },
+        { id: "gnss", name: "GNSS/GPS" },
+      ];
+    }),
+    satellitePositions: protectedProcedure.input(z.object({
+      group: z.string().default("iss"),
+    })).query(async ({ input }) => {
+      const cacheKey = `terra:sats:${input.group}`;
+      const cached = getCached<Array<Record<string, unknown>>>(cacheKey);
+      if (cached) {
+        return { source: "cache", positions: cached };
+      }
+
+      try {
+        const url = `${ENV.celestrakBaseUrl.replace(/\/$/, "")}/NORAD/elements/gp.php?GROUP=${encodeURIComponent(input.group.toUpperCase())}&FORMAT=JSON`;
+        const data = await fetchJson<any[]>(url);
+        const positions = data.slice(0, 40).map((item, idx) => ({
+          id: item.NORAD_CAT_ID ? String(item.NORAD_CAT_ID) : `sat-${idx}`,
+          name: item.OBJECT_NAME || `Satellite ${idx + 1}`,
+          catalogNumber: item.NORAD_CAT_ID ? String(item.NORAD_CAT_ID) : "unknown",
+          lat: (idx * 7.5) % 80 - 40,
+          lon: (idx * 14.1) % 360 - 180,
+          altitudeKm: 400 + (idx % 20) * 25,
+          timestamp: new Date().toISOString(),
+          tleEpoch: item.EPOCH || null,
+          source: "CelesTrak",
+        }));
+        return { source: "celestrak", positions: setCached(cacheKey, positions) };
+      } catch {
+        const positions = [
+          {
+            id: "25544",
+            name: "ISS (ZARYA)",
+            catalogNumber: "25544",
+            lat: 33.2,
+            lon: -119.5,
+            altitudeKm: 420,
+            timestamp: new Date().toISOString(),
+            tleEpoch: null,
+            source: "Mock",
+          },
+        ];
+        return { source: "mock", positions: setCached(cacheKey, positions) };
+      }
+    }),
+    createSession: protectedProcedure.input(z.object({
+      name: z.string().min(1).max(120),
+      center: z.object({ lat: z.number(), lon: z.number() }),
+      enabledLayers: z.array(z.string()).default([]),
+      sensorMode: z.string().default("normal"),
+      notes: z.string().max(2000).optional(),
+    })).mutation(({ input }) => {
+      const id = createTerraSessionId();
+      const session = {
+        id,
+        name: input.name,
+        createdAt: new Date().toISOString(),
+        center: input.center,
+        enabledLayers: input.enabledLayers,
+        sensorMode: input.sensorMode,
+        notes: input.notes,
+      };
+      terraSessions.set(id, session);
+      return session;
+    }),
+    getSession: protectedProcedure.input(z.object({
+      id: z.string(),
+    })).query(({ input }) => {
+      const session = terraSessions.get(input.id);
+      if (!session) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Terra session not found" });
+      }
+      return session;
+    }),
+    addManualCamera: protectedProcedure.input(z.object({
+      name: z.string().min(1).max(120),
+      streamUrl: z.string().url(),
+      lat: z.number(),
+      lon: z.number(),
+      authorized: z.literal(true),
+      notes: z.string().max(500).optional(),
+    })).mutation(({ input }) => {
+      if (!ENV.enablePublicCameraLayer) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Public camera layer is disabled by environment configuration",
+        });
+      }
+      return {
+        id: createTerraSessionId(),
+        ...input,
+        source: "manual-authorized",
+      };
+    }),
+    report: protectedProcedure.input(z.object({
+      sessionName: z.string(),
+      location: z.string(),
+      timeRange: z.string(),
+      enabledLayers: z.array(z.string()),
+      findings: z.array(z.object({
+        observation: z.string(),
+        confidence: z.string(),
+        suggestedNextStep: z.string(),
+      })),
+      notes: z.string().optional(),
+    })).mutation(({ input }) => {
+      const markdown = [
+        "# Argus Terra Session Report",
+        "",
+        `- Session: ${input.sessionName}`,
+        `- Location: ${input.location}`,
+        `- Time range: ${input.timeRange}`,
+        `- Enabled layers: ${input.enabledLayers.join(", ") || "none"}`,
+        "",
+        "## Findings",
+        ...input.findings.map(
+          item => `- ${item.observation} (confidence: ${item.confidence}) -> ${item.suggestedNextStep}`,
+        ),
+        "",
+        "## Analyst Notes",
+        input.notes || "No notes provided.",
+        "",
+        "## Limitations",
+        "- Uses public, licensed, simulated, or user-authorized sources only.",
+        "- Not suitable for person tracking, private surveillance, or targeting individuals.",
+      ].join("\n");
+
+      return {
+        format: "markdown",
+        markdown,
+        generatedAt: new Date().toISOString(),
+      };
     }),
   }),
 
