@@ -1,5 +1,4 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
   Brain, ChevronDown, Code2, Globe, Newspaper, Plane, Shield, Sparkles,
@@ -95,7 +94,6 @@ function ScanLine() {
 }
 
 export default function LandingPage() {
-  const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: containerRef });
@@ -104,11 +102,7 @@ export default function LandingPage() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
 
   const handleEnter = () => {
-    if (isAuthenticated) {
-      setLocation("/chat");
-    } else {
-      window.location.href = getLoginUrl("/chat");
-    }
+    setLocation("/chat");
   };
 
   return (

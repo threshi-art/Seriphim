@@ -55,6 +55,47 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+// ── Anonymous User (dev mode, no login required) ──
+const ANON_OPEN_ID = "anon-operator-seraphim";
+let _anonUser: typeof users.$inferSelect | null = null;
+
+export async function getOrCreateAnonymousUser() {
+  if (_anonUser) return _anonUser;
+  const db = await getDb();
+  if (!db) {
+    // Return a synthetic user object if DB is unavailable
+    return {
+      id: 1,
+      openId: ANON_OPEN_ID,
+      name: "Operator",
+      email: null,
+      loginMethod: null,
+      role: "admin" as const,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
+    };
+  }
+  // Try to find existing anonymous user
+  const existing = await db.select().from(users).where(eq(users.openId, ANON_OPEN_ID)).limit(1);
+  if (existing.length > 0) {
+    _anonUser = existing[0];
+    return _anonUser;
+  }
+  // Create anonymous user
+  await db.insert(users).values({
+    openId: ANON_OPEN_ID,
+    name: "Operator",
+    email: null,
+    loginMethod: null,
+    role: "admin",
+    lastSignedIn: new Date(),
+  });
+  const created = await db.select().from(users).where(eq(users.openId, ANON_OPEN_ID)).limit(1);
+  _anonUser = created[0] || null;
+  return _anonUser;
+}
+
 // ── Conversations ──
 
 export async function createConversation(userId: number, title: string) {

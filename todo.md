@@ -37,6 +37,11 @@
 - [x] Add backend routers for web randomizer, news, weather, and flight APIs
 - [x] Add sidebar navigation entries for 4 new tabs
 - [x] Update App.tsx with routes for landing page and 4 new tabs
-- [ ] Re-sync all updated files to user's local folder (pending)
+- [x] Re-sync all updated files to user's local folder (v3.0 — landing page + 4 new tabs + flight map)
 - [x] Add interactive map to FlightsPage with aircraft markers, dark map style, and flight info overlay
 - [x] Add map/table view toggle to FlightsPage
+- [x] Remove login/auth gating from DashboardLayout so dashboard is directly accessible
+- [x] Backend: anonymous fallback user in tRPC context (protectedProcedure still works without login)
+- [x] Remove auth redirect/login prompts from UI components (main.tsx, LandingPage, DashboardLayout)
+- [x] Provide anonymous operator user context for procedures that reference ctx.user
+- [x] Add Vitest coverage for anonymous-access context and protectedProcedure working without auth (5 new tests)
