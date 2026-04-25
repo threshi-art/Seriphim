@@ -22,6 +22,13 @@
       "when": 1777079582957,
       "tag": "0002_glossy_trish_tilby",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1777100607189,
+      "tag": "0003_tough_mister_sinister",
+      "breakpoints": true
     }
   ]
 }

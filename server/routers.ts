@@ -6,9 +6,7 @@ import { invokeLLM } from "./_core/llm";
 import { z } from "zod";
 import { runEiram } from "./eiram";
 import * as db from "./db";
-
-// ── Seraphim system prompt ──
-const SERAPHIM_SYSTEM_PROMPT = `You are Seraphim, an advanced AI agent created for operational intelligence, engineering analysis, network defense, and autonomous task execution. You are direct, precise, and mission-focused. You speak with authority but remain helpful. You have access to tools for code execution, network analysis, EiRAM narrative analysis, memory storage, and self-improvement through plugins. When asked about yourself, you identify as Seraphim. You assist your operator with any task — from coding and engineering to strategic analysis and threat assessment.`;
+import { MODE_PROMPTS, MODE_IDS } from "../shared/modes";
 
 export const appRouter = router({
   system: systemRouter,
@@ -41,14 +39,18 @@ export const appRouter = router({
     send: protectedProcedure.input(z.object({
       conversationId: z.number(),
       content: z.string().min(1),
+      mode: z.string().default("standard"),
     })).mutation(async ({ ctx, input }) => {
       // Save user message
       await db.addMessage(input.conversationId, "user", input.content);
 
+      // Get mode-specific system prompt
+      const systemPrompt = MODE_PROMPTS[input.mode] || MODE_PROMPTS.standard;
+
       // Get conversation history
       const history = await db.getConversationMessages(input.conversationId);
       const llmMessages = [
-        { role: "system" as const, content: SERAPHIM_SYSTEM_PROMPT },
+        { role: "system" as const, content: systemPrompt },
         ...history.map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content })),
       ];
 
@@ -65,9 +67,9 @@ export const appRouter = router({
 
       // Save assistant message
       await db.addMessage(input.conversationId, "assistant", assistantContent);
-      await db.addAuditLog(ctx.user.id, "Chat message sent", "chat", `Conv ${input.conversationId}`);
+      await db.addAuditLog(ctx.user.id, "Chat message sent", "chat", `Conv ${input.conversationId} [${input.mode}]`);
 
-      return { role: "assistant" as const, content: assistantContent };
+      return { role: "assistant" as const, content: assistantContent, mode: input.mode };
     }),
   }),
 
@@ -165,6 +167,7 @@ export const appRouter = router({
 
   // ── Analysis (EiRAM) ──
   analysis: router({
+    // Lexicon-based quick analysis (original)
     analyze: protectedProcedure.input(z.object({ text: z.string().min(1) })).mutation(async ({ ctx, input }) => {
       const result = runEiram(input.text);
       await db.saveAnalysisResult(ctx.user.id, {
@@ -178,6 +181,64 @@ export const appRouter = router({
       });
       await db.addAuditLog(ctx.user.id, "EiRAM analysis executed", "analysis", result.summary);
       return result;
+    }),
+    // Full LLM-powered EiRAM deep analysis with structured dashboard output
+    deepAnalyze: protectedProcedure.input(z.object({
+      text: z.string().min(1),
+      question: z.string().optional(),
+      domain: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      // First run the lexicon analysis for quantitative scores
+      const lexiconResult = runEiram(input.text);
+
+      // Then run the full LLM-powered EiRAM pipeline
+      const eiramSystemPrompt = MODE_PROMPTS.eiram;
+      const userPrompt = `Analyze the following using the full EiRAM pipeline. Produce the complete EiRAM Dashboard output.
+
+${input.question ? `**Question:** ${input.question}\n` : ""}${input.domain ? `**Domain:** ${input.domain}\n` : ""}
+**Source Material:**
+${input.text}
+
+**Quantitative Lexicon Analysis (for reference):**
+- Overall Risk: ${lexiconResult.risk_vector.overall_risk}
+- Ideological Lock (IRI): ${lexiconResult.module_scores.iri.score} (${lexiconResult.module_scores.iri.label})
+- Vulnerability (VDM): ${lexiconResult.module_scores.vdm.score} (${lexiconResult.module_scores.vdm.label})
+- Escalation (ECS): ${lexiconResult.module_scores.ecs.score} (${lexiconResult.module_scores.ecs.label})
+- Epistemic Elasticity (EEM): ${lexiconResult.module_scores.eem.score} (${lexiconResult.module_scores.eem.label})
+- Predictive Forecast (PFM): ${lexiconResult.module_scores.pfm.score} (${lexiconResult.module_scores.pfm.label})
+
+Now produce the full EiRAM Dashboard with all modules. Be thorough, precise, and use confidence levels throughout.`;
+
+      let dashboardOutput: string;
+      try {
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: eiramSystemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        });
+        dashboardOutput = typeof response.choices[0]?.message?.content === "string"
+          ? response.choices[0].message.content
+          : "EiRAM pipeline encountered an issue. Please try again.";
+      } catch (e: any) {
+        dashboardOutput = `EiRAM pipeline error: ${e.message || "Unknown failure"}. Please try again.`;
+      }
+
+      await db.saveAnalysisResult(ctx.user.id, {
+        inputText: input.text,
+        summary: lexiconResult.summary,
+        moduleScores: lexiconResult.module_scores,
+        extractedFeatures: lexiconResult.extracted_features,
+        riskVector: lexiconResult.risk_vector,
+        evidence: lexiconResult.evidence,
+        forecast: lexiconResult.forecast,
+      });
+      await db.addAuditLog(ctx.user.id, "EiRAM deep analysis executed", "analysis", `Domain: ${input.domain || "general"}`);
+
+      return {
+        dashboard: dashboardOutput,
+        lexicon: lexiconResult,
+      };
     }),
     history: protectedProcedure.query(async ({ ctx }) => {
       return db.getUserAnalysisResults(ctx.user.id);
@@ -464,6 +525,22 @@ export const appRouter = router({
       } catch {
         return null;
       }
+    }),
+  }),
+
+  // ── File Upload ──
+  files: router({
+    upload: protectedProcedure.input(z.object({
+      filename: z.string(),
+      contentType: z.string(),
+      base64Data: z.string(),
+    })).mutation(async ({ ctx, input }) => {
+      const { storagePut } = await import("./storage");
+      const buffer = Buffer.from(input.base64Data, "base64");
+      const fileKey = `uploads/${ctx.user.id}/${Date.now()}-${input.filename}`;
+      const { key, url } = await storagePut(fileKey, buffer, input.contentType);
+      await db.addAuditLog(ctx.user.id, "File uploaded", "files", `${input.filename} (${(buffer.length / 1024).toFixed(1)}KB)`);
+      return { key, url, filename: input.filename, size: buffer.length };
     }),
   }),
 

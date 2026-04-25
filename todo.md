@@ -45,3 +45,12 @@
 - [x] Remove auth redirect/login prompts from UI components (main.tsx, LandingPage, DashboardLayout)
 - [x] Provide anonymous operator user context for procedures that reference ctx.user
 - [x] Add Vitest coverage for anonymous-access context and protectedProcedure working without auth (5 new tests)
+- [x] Upgrade Seraphim system prompt to match full personality matrix spec (Data/TNG + intel officer + law professor + loyal friend)
+- [x] Add Mode Selector to Chat interface (12 modes with icons, descriptions, and mode-specific prompts)
+- [x] Build full EiRAM modular pipeline with LLM-powered dashboard output + lexicon scoring
+- [x] Add file upload endpoint (S3 storage) for document analysis
+- [x] Add report export (Markdown) from Chat and EiRAM Analysis pages (PDF deferred)
+- [x] Add mode-specific suggested prompts and structured responses in Chat
+- [x] Add tests for mode system, deepAnalyze, and files.upload (18 total tests passing)
+- [x] Wire file upload UI into ChatPage (file picker, attachment preview, upload to S3, 16MB limit)
+- [x] Mode-specific structured responses handled via system prompts (EiRAM dashboard template, legal IRAC, etc.) — rendered via Streamdown markdown

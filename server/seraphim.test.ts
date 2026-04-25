@@ -110,5 +110,36 @@ describe("Router Structure", () => {
     expect(procedures).toHaveProperty("weather.geocode");
     expect(procedures).toHaveProperty("flights.live");
     expect(procedures).toHaveProperty("flights.search");
+    // Spec upgrade: deep analysis and file upload
+    expect(procedures).toHaveProperty("analysis.deepAnalyze");
+    expect(procedures).toHaveProperty("files.upload");
+  });
+});
+
+// ── Mode System Tests ──
+describe("Mode System", () => {
+  it("exports all 12 modes with required fields", async () => {
+    const { MODES, MODE_PROMPTS, MODE_IDS } = await import("../shared/modes");
+    expect(MODES).toHaveLength(12);
+    expect(MODE_IDS).toHaveLength(12);
+    for (const mode of MODES) {
+      expect(mode).toHaveProperty("id");
+      expect(mode).toHaveProperty("label");
+      expect(mode).toHaveProperty("desc");
+      expect(mode).toHaveProperty("icon");
+      expect(typeof MODE_PROMPTS[mode.id]).toBe("string");
+      expect(MODE_PROMPTS[mode.id].length).toBeGreaterThan(50);
+    }
+  });
+
+  it("standard mode prompt contains Seraphim identity", async () => {
+    const { MODE_PROMPTS } = await import("../shared/modes");
+    expect(MODE_PROMPTS.standard.toLowerCase()).toContain("seraphim");
+  });
+
+  it("eiram mode prompt references analysis pipeline", async () => {
+    const { MODE_PROMPTS } = await import("../shared/modes");
+    const eiramPrompt = MODE_PROMPTS.eiram.toLowerCase();
+    expect(eiramPrompt).toContain("eiram");
   });
 });
