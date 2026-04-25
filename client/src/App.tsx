@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
+import LandingPage from "./pages/LandingPage";
 import ChatPage from "./pages/ChatPage";
 import NetworkPage from "./pages/NetworkPage";
 import CodePage from "./pages/CodePage";
@@ -13,12 +14,16 @@ import AnalysisPage from "./pages/AnalysisPage";
 import MemoryPage from "./pages/MemoryPage";
 import PluginsPage from "./pages/PluginsPage";
 import AuditPage from "./pages/AuditPage";
+import DiscoverPage from "./pages/DiscoverPage";
+import NewsPage from "./pages/NewsPage";
+import WeatherPage from "./pages/WeatherPage";
+import FlightsPage from "./pages/FlightsPage";
 
-function Router() {
+function DashboardRouter() {
   return (
     <DashboardLayout>
       <Switch>
-        <Route path="/" component={ChatPage} />
+        <Route path="/chat" component={ChatPage} />
         <Route path="/network" component={NetworkPage} />
         <Route path="/code" component={CodePage} />
         <Route path="/engineering" component={EngineeringPage} />
@@ -26,10 +31,24 @@ function Router() {
         <Route path="/memory" component={MemoryPage} />
         <Route path="/plugins" component={PluginsPage} />
         <Route path="/audit" component={AuditPage} />
-        <Route path="/404" component={NotFound} />
+        <Route path="/discover" component={DiscoverPage} />
+        <Route path="/news" component={NewsPage} />
+        <Route path="/weather" component={WeatherPage} />
+        <Route path="/flights" component={FlightsPage} />
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>
+  );
+}
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/" component={LandingPage} />
+      <Route path="/404" component={NotFound} />
+      {/* All dashboard routes */}
+      <Route component={DashboardRouter} />
+    </Switch>
   );
 }
 

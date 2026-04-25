@@ -108,7 +108,7 @@ export const auditLogs = mysqlTable("audit_logs", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   action: varchar("action", { length: 128 }).notNull(),
-  category: mysqlEnum("category", ["chat", "network", "code", "engineering", "analysis", "memory", "plugin", "system"]).notNull(),
+  category: mysqlEnum("category", ["chat", "network", "code", "engineering", "analysis", "memory", "plugin", "system", "discover", "news", "weather", "flights"]).notNull(),
   details: text("details"),
   metadata: json("metadata"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

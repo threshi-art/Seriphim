@@ -281,6 +281,192 @@ export const appRouter = router({
     }),
   }),
 
+  // ── Web Randomizer (StumbleUpon) ──
+  discover: router({
+    stumble: protectedProcedure.input(z.object({
+      interests: z.array(z.string()).min(1),
+    })).mutation(async ({ ctx, input }) => {
+      try {
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: `You are a web discovery engine. Given user interests, suggest 1 random interesting website they probably haven't seen. Return JSON with: title (string), url (string, must be a real working URL), description (string, 1-2 sentences), category (string). Pick obscure, fascinating, or educational sites — not mainstream ones like Wikipedia or YouTube. Be creative and surprising.` },
+            { role: "user", content: `My interests: ${input.interests.join(", ")}` },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "web_discovery",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  url: { type: "string" },
+                  description: { type: "string" },
+                  category: { type: "string" },
+                },
+                required: ["title", "url", "description", "category"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+        const content = typeof response.choices[0]?.message?.content === "string" ? response.choices[0].message.content : "{}";
+        const site = JSON.parse(content);
+        await db.addAuditLog(ctx.user.id, "Web discovery: stumble", "discover", `Found: ${site.title}`);
+        return site;
+      } catch (e: any) {
+        throw new Error(`Discovery failed: ${e.message}`);
+      }
+    }),
+  }),
+
+  // ── News Aggregator ──
+  news: router({
+    fetch: protectedProcedure.input(z.object({
+      category: z.string().default("general"),
+      query: z.string().optional(),
+    })).query(async ({ ctx, input }) => {
+      try {
+        const prompt = input.query
+          ? `Find 10 current real news headlines about "${input.query}". Return JSON array.`
+          : `Find 10 current real news headlines in the "${input.category}" category. Return JSON array.`;
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: `You are a news aggregation engine. Return the latest real news headlines as a JSON array. Each item must have: title (string), source (string, the news outlet), url (string, real URL to the article), summary (string, 1-2 sentences), category (string), publishedAt (string, ISO date estimate). Use real, current news from reputable sources. Today is ${new Date().toISOString().split("T")[0]}.` },
+            { role: "user", content: prompt },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "news_feed",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  articles: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        title: { type: "string" },
+                        source: { type: "string" },
+                        url: { type: "string" },
+                        summary: { type: "string" },
+                        category: { type: "string" },
+                        publishedAt: { type: "string" },
+                      },
+                      required: ["title", "source", "url", "summary", "category", "publishedAt"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["articles"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+        const content = typeof response.choices[0]?.message?.content === "string" ? response.choices[0].message.content : '{"articles":[]}';
+        const parsed = JSON.parse(content);
+        await db.addAuditLog(ctx.user.id, "News fetch", "news", `Category: ${input.category}, ${parsed.articles?.length || 0} articles`);
+        return parsed.articles || [];
+      } catch (e: any) {
+        return [];
+      }
+    }),
+  }),
+
+  // ── Weather ──
+  weather: router({
+    current: protectedProcedure.input(z.object({
+      lat: z.number(),
+      lon: z.number(),
+      city: z.string().optional(),
+    })).query(async ({ ctx, input }) => {
+      try {
+        // Use Open-Meteo free API (no key needed)
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${input.lat}&longitude=${input.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=7`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+        await db.addAuditLog(ctx.user.id, "Weather fetch", "weather", `Location: ${input.city || `${input.lat},${input.lon}`}`);
+        return { ...data, city: input.city || "Current Location" };
+      } catch (e: any) {
+        throw new Error(`Weather fetch failed: ${e.message}`);
+      }
+    }),
+    geocode: protectedProcedure.input(z.object({ city: z.string() })).mutation(async ({ input }) => {
+      try {
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(input.city)}&count=5&language=en&format=json`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+        return data.results || [];
+      } catch {
+        return [];
+      }
+    }),
+  }),
+
+  // ── Flight Monitor ──
+  flights: router({
+    live: protectedProcedure.input(z.object({
+      bounds: z.object({
+        lamin: z.number(),
+        lamax: z.number(),
+        lomin: z.number(),
+        lomax: z.number(),
+      }).optional(),
+    }).optional()).query(async ({ ctx }) => {
+      try {
+        // Use OpenSky Network free API
+        const url = `https://opensky-network.org/api/states/all`;
+        const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (!resp.ok) throw new Error(`OpenSky API returned ${resp.status}`);
+        const data = await resp.json();
+        // Transform to cleaner format, limit to 200 flights
+        const flights = (data.states || []).slice(0, 200).map((s: any[]) => ({
+          icao24: s[0],
+          callsign: (s[1] || "").trim(),
+          originCountry: s[2],
+          longitude: s[5],
+          latitude: s[6],
+          altitude: s[7] ? Math.round(s[7] * 3.281) : null, // meters to feet
+          velocity: s[9] ? Math.round(s[9] * 1.944) : null, // m/s to knots
+          heading: s[10] ? Math.round(s[10]) : null,
+          verticalRate: s[11] ? Math.round(s[11] * 196.85) : null, // m/s to ft/min
+          onGround: s[8],
+        })).filter((f: any) => f.latitude && f.longitude);
+        await db.addAuditLog(ctx.user.id, "Flight data fetch", "flights", `${flights.length} aircraft tracked`);
+        return { flights, timestamp: data.time };
+      } catch (e: any) {
+        // Return simulated data if API is down
+        return { flights: generateSimulatedFlights(), timestamp: Math.floor(Date.now() / 1000), simulated: true };
+      }
+    }),
+    search: protectedProcedure.input(z.object({ callsign: z.string() })).query(async ({ input }) => {
+      try {
+        const url = `https://opensky-network.org/api/states/all`;
+        const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        const data = await resp.json();
+        const match = (data.states || []).find((s: any[]) => (s[1] || "").trim().toLowerCase().includes(input.callsign.toLowerCase()));
+        if (!match) return null;
+        return {
+          icao24: match[0],
+          callsign: (match[1] || "").trim(),
+          originCountry: match[2],
+          longitude: match[5],
+          latitude: match[6],
+          altitude: match[7] ? Math.round(match[7] * 3.281) : null,
+          velocity: match[9] ? Math.round(match[9] * 1.944) : null,
+          heading: match[10] ? Math.round(match[10]) : null,
+          onGround: match[8],
+        };
+      } catch {
+        return null;
+      }
+    }),
+  }),
+
   // ── Audit ──
   audit: router({
     logs: protectedProcedure.input(z.object({ limit: z.number().optional() }).optional()).query(async ({ ctx, input }) => {
@@ -352,4 +538,32 @@ function generateNetworkScanResults() {
   });
 
   return events;
+}
+
+// ── Simulated Flight Data (fallback when OpenSky is unavailable) ──
+function generateSimulatedFlights() {
+  const airlines = ["UAL", "DAL", "AAL", "SWA", "BAW", "DLH", "AFR", "ANA", "QFA", "EK"];
+  const countries = ["United States", "United Kingdom", "Germany", "France", "Japan", "Australia", "UAE", "Canada"];
+  const flights: Array<{
+    icao24: string; callsign: string; originCountry: string;
+    longitude: number; latitude: number; altitude: number | null;
+    velocity: number | null; heading: number | null; verticalRate: number | null; onGround: boolean;
+  }> = [];
+
+  for (let i = 0; i < 80; i++) {
+    const airline = airlines[Math.floor(Math.random() * airlines.length)];
+    flights.push({
+      icao24: Math.random().toString(16).substring(2, 8),
+      callsign: `${airline}${Math.floor(Math.random() * 9000 + 1000)}`,
+      originCountry: countries[Math.floor(Math.random() * countries.length)],
+      longitude: (Math.random() * 360) - 180,
+      latitude: (Math.random() * 140) - 70,
+      altitude: Math.floor(Math.random() * 41000 + 1000),
+      velocity: Math.floor(Math.random() * 400 + 150),
+      heading: Math.floor(Math.random() * 360),
+      verticalRate: Math.floor(Math.random() * 4000 - 2000),
+      onGround: false,
+    });
+  }
+  return flights;
 }

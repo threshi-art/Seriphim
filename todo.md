@@ -28,3 +28,15 @@
 - [x] Update DashboardLayout sidebar with teal active indicators and darker bg
 - [x] Update all 8 pages with NSA card styling (teal borders, status badges, denser layouts)
 - [x] Re-sync updated files to user's local SeraphimGPT/Seraphim folder
+- [x] Cinematic landing page — Inception-style parallax, cyberpunk AI android hero, dark immersive entry into dashboard
+- [x] Web Randomizer tab — StumbleUpon-style random website discovery based on user interests
+- [x] News Aggregator tab — multi-source news feed with categories, search, and real-time updates
+- [x] Weather Dashboard tab — radar-style weather with maps, forecasts, and current conditions
+- [x] Flight Monitor tab — live flight tracking with interactive map display
+- [x] Upload hero images (AI android, NSOC) for landing page
+- [x] Add backend routers for web randomizer, news, weather, and flight APIs
+- [x] Add sidebar navigation entries for 4 new tabs
+- [x] Update App.tsx with routes for landing page and 4 new tabs
+- [ ] Re-sync all updated files to user's local folder (pending)
+- [x] Add interactive map to FlightsPage with aircraft markers, dark map style, and flight info overlay
+- [x] Add map/table view toggle to FlightsPage

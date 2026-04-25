@@ -24,6 +24,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import {
   MessageSquare, Shield, Code2, Wrench, Brain,
   Database, Puzzle, ScrollText, LogOut, PanelLeft, Sparkles, ArrowRight,
+  Compass, Newspaper, Cloud, Plane,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -31,11 +32,15 @@ import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: MessageSquare, label: "Chat", path: "/" },
+  { icon: MessageSquare, label: "Chat", path: "/chat" },
   { icon: Shield, label: "Network Defense", path: "/network" },
   { icon: Code2, label: "Code", path: "/code" },
   { icon: Wrench, label: "Engineering", path: "/engineering" },
   { icon: Brain, label: "Analysis", path: "/analysis" },
+  { icon: Compass, label: "Discover", path: "/discover" },
+  { icon: Newspaper, label: "News", path: "/news" },
+  { icon: Cloud, label: "Weather", path: "/weather" },
+  { icon: Plane, label: "Flights", path: "/flights" },
   { icon: Database, label: "Memory", path: "/memory" },
   { icon: Puzzle, label: "Plugins", path: "/plugins" },
   { icon: ScrollText, label: "Audit Log", path: "/audit" },

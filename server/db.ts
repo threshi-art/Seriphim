@@ -196,7 +196,7 @@ export async function deletePlugin(id: number, userId: number) {
 
 // ── Audit Logs ──
 
-export async function addAuditLog(userId: number, action: string, category: "chat" | "network" | "code" | "engineering" | "analysis" | "memory" | "plugin" | "system", details?: string, metadata?: unknown) {
+export async function addAuditLog(userId: number, action: string, category: "chat" | "network" | "code" | "engineering" | "analysis" | "memory" | "plugin" | "system" | "discover" | "news" | "weather" | "flights", details?: string, metadata?: unknown) {
   const db = await getDb();
   if (!db) return;
   await db.insert(auditLogs).values({ userId, action, category, details: details ?? null, metadata: metadata ?? null });

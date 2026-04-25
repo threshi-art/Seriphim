@@ -15,6 +15,13 @@
       "when": 1777073477706,
       "tag": "0001_wandering_sinister_six",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1777079582957,
+      "tag": "0002_glossy_trish_tilby",
+      "breakpoints": true
     }
   ]
 }

@@ -103,5 +103,12 @@ describe("Router Structure", () => {
     expect(procedures).toHaveProperty("plugins.create");
     expect(procedures).toHaveProperty("plugins.propose");
     expect(procedures).toHaveProperty("audit.logs");
+    // New feature routers
+    expect(procedures).toHaveProperty("discover.stumble");
+    expect(procedures).toHaveProperty("news.fetch");
+    expect(procedures).toHaveProperty("weather.current");
+    expect(procedures).toHaveProperty("weather.geocode");
+    expect(procedures).toHaveProperty("flights.live");
+    expect(procedures).toHaveProperty("flights.search");
   });
 });
