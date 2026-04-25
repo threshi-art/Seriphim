@@ -19,7 +19,7 @@ import {
   Loader2, Send, User, Sparkles, Plus, Trash2, MessageSquare,
   Brain, Scale, Cpu, Globe, Users, Pen, Flame, BookOpen,
   FileText, ShieldAlert, LayoutDashboard, Download, Paperclip,
-  ChevronDown,
+  ChevronDown, Search, X,
 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Streamdown } from "streamdown";
@@ -50,6 +50,20 @@ export default function ChatPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const searchResults = trpc.chatSearch.search.useQuery(
+    { query: debouncedSearch },
+    { enabled: debouncedSearch.length >= 2 }
+  );
 
   const convQuery = trpc.chat.conversations.useQuery();
   const msgQuery = trpc.chat.messages.useQuery(
@@ -230,43 +244,102 @@ export default function ChatPage() {
     <div className="flex h-full">
       {/* Conversation Sidebar */}
       <div className="w-60 border-r border-border/50 bg-muted/20 flex flex-col shrink-0 hidden md:flex">
-        <div className="p-3 border-b border-border/50">
-          <Button
-            onClick={() => createConv.mutate({ title: "New Conversation" })}
-            variant="outline"
-            size="sm"
-            className="w-full gap-2 text-xs rounded-lg border-border/50 bg-muted/30 hover:bg-muted/50"
-            disabled={createConv.isPending}
-          >
-            <Plus className="h-3.5 w-3.5" /> New Thread
-          </Button>
-        </div>
-        <ScrollArea className="flex-1">
-          <div className="p-2 space-y-0.5">
-            {convQuery.data?.map(conv => (
-              <div
-                key={conv.id}
-                className={cn(
-                  "group flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] cursor-pointer transition-all",
-                  activeConvId === conv.id
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                )}
-                onClick={() => setActiveConvId(conv.id)}
-              >
-                <div className={cn("w-1 h-1 rounded-full shrink-0", activeConvId === conv.id ? "bg-primary" : "bg-transparent")} />
-                <MessageSquare className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate flex-1">{conv.title}</span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); deleteConv.mutate({ id: conv.id }); }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                </button>
-              </div>
-            ))}
+        <div className="p-3 border-b border-border/50 space-y-2">
+          <div className="flex gap-1.5">
+            <Button
+              onClick={() => createConv.mutate({ title: "New Conversation" })}
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-2 text-xs rounded-lg border-border/50 bg-muted/30 hover:bg-muted/50"
+              disabled={createConv.isPending}
+            >
+              <Plus className="h-3.5 w-3.5" /> New Thread
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 shrink-0 rounded-lg border-border/50 bg-muted/30 hover:bg-muted/50"
+              onClick={() => { setShowSearch(!showSearch); if (showSearch) setSearchQuery(""); }}
+            >
+              {showSearch ? <X className="h-3.5 w-3.5" /> : <Search className="h-3.5 w-3.5" />}
+            </Button>
           </div>
-        </ScrollArea>
+          {showSearch && (
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search messages..."
+                className="w-full h-7 pl-7 pr-2 text-xs rounded-md bg-card border border-border/50 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                autoFocus
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Search Results */}
+        {showSearch && debouncedSearch.length >= 2 ? (
+          <ScrollArea className="flex-1">
+            <div className="p-2 space-y-1">
+              {searchResults.isLoading && (
+                <div className="flex items-center gap-2 p-3 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Searching...
+                </div>
+              )}
+              {searchResults.isError && (
+                <div className="p-3 text-xs text-destructive text-center">Search failed. Try again.</div>
+              )}
+              {searchResults.data && searchResults.data.length === 0 && (
+                <div className="p-3 text-xs text-muted-foreground text-center">No results found</div>
+              )}
+              {searchResults.data?.map((result, i) => (
+                <button
+                  key={`${result.messageId}-${i}`}
+                  onClick={() => { setActiveConvId(result.conversationId); setShowSearch(false); setSearchQuery(""); }}
+                  className="w-full text-left p-2.5 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-border/30"
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <MessageSquare className="h-3 w-3 text-primary shrink-0" />
+                    <span className="text-[11px] font-medium text-primary truncate">{result.conversationTitle}</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground line-clamp-2">{result.content.substring(0, 120)}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[9px] text-muted-foreground/60">{result.role}</span>
+                    <span className="text-[9px] text-muted-foreground/60">{new Date(result.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
+        ) : (
+          <ScrollArea className="flex-1">
+            <div className="p-2 space-y-0.5">
+              {convQuery.data?.map(conv => (
+                <div
+                  key={conv.id}
+                  className={cn(
+                    "group flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] cursor-pointer transition-all",
+                    activeConvId === conv.id
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                  )}
+                  onClick={() => setActiveConvId(conv.id)}
+                >
+                  <div className={cn("w-1 h-1 rounded-full shrink-0", activeConvId === conv.id ? "bg-primary" : "bg-transparent")} />
+                  <MessageSquare className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate flex-1">{conv.title}</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deleteConv.mutate({ id: conv.id }); }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
       </div>
 
       {/* Main Chat Area */}

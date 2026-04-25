@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, conversations, messages, memoryEntries,
   networkEvents, analysisResults, plugins, auditLogs, codeExecutions,
+  userSettings, instagramCache,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -237,7 +238,7 @@ export async function deletePlugin(id: number, userId: number) {
 
 // ── Audit Logs ──
 
-export async function addAuditLog(userId: number, action: string, category: "chat" | "network" | "code" | "engineering" | "analysis" | "memory" | "plugin" | "system" | "discover" | "news" | "weather" | "flights" | "files", details?: string, metadata?: unknown) {
+export async function addAuditLog(userId: number, action: string, category: "chat" | "network" | "code" | "engineering" | "analysis" | "memory" | "plugin" | "system" | "discover" | "news" | "weather" | "flights" | "files" | "settings" | "instagram", details?: string, metadata?: unknown) {
   const db = await getDb();
   if (!db) return;
   await db.insert(auditLogs).values({ userId, action, category, details: details ?? null, metadata: metadata ?? null });
@@ -268,4 +269,121 @@ export async function getUserCodeExecutions(userId: number, limit = 20) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(codeExecutions).where(eq(codeExecutions.userId, userId)).orderBy(desc(codeExecutions.createdAt)).limit(limit);
+}
+
+
+// ── User Settings ──
+
+export async function getUserSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function upsertUserSettings(userId: number, data: {
+  defaultMode?: string;
+  weatherCity?: string | null;
+  weatherLat?: string | null;
+  weatherLon?: string | null;
+  personalityTuning?: unknown;
+  discoverInterests?: unknown;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+  if (existing.length > 0) {
+    const updateSet: Record<string, unknown> = {};
+    if (data.defaultMode !== undefined) updateSet.defaultMode = data.defaultMode;
+    if (data.weatherCity !== undefined) updateSet.weatherCity = data.weatherCity;
+    if (data.weatherLat !== undefined) updateSet.weatherLat = data.weatherLat;
+    if (data.weatherLon !== undefined) updateSet.weatherLon = data.weatherLon;
+    if (data.personalityTuning !== undefined) updateSet.personalityTuning = data.personalityTuning;
+    if (data.discoverInterests !== undefined) updateSet.discoverInterests = data.discoverInterests;
+    if (Object.keys(updateSet).length > 0) {
+      await db.update(userSettings).set(updateSet).where(eq(userSettings.userId, userId));
+    }
+    return existing[0];
+  } else {
+    await db.insert(userSettings).values({
+      userId,
+      defaultMode: data.defaultMode || "standard",
+      weatherCity: data.weatherCity ?? "Seattle",
+      weatherLat: data.weatherLat ?? null,
+      weatherLon: data.weatherLon ?? null,
+      personalityTuning: data.personalityTuning ?? null,
+      discoverInterests: data.discoverInterests ?? null,
+    });
+    const created = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+    return created[0] || null;
+  }
+}
+
+// ── Instagram Cache ──
+
+export async function saveInstagramCache(userId: number, dataType: string, data: unknown) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Delete old cache of same type
+  await db.delete(instagramCache).where(and(eq(instagramCache.userId, userId), eq(instagramCache.dataType, dataType)));
+  await db.insert(instagramCache).values({ userId, dataType, data });
+}
+
+export async function getInstagramCache(userId: number, dataType: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(instagramCache)
+    .where(and(eq(instagramCache.userId, userId), eq(instagramCache.dataType, dataType)))
+    .orderBy(desc(instagramCache.fetchedAt))
+    .limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function getAllInstagramCache(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(instagramCache)
+    .where(eq(instagramCache.userId, userId))
+    .orderBy(desc(instagramCache.fetchedAt));
+}
+
+// ── Conversation Search ──
+
+export async function searchConversations(userId: number, query: string) {
+  const db = await getDb();
+  if (!db) return [];
+  // Search across messages in user's conversations
+  const userConvs = await db.select({ id: conversations.id }).from(conversations).where(eq(conversations.userId, userId));
+  if (userConvs.length === 0) return [];
+  const convIds = userConvs.map(c => c.id);
+
+  // Search messages containing the query
+  const results: Array<{
+    messageId: number;
+    conversationId: number;
+    conversationTitle: string;
+    role: string;
+    content: string;
+    createdAt: Date;
+  }> = [];
+
+  for (const convId of convIds) {
+    const conv = await db.select().from(conversations).where(eq(conversations.id, convId)).limit(1);
+    const msgs = await db.select().from(messages)
+      .where(and(eq(messages.conversationId, convId), like(messages.content, `%${query}%`)))
+      .orderBy(desc(messages.createdAt))
+      .limit(5);
+    for (const msg of msgs) {
+      results.push({
+        messageId: msg.id,
+        conversationId: convId,
+        conversationTitle: conv[0]?.title || "Untitled",
+        role: msg.role,
+        content: msg.content,
+        createdAt: msg.createdAt,
+      });
+    }
+  }
+
+  return results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 20);
 }

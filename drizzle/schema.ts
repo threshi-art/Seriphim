@@ -16,6 +16,22 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// ── User Settings ──
+export const userSettings = mysqlTable("user_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  defaultMode: varchar("defaultMode", { length: 32 }).default("standard").notNull(),
+  weatherCity: varchar("weatherCity", { length: 128 }).default("Seattle"),
+  weatherLat: varchar("weatherLat", { length: 20 }),
+  weatherLon: varchar("weatherLon", { length: 20 }),
+  personalityTuning: json("personalityTuning"), // { formality, humor, depth }
+  discoverInterests: json("discoverInterests"), // string[]
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserSettings = typeof userSettings.$inferSelect;
+
 // ── Conversations ──
 export const conversations = mysqlTable("conversations", {
   id: int("id").autoincrement().primaryKey(),
@@ -108,7 +124,7 @@ export const auditLogs = mysqlTable("audit_logs", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   action: varchar("action", { length: 128 }).notNull(),
-  category: mysqlEnum("category", ["chat", "network", "code", "engineering", "analysis", "memory", "plugin", "system", "discover", "news", "weather", "flights", "files"]).notNull(),
+  category: mysqlEnum("category", ["chat", "network", "code", "engineering", "analysis", "memory", "plugin", "system", "discover", "news", "weather", "flights", "files", "settings", "instagram"]).notNull(),
   details: text("details"),
   metadata: json("metadata"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -129,3 +145,14 @@ export const codeExecutions = mysqlTable("code_executions", {
 });
 
 export type CodeExecution = typeof codeExecutions.$inferSelect;
+
+// ── Instagram Cache ──
+export const instagramCache = mysqlTable("instagram_cache", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  dataType: varchar("dataType", { length: 32 }).notNull(), // "account", "posts", "insights"
+  data: json("data").notNull(),
+  fetchedAt: timestamp("fetchedAt").defaultNow().notNull(),
+});
+
+export type InstagramCache = typeof instagramCache.$inferSelect;

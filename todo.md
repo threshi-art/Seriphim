@@ -54,3 +54,11 @@
 - [x] Add tests for mode system, deepAnalyze, and files.upload (18 total tests passing)
 - [x] Wire file upload UI into ChatPage (file picker, attachment preview, upload to S3, 16MB limit)
 - [x] Mode-specific structured responses handled via system prompts (EiRAM dashboard template, legal IRAC, etc.) — rendered via Streamdown markdown
+- [x] Retry sync all updated files to user's local folder via base64 PowerShell (10 files synced successfully)
+- [x] Settings page — default mode, preferred weather location, personality tuning sliders, discover interests, system info
+- [x] Instagram Intelligence page — account overview, posts, AI analysis, data cache, MCP sync endpoint
+- [x] Conversation search — full-text search across chat history with inline sidebar results
+- [x] Tests updated for settings, instagram, and chatSearch routers (18 tests passing)
+- [x] Add debounce (300ms) to chat search input + error state handling
+- [x] Add real Vitest behavior tests for settings, instagram, chatSearch, and db helpers (31 tests passing)
+- [x] Instagram module: cache-backed dashboard with MCP-powered data ingestion (MCP tools run in sandbox, data pushed via syncData endpoint)

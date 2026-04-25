@@ -544,6 +544,94 @@ Now produce the full EiRAM Dashboard with all modules. Be thorough, precise, and
     }),
   }),
 
+  // ── Settings ──
+  settings: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      const settings = await db.getUserSettings(ctx.user.id);
+      if (settings) return settings;
+      // Return defaults
+      return {
+        id: 0, userId: ctx.user.id, defaultMode: "standard",
+        weatherCity: "Seattle", weatherLat: "47.6062", weatherLon: "-122.3321",
+        personalityTuning: { formality: 50, humor: 30, depth: 70 },
+        discoverInterests: ["aerospace", "technology", "science"],
+        createdAt: new Date(), updatedAt: new Date(),
+      };
+    }),
+    update: protectedProcedure.input(z.object({
+      defaultMode: z.string().optional(),
+      weatherCity: z.string().nullable().optional(),
+      weatherLat: z.string().nullable().optional(),
+      weatherLon: z.string().nullable().optional(),
+      personalityTuning: z.object({
+        formality: z.number().min(0).max(100),
+        humor: z.number().min(0).max(100),
+        depth: z.number().min(0).max(100),
+      }).optional(),
+      discoverInterests: z.array(z.string()).optional(),
+    })).mutation(async ({ ctx, input }) => {
+      await db.upsertUserSettings(ctx.user.id, input);
+      await db.addAuditLog(ctx.user.id, "Settings updated", "settings", JSON.stringify(input).substring(0, 200));
+      return { success: true };
+    }),
+  }),
+
+  // ── Instagram Intelligence ──
+  instagram: router({
+    account: protectedProcedure.query(async ({ ctx }) => {
+      const cached = await db.getInstagramCache(ctx.user.id, "account");
+      return cached ? { data: cached.data, fetchedAt: cached.fetchedAt } : null;
+    }),
+    posts: protectedProcedure.query(async ({ ctx }) => {
+      const cached = await db.getInstagramCache(ctx.user.id, "posts");
+      return cached ? { data: cached.data, fetchedAt: cached.fetchedAt } : null;
+    }),
+    insights: protectedProcedure.input(z.object({ postId: z.string() })).query(async ({ ctx, input }) => {
+      const cached = await db.getInstagramCache(ctx.user.id, `insights-${input.postId}`);
+      return cached ? { data: cached.data, fetchedAt: cached.fetchedAt } : null;
+    }),
+    // Endpoint for scheduled task or manual refresh to push data
+    syncData: protectedProcedure.input(z.object({
+      dataType: z.string(),
+      data: z.any(),
+    })).mutation(async ({ ctx, input }) => {
+      await db.saveInstagramCache(ctx.user.id, input.dataType, input.data);
+      await db.addAuditLog(ctx.user.id, `Instagram data synced: ${input.dataType}`, "instagram");
+      return { success: true };
+    }),
+    allData: protectedProcedure.query(async ({ ctx }) => {
+      return db.getAllInstagramCache(ctx.user.id);
+    }),
+    // LLM-powered analysis of Instagram data
+    analyze: protectedProcedure.mutation(async ({ ctx }) => {
+      const allData = await db.getAllInstagramCache(ctx.user.id);
+      if (allData.length === 0) return { analysis: "No Instagram data available. Use the Sync button to fetch your account data first." };
+      const dataStr = allData.map(d => `[${d.dataType}]: ${JSON.stringify(d.data).substring(0, 2000)}`).join("\n");
+      try {
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: "You are a social media intelligence analyst. Analyze the provided Instagram data and produce a concise intelligence briefing covering: engagement patterns, audience insights, content performance, growth trends, and strategic recommendations. Use a professional intelligence report format." },
+            { role: "user", content: `Analyze this Instagram data:\n${dataStr}` },
+          ],
+        });
+        const analysis = typeof response.choices[0]?.message?.content === "string" ? response.choices[0].message.content : "Analysis failed.";
+        await db.addAuditLog(ctx.user.id, "Instagram analysis generated", "instagram");
+        return { analysis };
+      } catch (e: any) {
+        return { analysis: `Analysis error: ${e.message}` };
+      }
+    }),
+  }),
+
+  // ── Chat Search ──
+  chatSearch: router({
+    search: protectedProcedure.input(z.object({ query: z.string().min(1) })).query(async ({ ctx, input }) => {
+      const results = await db.searchConversations(ctx.user.id, input.query);
+      await db.addAuditLog(ctx.user.id, "Chat search", "chat", `Query: ${input.query}, ${results.length} results`);
+      return results;
+    }),
+  }),
+
   // ── Audit ──
   audit: router({
     logs: protectedProcedure.input(z.object({ limit: z.number().optional() }).optional()).query(async ({ ctx, input }) => {

@@ -113,6 +113,16 @@ describe("Router Structure", () => {
     // Spec upgrade: deep analysis and file upload
     expect(procedures).toHaveProperty("analysis.deepAnalyze");
     expect(procedures).toHaveProperty("files.upload");
+    // v5.0: Settings, Instagram, Chat Search
+    expect(procedures).toHaveProperty("settings.get");
+    expect(procedures).toHaveProperty("settings.update");
+    expect(procedures).toHaveProperty("instagram.account");
+    expect(procedures).toHaveProperty("instagram.posts");
+    expect(procedures).toHaveProperty("instagram.insights");
+    expect(procedures).toHaveProperty("instagram.syncData");
+    expect(procedures).toHaveProperty("instagram.allData");
+    expect(procedures).toHaveProperty("instagram.analyze");
+    expect(procedures).toHaveProperty("chatSearch.search");
   });
 });
 

@@ -16,7 +16,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import {
   MessageSquare, Shield, Code2, Wrench, Brain,
   Database, Puzzle, ScrollText, PanelLeft, Sparkles,
-  Compass, Newspaper, Cloud, Plane,
+  Compass, Newspaper, Cloud, Plane, Instagram, Settings,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -33,7 +33,9 @@ const menuItems = [
   { icon: Plane, label: "Flights", path: "/flights" },
   { icon: Database, label: "Memory", path: "/memory" },
   { icon: Puzzle, label: "Plugins", path: "/plugins" },
+  { icon: Instagram, label: "Instagram", path: "/instagram" },
   { icon: ScrollText, label: "Audit Log", path: "/audit" },
+  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

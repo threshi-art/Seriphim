@@ -18,6 +18,8 @@ import DiscoverPage from "./pages/DiscoverPage";
 import NewsPage from "./pages/NewsPage";
 import WeatherPage from "./pages/WeatherPage";
 import FlightsPage from "./pages/FlightsPage";
+import SettingsPage from "./pages/SettingsPage";
+import InstagramPage from "./pages/InstagramPage";
 
 function DashboardRouter() {
   return (
@@ -35,6 +37,8 @@ function DashboardRouter() {
         <Route path="/news" component={NewsPage} />
         <Route path="/weather" component={WeatherPage} />
         <Route path="/flights" component={FlightsPage} />
+        <Route path="/settings" component={SettingsPage} />
+        <Route path="/instagram" component={InstagramPage} />
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>
