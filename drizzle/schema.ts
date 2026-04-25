@@ -124,7 +124,7 @@ export const auditLogs = mysqlTable("audit_logs", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   action: varchar("action", { length: 128 }).notNull(),
-  category: mysqlEnum("category", ["chat", "network", "code", "engineering", "analysis", "memory", "plugin", "system", "discover", "news", "weather", "flights", "files", "settings", "instagram"]).notNull(),
+  category: mysqlEnum("category", ["chat", "network", "code", "engineering", "analysis", "memory", "plugin", "system", "discover", "news", "weather", "flights", "files", "settings", "instagram", "sentinel"]).notNull(),
   details: text("details"),
   metadata: json("metadata"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -156,3 +156,19 @@ export const instagramCache = mysqlTable("instagram_cache", {
 });
 
 export type InstagramCache = typeof instagramCache.$inferSelect;
+
+// ── Sentinel Checks ──
+export const sentinelChecks = mysqlTable("sentinel_checks", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  category: mysqlEnum("category", ["system_health", "security", "performance", "inventory", "logs"]).notNull(),
+  checkName: varchar("checkName", { length: 128 }).notNull(),
+  scriptName: varchar("scriptName", { length: 128 }).notNull(),
+  status: mysqlEnum("status", ["pass", "warning", "fail", "pending"]).default("pending").notNull(),
+  output: text("output"),
+  exitCode: int("exitCode"),
+  executedAt: timestamp("executedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SentinelCheck = typeof sentinelChecks.$inferSelect;

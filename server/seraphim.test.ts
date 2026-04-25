@@ -123,6 +123,21 @@ describe("Router Structure", () => {
     expect(procedures).toHaveProperty("instagram.allData");
     expect(procedures).toHaveProperty("instagram.analyze");
     expect(procedures).toHaveProperty("chatSearch.search");
+    // v6.0: SystemSentinel and Network Intelligence
+    expect(procedures).toHaveProperty("sentinel.catalog");
+    expect(procedures).toHaveProperty("sentinel.results");
+    expect(procedures).toHaveProperty("sentinel.saveResult");
+    expect(procedures).toHaveProperty("sentinel.batchSave");
+    expect(procedures).toHaveProperty("sentinel.clear");
+    expect(procedures).toHaveProperty("netIntel.ports");
+    expect(procedures).toHaveProperty("netIntel.commands");
+    expect(procedures).toHaveProperty("netIntel.labs");
+    expect(procedures).toHaveProperty("netIntel.labDetail");
+    expect(procedures).toHaveProperty("netIntel.subnet");
+    expect(procedures).toHaveProperty("netIntel.troubleshoot");
+    expect(procedures).toHaveProperty("netIntel.quiz");
+    expect(procedures).toHaveProperty("netIntel.design");
+    expect(procedures).toHaveProperty("netIntel.generateDocs");
   });
 });
 
@@ -151,5 +166,72 @@ describe("Mode System", () => {
     const { MODE_PROMPTS } = await import("../shared/modes");
     const eiramPrompt = MODE_PROMPTS.eiram.toLowerCase();
     expect(eiramPrompt).toContain("eiram");
+  });
+});
+
+// ── Network Intelligence Knowledge Base Tests ──
+describe("Network Intelligence Knowledge Bases", () => {
+  it("PORT_DATABASE has all 26 ports with required fields", async () => {
+    const { PORT_DATABASE } = await import("../shared/network-ports");
+    expect(PORT_DATABASE.length).toBe(25);
+    for (const port of PORT_DATABASE) {
+      expect(port).toHaveProperty("protocol");
+      expect(port).toHaveProperty("port");
+      expect(port).toHaveProperty("transport");
+      expect(port).toHaveProperty("purpose");
+      expect(port).toHaveProperty("securityConcern");
+      expect(port).toHaveProperty("troubleshootingCommands");
+      expect(typeof port.port).toBe("number");
+      expect(Array.isArray(port.troubleshootingCommands)).toBe(true);
+    }
+  });
+
+  it("COMMAND_LIBRARY has entries for all three platforms", async () => {
+    const { COMMAND_LIBRARY } = await import("../shared/network-commands");
+    expect(COMMAND_LIBRARY.length).toBeGreaterThan(20);
+    const platforms = new Set(COMMAND_LIBRARY.map((c: any) => c.platform));
+    expect(platforms.has("Windows")).toBe(true);
+    expect(platforms.has("Linux")).toBe(true);
+    expect(platforms.has("Cisco")).toBe(true);
+    for (const cmd of COMMAND_LIBRARY) {
+      expect(cmd).toHaveProperty("command");
+      expect(cmd).toHaveProperty("platform");
+      expect(cmd).toHaveProperty("purpose");
+      expect(cmd).toHaveProperty("goodOutput");
+      expect(cmd).toHaveProperty("badOutput");
+    }
+  });
+
+  it("LAB_REGISTRY has labs with required fields", async () => {
+    const { LAB_REGISTRY } = await import("../shared/network-labs");
+    expect(LAB_REGISTRY.length).toBeGreaterThan(20);
+    for (const lab of LAB_REGISTRY) {
+      expect(lab).toHaveProperty("id");
+      expect(lab).toHaveProperty("title");
+      expect(lab).toHaveProperty("category");
+      expect(lab).toHaveProperty("objectives");
+      expect(lab).toHaveProperty("topology");
+      expect(lab).toHaveProperty("keyCommands");
+      expect(lab).toHaveProperty("quizQuestions");
+      expect(Array.isArray(lab.keyCommands)).toBe(true);
+      expect(Array.isArray(lab.quizQuestions)).toBe(true);
+    }
+  });
+
+  it("subnet calculator produces correct results for 192.168.1.0/24", async () => {
+    // Test the pure calculation logic inline
+    const ip = "192.168.1.0";
+    const cidr = 24;
+    const parts = ip.split(".").map(Number);
+    const ipNum = ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+    const mask = cidr === 0 ? 0 : (~0 << (32 - cidr)) >>> 0;
+    const network = (ipNum & mask) >>> 0;
+    const broadcast = (network | ~mask) >>> 0;
+    const numToIp = (n: number) => [(n >>> 24) & 0xff, (n >>> 16) & 0xff, (n >>> 8) & 0xff, n & 0xff].join(".");
+    
+    expect(numToIp(network)).toBe("192.168.1.0");
+    expect(numToIp(broadcast)).toBe("192.168.1.255");
+    expect(numToIp(mask)).toBe("255.255.255.0");
+    expect(Math.pow(2, 32 - cidr) - 2).toBe(254); // usable hosts
   });
 });

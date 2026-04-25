@@ -5,7 +5,9 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
+import TopNav from "./components/TopNav";
 import LandingPage from "./pages/LandingPage";
+import CommandDeckPage from "./pages/CommandDeckPage";
 import ChatPage from "./pages/ChatPage";
 import NetworkPage from "./pages/NetworkPage";
 import CodePage from "./pages/CodePage";
@@ -20,6 +22,8 @@ import WeatherPage from "./pages/WeatherPage";
 import FlightsPage from "./pages/FlightsPage";
 import SettingsPage from "./pages/SettingsPage";
 import InstagramPage from "./pages/InstagramPage";
+import SentinelPage from "./pages/SentinelPage";
+import NetworkIntelPage from "./pages/NetworkIntelPage";
 
 function DashboardRouter() {
   return (
@@ -39,6 +43,8 @@ function DashboardRouter() {
         <Route path="/flights" component={FlightsPage} />
         <Route path="/settings" component={SettingsPage} />
         <Route path="/instagram" component={InstagramPage} />
+        <Route path="/sentinel" component={SentinelPage} />
+        <Route path="/netintel" component={NetworkIntelPage} />
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>
@@ -49,6 +55,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={LandingPage} />
+      <Route path="/deck" component={CommandDeckPage} />
       <Route path="/404" component={NotFound} />
       {/* All dashboard routes */}
       <Route component={DashboardRouter} />
@@ -62,6 +69,7 @@ function App() {
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
+          <TopNav />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

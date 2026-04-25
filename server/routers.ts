@@ -7,6 +7,51 @@ import { z } from "zod";
 import { runEiram } from "./eiram";
 import * as db from "./db";
 import { MODE_PROMPTS, MODE_IDS } from "../shared/modes";
+import { PORT_DATABASE } from "../shared/network-ports";
+import { COMMAND_LIBRARY } from "../shared/network-commands";
+import { LAB_REGISTRY } from "../shared/network-labs";
+
+// ── System Sentinel Check Catalog ──
+const SENTINEL_CATALOG = {
+  system_health: [
+    { checkName: "SFC Scan & Repair", scriptName: "check-sfc-scan.ps1", description: "Scans and repairs Windows system files" },
+    { checkName: "DISM Health Check & Restore", scriptName: "check-dism-health.ps1", description: "Checks and restores Windows component store health" },
+    { checkName: "CHKDSK with Auto-Repair", scriptName: "check-chkdsk.ps1", description: "Checks disk integrity and repairs errors" },
+    { checkName: "Windows Update Audit", scriptName: "check-windows-updates.ps1", description: "Audits pending and installed Windows updates" },
+    { checkName: "Driver Integrity Check", scriptName: "check-driver-integrity.ps1", description: "Verifies driver signatures and integrity" },
+    { checkName: "Disk Space Check", scriptName: "check-disk-space.ps1", description: "Monitors free disk space across all drives" },
+    { checkName: "Memory Usage", scriptName: "check-memory.ps1", description: "Reports current memory utilization" },
+    { checkName: "CPU Temperature", scriptName: "check-cpu-temperature.ps1", description: "Reads CPU thermal sensor data" },
+    { checkName: "Service Status", scriptName: "check-service-status.ps1", description: "Checks critical Windows service states" },
+    { checkName: "Network Connectivity", scriptName: "check-network-connectivity.ps1", description: "Tests network adapter and internet connectivity" },
+  ],
+  security: [
+    { checkName: "Startup Program Audit", scriptName: "check-startup-programs.ps1", description: "Lists and audits auto-start programs" },
+    { checkName: "Process Watchdog", scriptName: "check-process-watchdog.ps1", description: "Monitors running processes for anomalies" },
+    { checkName: "Network Port Monitor", scriptName: "check-network-ports.ps1", description: "Scans open network ports and listeners" },
+    { checkName: "Firewall Rule Audit", scriptName: "check-firewall-rules.ps1", description: "Audits firewall rules for risky exceptions" },
+    { checkName: "Event Log Criticals", scriptName: "check-event-log-criticals.ps1", description: "Scans Windows event logs for critical errors" },
+  ],
+  performance: [
+    { checkName: "Disk Defrag / Optimize", scriptName: "check-disk-defrag.ps1", description: "Checks disk fragmentation and optimization status" },
+    { checkName: "Memory Diagnostic", scriptName: "check-memory-diagnostic.ps1", description: "Runs Windows Memory Diagnostic checks" },
+    { checkName: "Resource Usage Dashboard", scriptName: "check-resource-usage.ps1", description: "Comprehensive CPU, memory, and disk usage report" },
+    { checkName: "Scheduled Task Audit", scriptName: "check-scheduled-tasks.ps1", description: "Audits Windows scheduled tasks for anomalies" },
+    { checkName: "Service Status Viewer", scriptName: "check-service-status-viewer.ps1", description: "Detailed service status with dependencies" },
+    { checkName: "Disk I/O Performance", scriptName: "check-disk-io.ps1", description: "Measures disk read/write performance" },
+    { checkName: "Network Latency", scriptName: "check-network-latency.ps1", description: "Tests network latency to key endpoints" },
+    { checkName: "Application Response Time", scriptName: "check-app-response-time.ps1", description: "Measures application startup and response times" },
+  ],
+  inventory: [
+    { checkName: "Installed Software List", scriptName: "check-installed-software.ps1", description: "Lists all installed software with versions" },
+    { checkName: "Driver List with Versions", scriptName: "check-driver-list.ps1", description: "Enumerates all drivers with version info" },
+    { checkName: "Patch History Timeline", scriptName: "check-patch-history.ps1", description: "Shows Windows update and patch history" },
+    { checkName: "BSOD Dump Parser", scriptName: "check-bsod-dump.ps1", description: "Parses blue screen crash dump files" },
+  ],
+  logs: [
+    { checkName: "Session Log Timeline", scriptName: "check-session-log-timeline.ps1", description: "Shows login/logout session timeline" },
+  ],
+} as const;
 
 export const appRouter = router({
   system: systemRouter,
@@ -629,6 +674,238 @@ Now produce the full EiRAM Dashboard with all modules. Be thorough, precise, and
       const results = await db.searchConversations(ctx.user.id, input.query);
       await db.addAuditLog(ctx.user.id, "Chat search", "chat", `Query: ${input.query}, ${results.length} results`);
       return results;
+    }),
+  }),
+
+  // ── System Sentinel ──
+  sentinel: router({
+    // Full catalog of all 29 checks organized by category
+    catalog: publicProcedure.query(() => {
+      return SENTINEL_CATALOG;
+    }),
+    // Get all stored check results for the user
+    results: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserSentinelChecks(ctx.user.id);
+    }),
+    // Get results by category
+    resultsByCategory: protectedProcedure.input(z.object({
+      category: z.enum(["system_health", "security", "performance", "inventory", "logs"]),
+    })).query(async ({ ctx, input }) => {
+      return db.getSentinelChecksByCategory(ctx.user.id, input.category);
+    }),
+    // Save a check result (called after script execution)
+    saveResult: protectedProcedure.input(z.object({
+      category: z.enum(["system_health", "security", "performance", "inventory", "logs"]),
+      checkName: z.string(),
+      scriptName: z.string(),
+      status: z.enum(["pass", "warning", "fail", "pending"]),
+      output: z.string().optional(),
+      exitCode: z.number().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const result = await db.saveSentinelCheck(ctx.user.id, input);
+      await db.addAuditLog(ctx.user.id, `Sentinel check: ${input.checkName}`, "sentinel", `Status: ${input.status}`);
+      return result;
+    }),
+    // Batch save results (for Run All)
+    batchSave: protectedProcedure.input(z.object({
+      results: z.array(z.object({
+        category: z.enum(["system_health", "security", "performance", "inventory", "logs"]),
+        checkName: z.string(),
+        scriptName: z.string(),
+        status: z.enum(["pass", "warning", "fail", "pending"]),
+        output: z.string().optional(),
+        exitCode: z.number().optional(),
+      })),
+    })).mutation(async ({ ctx, input }) => {
+      const saved = [];
+      for (const check of input.results) {
+        const result = await db.saveSentinelCheck(ctx.user.id, check);
+        saved.push(result);
+      }
+      await db.addAuditLog(ctx.user.id, `Sentinel batch: ${input.results.length} checks`, "sentinel",
+        `Pass: ${input.results.filter(r => r.status === "pass").length}, Warn: ${input.results.filter(r => r.status === "warning").length}, Fail: ${input.results.filter(r => r.status === "fail").length}`);
+      return { saved: saved.length };
+    }),
+    // Clear all results
+    clear: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.clearSentinelChecks(ctx.user.id);
+      await db.addAuditLog(ctx.user.id, "Sentinel results cleared", "sentinel");
+      return { success: true };
+    }),
+  }),
+
+  // ── Network Intelligence (CMIT 265) ──
+  netIntel: router({
+    // Port database lookup
+    ports: publicProcedure.query(() => {
+      return PORT_DATABASE;
+    }),
+    // Command library lookup
+    commands: publicProcedure.input(z.object({ platform: z.string().optional() }).optional()).query(({ input }) => {
+      if (input?.platform) return COMMAND_LIBRARY.filter((c: any) => c.platform === input.platform);
+      return COMMAND_LIBRARY;
+    }),
+    // Lab registry
+    labs: publicProcedure.input(z.object({ category: z.string().optional() }).optional()).query(({ input }) => {
+      if (input?.category) return LAB_REGISTRY.filter((l: any) => l.category === input.category);
+      return LAB_REGISTRY;
+    }),
+    // Lab detail
+    labDetail: publicProcedure.input(z.object({ id: z.string() })).query(({ input }) => {
+      return LAB_REGISTRY.find((l: any) => l.id === input.id) || null;
+    }),
+    // IPv4 Subnetting Calculator
+    subnet: publicProcedure.input(z.object({
+      ip: z.string(),
+      cidr: z.number().min(0).max(32),
+    })).query(({ input }) => {
+      const parts = input.ip.split(".").map(Number);
+      if (parts.length !== 4 || parts.some(p => isNaN(p) || p < 0 || p > 255)) {
+        return { error: "Invalid IPv4 address" };
+      }
+      const ipNum = (parts[0] << 24) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
+      const mask = input.cidr === 0 ? 0 : (~0 << (32 - input.cidr)) >>> 0;
+      const network = (ipNum & mask) >>> 0;
+      const broadcast = (network | (~mask >>> 0)) >>> 0;
+      const firstHost = input.cidr >= 31 ? network : (network + 1) >>> 0;
+      const lastHost = input.cidr >= 31 ? broadcast : (broadcast - 1) >>> 0;
+      const totalHosts = input.cidr >= 31 ? (input.cidr === 32 ? 1 : 2) : Math.pow(2, 32 - input.cidr) - 2;
+      const toIp = (n: number) => `${(n >>> 24) & 255}.${(n >>> 16) & 255}.${(n >>> 8) & 255}.${n & 255}`;
+      const toBin = (n: number) => {
+        const b = n.toString(2).padStart(32, "0");
+        return `${b.slice(0,8)}.${b.slice(8,16)}.${b.slice(16,24)}.${b.slice(24,32)}`;
+      };
+      return {
+        ip: input.ip,
+        cidr: input.cidr,
+        subnetMask: toIp(mask),
+        wildcardMask: toIp((~mask) >>> 0),
+        networkAddress: toIp(network),
+        broadcastAddress: toIp(broadcast),
+        firstUsableHost: toIp(firstHost),
+        lastUsableHost: toIp(lastHost),
+        totalUsableHosts: totalHosts,
+        ipClass: parts[0] < 128 ? "A" : parts[0] < 192 ? "B" : parts[0] < 224 ? "C" : parts[0] < 240 ? "D" : "E",
+        isPrivate: (parts[0] === 10) || (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) || (parts[0] === 192 && parts[1] === 168),
+        binary: { ip: toBin(ipNum), mask: toBin(mask), network: toBin(network), broadcast: toBin(broadcast) },
+      };
+    }),
+    // LLM-powered troubleshooting engine
+    troubleshoot: protectedProcedure.input(z.object({
+      problem: z.string(),
+      context: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      try {
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: `You are Seraphim's Network Troubleshooting Engine, an expert network engineer and CMIT 265 instructor.
+Analyze the problem using the OSI model bottom-up approach. For each relevant layer, provide:
+- Layer name and number
+- Possible causes at that layer
+- Diagnostic commands (Windows, Linux, and Cisco where applicable)
+- Expected good vs bad output
+- Resolution steps
+
+Format your response as a structured troubleshooting report with clear sections:
+## Problem Summary
+## OSI Layer Analysis
+### Layer 1 — Physical
+### Layer 2 — Data Link
+### Layer 3 — Network
+### Layer 4 — Transport
+### Layer 7 — Application
+## Recommended Action Plan
+## Prevention Measures` },
+            { role: "user", content: `Problem: ${input.problem}${input.context ? `\nContext: ${input.context}` : ""}` },
+          ],
+        });
+        const result = typeof response.choices[0]?.message?.content === "string" ? response.choices[0].message.content : "Analysis failed.";
+        await db.addAuditLog(ctx.user.id, "Network troubleshoot", "network", input.problem.substring(0, 100));
+        return { analysis: result };
+      } catch (e: any) {
+        return { analysis: `Error: ${e.message}` };
+      }
+    }),
+    // LLM-powered network design engine
+    design: protectedProcedure.input(z.object({
+      requirements: z.string(),
+    })).mutation(async ({ ctx, input }) => {
+      try {
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: `You are Seraphim's Network Design Engine. Given requirements, produce a complete network design document including:
+## Network Overview
+## IP Addressing Scheme (table format)
+## VLAN Design (table format)
+## Routing Protocol Selection & Justification
+## Security Architecture (ACLs, firewall rules)
+## Hardware Recommendations
+## Implementation Steps
+## Configuration Snippets (Cisco IOS)
+Use tables for IP schemes and VLAN assignments. Be specific with IP addresses and subnet masks.` },
+            { role: "user", content: input.requirements },
+          ],
+        });
+        const result = typeof response.choices[0]?.message?.content === "string" ? response.choices[0].message.content : "Design failed.";
+        await db.addAuditLog(ctx.user.id, "Network design", "network", input.requirements.substring(0, 100));
+        return { design: result };
+      } catch (e: any) {
+        return { design: `Error: ${e.message}` };
+      }
+    }),
+    // LLM-powered documentation generator
+    generateDocs: protectedProcedure.input(z.object({
+      docType: z.enum(["ip_table", "vlan_table", "firewall_rules", "topology_notes", "change_log"]),
+      context: z.string(),
+    })).mutation(async ({ ctx, input }) => {
+      const templates: Record<string, string> = {
+        ip_table: "Generate a professional IP address allocation table in markdown format. Include columns: Subnet, VLAN, Network Address, Usable Range, Broadcast, Gateway, Purpose/Department. Use the context provided.",
+        vlan_table: "Generate a VLAN assignment table in markdown format. Include columns: VLAN ID, Name, Subnet, Gateway, Ports, Purpose, Notes.",
+        firewall_rules: "Generate a firewall rule set in markdown table format. Include columns: Rule#, Direction, Source, Destination, Port/Protocol, Action, Description. Include both allow and deny rules.",
+        topology_notes: "Generate network topology documentation including: device inventory, connections, IP assignments, and a text-based topology diagram.",
+        change_log: "Generate a network change log entry in professional format including: Date, Change ID, Description, Affected Systems, Risk Level, Rollback Plan, Approval.",
+      };
+      try {
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: templates[input.docType] || "Generate professional network documentation." },
+            { role: "user", content: input.context },
+          ],
+        });
+        const result = typeof response.choices[0]?.message?.content === "string" ? response.choices[0].message.content : "Generation failed.";
+        await db.addAuditLog(ctx.user.id, `Net docs: ${input.docType}`, "network", input.context.substring(0, 100));
+        return { document: result };
+      } catch (e: any) {
+        return { document: `Error: ${e.message}` };
+      }
+    }),
+    // Quiz generator
+    quiz: protectedProcedure.input(z.object({
+      topic: z.string(),
+      count: z.number().min(1).max(20).default(5),
+      difficulty: z.enum(["beginner", "intermediate", "advanced"]).default("intermediate"),
+    })).mutation(async ({ ctx, input }) => {
+      try {
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: `You are a CMIT 265 exam prep assistant. Generate ${input.count} multiple-choice questions on the topic at ${input.difficulty} difficulty. Format as JSON array with objects: { "question": string, "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "correct": "A"|"B"|"C"|"D", "explanation": string }. Return ONLY valid JSON, no markdown.` },
+            { role: "user", content: `Topic: ${input.topic}` },
+          ],
+        });
+        const raw = typeof response.choices[0]?.message?.content === "string" ? response.choices[0].message.content : "[]";
+        let questions;
+        try {
+          // Try to parse, handling potential markdown wrapping
+          const cleaned = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+          questions = JSON.parse(cleaned);
+        } catch {
+          questions = [{ question: "Quiz generation failed. Please try again.", options: [], correct: "A", explanation: raw }];
+        }
+        await db.addAuditLog(ctx.user.id, "Quiz generated", "network", `${input.topic} (${input.count}q, ${input.difficulty})`);
+        return { questions };
+      } catch (e: any) {
+        return { questions: [{ question: `Error: ${e.message}`, options: [], correct: "A", explanation: "" }] };
+      }
     }),
   }),
 

@@ -16,7 +16,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import {
   MessageSquare, Shield, Code2, Wrench, Brain,
   Database, Puzzle, ScrollText, PanelLeft, Sparkles,
-  Compass, Newspaper, Cloud, Plane, Instagram, Settings,
+  Compass, Newspaper, Cloud, Plane, Instagram, Settings, Monitor, Wifi,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -34,6 +34,8 @@ const menuItems = [
   { icon: Database, label: "Memory", path: "/memory" },
   { icon: Puzzle, label: "Plugins", path: "/plugins" },
   { icon: Instagram, label: "Instagram", path: "/instagram" },
+  { icon: Monitor, label: "Sentinel", path: "/sentinel" },
+  { icon: Wifi, label: "Net Intel", path: "/netintel" },
   { icon: ScrollText, label: "Audit Log", path: "/audit" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
@@ -107,7 +109,7 @@ function DashboardLayoutContent({ children, setSidebarWidth }: DashboardLayoutCo
   return (
     <>
       <div className="relative" ref={sidebarRef}>
-        <Sidebar collapsible="icon" className="border-r border-border/50" disableTransition={isResizing}>
+        <Sidebar collapsible="icon" className="border-r border-border/50 pt-11" disableTransition={isResizing}>
           <SidebarHeader className="h-14 justify-center">
             <div className="flex items-center gap-3 px-2 transition-all w-full">
               <button
@@ -192,7 +194,7 @@ function DashboardLayoutContent({ children, setSidebarWidth }: DashboardLayoutCo
             </div>
           </div>
         )}
-        <main className="flex-1 h-[calc(100vh-0px)] overflow-hidden">{children}</main>
+        <main className="flex-1 h-[calc(100vh-44px)] overflow-hidden mt-11">{children}</main>
       </SidebarInset>
     </>
   );

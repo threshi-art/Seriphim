@@ -102,7 +102,7 @@ export default function LandingPage() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
 
   const handleEnter = () => {
-    setLocation("/chat");
+    setLocation("/deck");
   };
 
   return (

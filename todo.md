@@ -62,3 +62,27 @@
 - [x] Add debounce (300ms) to chat search input + error state handling
 - [x] Add real Vitest behavior tests for settings, instagram, chatSearch, and db helpers (31 tests passing)
 - [x] Instagram module: cache-backed dashboard with MCP-powered data ingestion (MCP tools run in sandbox, data pushed via syncData endpoint)
+- [x] Add SystemSentinel module: DB schema for sentinel check results
+- [x] Add SystemSentinel tRPC router (catalog, run check, get results, run all)
+- [x] Build SystemSentinel dashboard page with 5-category tabbed layout and status cards
+- [x] Add SystemSentinel to sidebar navigation and App.tsx routes
+- [ ] Test SystemSentinel with live PowerShell check execution on user's desktop
+- [x] Add vitest coverage for SystemSentinel and netIntel router procedures (35 tests passing)
+- [x] Build CMIT 265 Network Intelligence Core into Network module
+- [x] Create lab registry JSON with 28 CMIT 265 lab topics
+- [x] Create port database JSON with 25 common ports
+- [x] Create command library JSON (28 commands: Windows, Linux, Cisco)
+- [x] Build subnetting/IP calculator (IPv4) as tRPC procedure
+- [x] Build troubleshooting engine with OSI model structured output (LLM-powered)
+- [x] Build network design engine with structured output (LLM-powered)
+- [x] Build documentation generator for IP tables, VLAN tables, firewall rules, topology notes
+- [x] Build quiz/exam prep generator (LLM-powered with knowledge base context)
+- [x] Build lab simulator mode (28 labs with objectives, topology, commands, quiz questions)
+- [x] Safety boundaries built into LLM system prompts for all netIntel procedures
+- [x] Rebuild NetworkPage as Network Intelligence dashboard with 8 sub-tabs
+- [x] Network Intelligence mode available via Technical Architecture mode in chat
+- [x] Build Command Deck page with Boeing KPI aesthetic (dark navy, status buckets, workstream progress, attention queue)
+- [x] Add live module preview windows to Command Deck (chat, weather, flights, network, news, sentinel, etc.)
+- [x] Add persistent top navigation bar across Landing, Command Deck, and Dashboard views
+- [x] Update LandingPage CTA to navigate to Command Deck instead of Chat
+- [x] Fix sidebar top padding for TopNav coexistence

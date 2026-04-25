@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, conversations, messages, memoryEntries,
   networkEvents, analysisResults, plugins, auditLogs, codeExecutions,
-  userSettings, instagramCache,
+  userSettings, instagramCache, sentinelChecks,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -238,7 +238,7 @@ export async function deletePlugin(id: number, userId: number) {
 
 // ── Audit Logs ──
 
-export async function addAuditLog(userId: number, action: string, category: "chat" | "network" | "code" | "engineering" | "analysis" | "memory" | "plugin" | "system" | "discover" | "news" | "weather" | "flights" | "files" | "settings" | "instagram", details?: string, metadata?: unknown) {
+export async function addAuditLog(userId: number, action: string, category: "chat" | "network" | "code" | "engineering" | "analysis" | "memory" | "plugin" | "system" | "discover" | "news" | "weather" | "flights" | "files" | "settings" | "instagram" | "sentinel", details?: string, metadata?: unknown) {
   const db = await getDb();
   if (!db) return;
   await db.insert(auditLogs).values({ userId, action, category, details: details ?? null, metadata: metadata ?? null });
@@ -345,6 +345,63 @@ export async function getAllInstagramCache(userId: number) {
   return db.select().from(instagramCache)
     .where(eq(instagramCache.userId, userId))
     .orderBy(desc(instagramCache.fetchedAt));
+}
+
+// ── Sentinel Checks ──
+
+export async function saveSentinelCheck(userId: number, data: {
+  category: "system_health" | "security" | "performance" | "inventory" | "logs";
+  checkName: string;
+  scriptName: string;
+  status: "pass" | "warning" | "fail" | "pending";
+  output?: string | null;
+  exitCode?: number | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Upsert: delete old result for same check, insert new
+  await db.delete(sentinelChecks).where(
+    and(
+      eq(sentinelChecks.userId, userId),
+      eq(sentinelChecks.scriptName, data.scriptName)
+    )
+  );
+  const result = await db.insert(sentinelChecks).values({
+    userId,
+    category: data.category,
+    checkName: data.checkName,
+    scriptName: data.scriptName,
+    status: data.status,
+    output: data.output ?? null,
+    exitCode: data.exitCode ?? null,
+    executedAt: new Date(),
+  });
+  return { id: Number(result[0].insertId) };
+}
+
+export async function getUserSentinelChecks(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sentinelChecks)
+    .where(eq(sentinelChecks.userId, userId))
+    .orderBy(desc(sentinelChecks.executedAt));
+}
+
+export async function getSentinelChecksByCategory(userId: number, category: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sentinelChecks)
+    .where(and(
+      eq(sentinelChecks.userId, userId),
+      eq(sentinelChecks.category, category as any)
+    ))
+    .orderBy(desc(sentinelChecks.executedAt));
+}
+
+export async function clearSentinelChecks(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(sentinelChecks).where(eq(sentinelChecks.userId, userId));
 }
 
 // ── Conversation Search ──
