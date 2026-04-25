@@ -28,7 +28,6 @@ export default function ChatPage() {
       setActiveConvId(data.id);
       setLocalMessages([]);
       convQuery.refetch();
-      // If there's a pending message, send it now
       if (pendingMessage) {
         const msg = pendingMessage;
         setPendingMessage(null);
@@ -58,14 +57,12 @@ export default function ChatPage() {
     onError: (err) => setError(`Seraphim encountered an error: ${err.message}`),
   });
 
-  // Sync messages from server
   useEffect(() => {
     if (msgQuery.data) {
       setLocalMessages(msgQuery.data.map(m => ({ role: m.role as Message["role"], content: m.content })));
     }
   }, [msgQuery.data]);
 
-  // Auto-select first conversation
   useEffect(() => {
     if (!activeConvId && convQuery.data && convQuery.data.length > 0) {
       setActiveConvId(convQuery.data[0].id);
@@ -88,7 +85,6 @@ export default function ChatPage() {
     setInput("");
     textareaRef.current?.focus();
     if (!activeConvId) {
-      // Store the message and create conversation — message will be sent in onSuccess
       setPendingMessage(trimmed);
       setLocalMessages([{ role: "user", content: trimmed }]);
       createConv.mutate({ title: trimmed.substring(0, 60) });
@@ -117,31 +113,32 @@ export default function ChatPage() {
   return (
     <div className="flex h-full">
       {/* Conversation Sidebar */}
-      <div className="w-64 border-r border-border bg-card/50 flex flex-col shrink-0 hidden md:flex">
-        <div className="p-3 border-b border-border">
+      <div className="w-60 border-r border-border/50 bg-muted/20 flex flex-col shrink-0 hidden md:flex">
+        <div className="p-3 border-b border-border/50">
           <Button
             onClick={() => createConv.mutate({ title: "New Conversation" })}
             variant="outline"
             size="sm"
-            className="w-full gap-2 text-xs"
+            className="w-full gap-2 text-xs rounded-lg border-border/50 bg-muted/30 hover:bg-muted/50"
             disabled={createConv.isPending}
           >
-            <Plus className="h-3.5 w-3.5" /> New Conversation
+            <Plus className="h-3.5 w-3.5" /> New Thread
           </Button>
         </div>
         <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
+          <div className="p-2 space-y-0.5">
             {convQuery.data?.map(conv => (
               <div
                 key={conv.id}
                 className={cn(
-                  "group flex items-center gap-2 rounded-md px-3 py-2 text-sm cursor-pointer transition-colors",
+                  "group flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] cursor-pointer transition-all",
                   activeConvId === conv.id
                     ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
                 )}
                 onClick={() => setActiveConvId(conv.id)}
               >
+                <div className={cn("w-1 h-1 rounded-full shrink-0", activeConvId === conv.id ? "bg-primary" : "bg-transparent")} />
                 <MessageSquare className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate flex-1">{conv.title}</span>
                 <button
@@ -161,11 +158,12 @@ export default function ChatPage() {
         {displayMessages.length === 0 && !sendMsg.isPending && !createConv.isPending ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8">
             <div className="flex flex-col items-center gap-4">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center seraphim-glow">
+              <div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center seraphim-glow">
                 <Sparkles className="h-8 w-8 text-primary" />
               </div>
               <div className="text-center">
-                <h2 className="text-xl font-semibold text-foreground">Seraphim</h2>
+                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary/80">AI Assistant</p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground">Seraphim</h2>
                 <p className="text-sm text-muted-foreground mt-1">How can I assist you, Operator?</p>
               </div>
             </div>
@@ -177,7 +175,7 @@ export default function ChatPage() {
                     setInput(prompt);
                     textareaRef.current?.focus();
                   }}
-                  className="rounded-lg border border-border bg-card px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                  className="nsa-card px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {prompt}
                 </button>
@@ -197,15 +195,15 @@ export default function ChatPage() {
                     )}
                   >
                     {msg.role === "assistant" && (
-                      <div className="h-8 w-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center">
+                      <div className="h-8 w-8 shrink-0 mt-1 rounded-lg bg-primary/10 flex items-center justify-center">
                         <Sparkles className="h-4 w-4 text-primary" />
                       </div>
                     )}
                     <div className={cn(
-                      "max-w-[80%] rounded-lg px-4 py-2.5",
+                      "max-w-[80%] rounded-xl px-4 py-3",
                       msg.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground"
+                        ? "bg-primary/15 border border-primary/25 text-foreground"
+                        : "nsa-card text-foreground"
                     )}>
                       {msg.role === "assistant" ? (
                         <div className="prose prose-sm prose-invert max-w-none">
@@ -216,19 +214,19 @@ export default function ChatPage() {
                       )}
                     </div>
                     {msg.role === "user" && (
-                      <div className="h-8 w-8 shrink-0 mt-1 rounded-full bg-secondary flex items-center justify-center">
-                        <User className="h-4 w-4 text-secondary-foreground" />
+                      <div className="h-8 w-8 shrink-0 mt-1 rounded-lg bg-primary/15 flex items-center justify-center">
+                        <User className="h-4 w-4 text-primary" />
                       </div>
                     )}
                   </div>
                 ))}
                 {sendMsg.isPending && (
                   <div className="flex items-start gap-3">
-                    <div className="h-8 w-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center">
+                    <div className="h-8 w-8 shrink-0 mt-1 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Sparkles className="h-4 w-4 text-primary" />
                     </div>
-                    <div className="rounded-lg bg-muted px-4 py-2.5">
-                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <div className="nsa-card px-4 py-3">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     </div>
                   </div>
                 )}
@@ -237,7 +235,6 @@ export default function ChatPage() {
           </div>
         )}
 
-        {/* Error */}
         {error && (
           <div className="px-4 py-2 bg-destructive/10 border-t border-destructive/20">
             <p className="text-xs text-destructive max-w-4xl mx-auto">{error}</p>
@@ -245,7 +242,7 @@ export default function ChatPage() {
         )}
 
         {/* Input */}
-        <div className="border-t border-border p-4 bg-card/50">
+        <div className="border-t border-border/50 p-4 bg-muted/20">
           <div className="max-w-4xl mx-auto flex gap-2 items-end">
             <Textarea
               ref={textareaRef}
@@ -253,14 +250,14 @@ export default function ChatPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Message Seraphim..."
-              className="flex-1 max-h-32 resize-none min-h-[42px] bg-background border-border"
+              className="flex-1 max-h-32 resize-none min-h-[42px] rounded-lg bg-card border-border/50 text-foreground placeholder:text-muted-foreground/50"
               rows={1}
             />
             <Button
               onClick={handleSend}
               size="icon"
               disabled={!input.trim() || sendMsg.isPending}
-              className="shrink-0 h-[42px] w-[42px] bg-primary text-primary-foreground"
+              className="shrink-0 h-[42px] w-[42px] rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {sendMsg.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>

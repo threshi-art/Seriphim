@@ -1,13 +1,10 @@
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Database, Plus, Trash2, Search, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 
 export default function MemoryPage() {
   const [newCategory, setNewCategory] = useState("general");
@@ -34,136 +31,148 @@ export default function MemoryPage() {
   });
 
   const displayData = searchQuery.length > 0 ? (searchResults.data || []) : (memoryQuery.data || []);
-
   const categories = Array.from(new Set((memoryQuery.data || []).map(m => m.category)));
 
   return (
-    <div className="h-full flex flex-col p-6 gap-6 overflow-auto">
+    <div className="h-full flex flex-col overflow-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Database className="h-6 w-6 text-primary" />
-            Memory
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Persistent knowledge store — Seraphim remembers across sessions.
-          </p>
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Database className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-foreground">Memory</h1>
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground/60">Persistent Knowledge Store</p>
+          </div>
         </div>
         <Button
           onClick={() => setShowAdd(!showAdd)}
           variant="outline"
-          className="gap-2"
+          size="sm"
+          className="gap-2 rounded-lg border-border/50 bg-muted/30 hover:bg-muted/50"
         >
-          <Plus className="h-4 w-4" /> Add Entry
+          <Plus className="h-3.5 w-3.5" /> Add Entry
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search memory..."
-          className="pl-10 bg-card border-border"
-        />
-      </div>
+      <div className="flex-1 overflow-auto p-6 space-y-4">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search memory..."
+            className="pl-10 rounded-lg bg-card border-border/50 text-foreground placeholder:text-muted-foreground/40"
+          />
+        </div>
 
-      {/* Add Form */}
-      {showAdd && (
-        <Card className="bg-card border-border">
-          <CardContent className="p-4 space-y-3">
+        {/* Add Form */}
+        {showAdd && (
+          <div className="nsa-card p-4 space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground/60 mb-2">New Entry</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Category</label>
+                <label className="text-[11px] text-muted-foreground mb-1 block">Category</label>
                 <Input
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
                   placeholder="general"
-                  className="bg-background border-border"
+                  className="rounded-lg bg-muted/20 border-border/50 text-foreground"
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Key</label>
+                <label className="text-[11px] text-muted-foreground mb-1 block">Key</label>
                 <Input
                   value={newKey}
                   onChange={(e) => setNewKey(e.target.value)}
                   placeholder="e.g., user_preference"
-                  className="bg-background border-border"
+                  className="rounded-lg bg-muted/20 border-border/50 text-foreground"
                 />
               </div>
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Value</label>
+              <label className="text-[11px] text-muted-foreground mb-1 block">Value</label>
               <Textarea
                 value={newValue}
                 onChange={(e) => setNewValue(e.target.value)}
                 placeholder="Memory content..."
-                className="bg-background border-border min-h-[60px]"
+                className="rounded-lg bg-muted/20 border-border/50 text-foreground min-h-[60px]"
                 rows={2}
               />
             </div>
             <Button
               onClick={() => addMutation.mutate({ category: newCategory, key: newKey, value: newValue })}
               disabled={!newKey.trim() || !newValue.trim() || addMutation.isPending}
-              className="gap-2 bg-primary text-primary-foreground"
+              size="sm"
+              className="gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              {addMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
               Save
             </Button>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
 
-      {/* Stats */}
-      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-        <span>{memoryQuery.data?.length || 0} entries</span>
-        <span>{categories.length} categories</span>
-      </div>
+        {/* Stats */}
+        <div className="flex items-center gap-4">
+          <div className="nsa-card px-3 py-1.5 text-[11px] text-muted-foreground">
+            <span className="text-primary font-semibold">{memoryQuery.data?.length || 0}</span> entries
+          </div>
+          <div className="nsa-card px-3 py-1.5 text-[11px] text-muted-foreground">
+            <span className="text-primary font-semibold">{categories.length}</span> categories
+          </div>
+        </div>
 
-      {/* Memory List */}
-      <Card className="flex-1 bg-card border-border">
-        <CardContent className="p-0">
-          <ScrollArea className="h-[calc(100vh-380px)]">
+        {/* Memory Table */}
+        <div className="nsa-card flex-1 flex flex-col overflow-hidden">
+          <div className="px-4 py-3 border-b border-border/50">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground/60">Knowledge Base</p>
+          </div>
+          <ScrollArea className="flex-1 max-h-[calc(100vh-380px)]">
             {displayData.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                <Database className="h-12 w-12 opacity-20 mb-3" />
+                <Database className="h-10 w-10 opacity-20 mb-3" />
                 <p className="text-sm">
                   {searchQuery ? "No matching entries found." : "No memory entries yet. Add knowledge for Seraphim to remember."}
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-border">
-                {displayData.map(entry => (
-                  <div key={entry.id} className="px-6 py-3 hover:bg-accent/30 transition-colors group">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline" className="text-xs text-primary border-primary/30">
-                            {entry.category}
-                          </Badge>
-                          <span className="text-sm font-medium text-foreground">{entry.key}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{entry.value}</p>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                          <span>Source: {entry.source}</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => deleteMutation.mutate({ id: entry.id })}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-1"
-                      >
-                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/30">
+                    <th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Category</th>
+                    <th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Key</th>
+                    <th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Value</th>
+                    <th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Source</th>
+                    <th className="w-10"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayData.map(entry => (
+                    <tr key={entry.id} className="border-b border-border/20 hover:bg-white/[0.02] transition-colors group">
+                      <td className="px-4 py-2.5">
+                        <span className="status-info px-2 py-0.5 rounded-md text-[11px] font-semibold">{entry.category}</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-[13px] font-semibold text-foreground">{entry.key}</td>
+                      <td className="px-4 py-2.5 text-[13px] text-muted-foreground max-w-xs truncate">{entry.value}</td>
+                      <td className="px-4 py-2.5 text-[12px] text-muted-foreground/60">{entry.source}</td>
+                      <td className="px-4 py-2.5">
+                        <button
+                          onClick={() => deleteMutation.mutate({ id: entry.id })}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </ScrollArea>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

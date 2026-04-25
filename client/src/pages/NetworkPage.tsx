@@ -1,16 +1,14 @@
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Shield, ShieldAlert, ShieldCheck, Radar, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const severityColors: Record<string, string> = {
-  low: "bg-green-500/10 text-green-400 border-green-500/20",
-  medium: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  high: "bg-orange-500/10 text-orange-400 border-orange-500/20",
-  critical: "bg-red-500/10 text-red-400 border-red-500/20",
+const severityStyle: Record<string, string> = {
+  low: "status-info",
+  medium: "status-active",
+  high: "status-warning",
+  critical: "status-critical",
 };
 
 const typeIcons: Record<string, typeof Shield> = {
@@ -35,134 +33,123 @@ export default function NetworkPage() {
   const alerts = events.filter(e => e.eventType === "alert" && !e.resolved);
 
   return (
-    <div className="h-full flex flex-col p-6 gap-6 overflow-auto">
+    <div className="h-full flex flex-col overflow-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
-            Network Defense
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Monitor connections, detect threats, and secure your perimeter.
-          </p>
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Shield className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-foreground">Network Defense</h1>
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground/60">Threat Monitoring System</p>
+          </div>
         </div>
         <Button
           onClick={() => scanMutation.mutate()}
           disabled={scanMutation.isPending}
-          className="gap-2 bg-primary text-primary-foreground"
+          size="sm"
+          className="gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
         >
-          {scanMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Radar className="h-4 w-4" />}
+          {scanMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Radar className="h-3.5 w-3.5" />}
           Run Scan
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-              <ShieldCheck className="h-5 w-5 text-green-400" />
+      <div className="flex-1 overflow-auto p-6 space-y-4">
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { icon: ShieldCheck, color: "text-green-400", bg: "bg-green-500/10", count: connections.length, label: "Connections" },
+            { icon: ShieldAlert, color: "text-red-400", bg: "bg-red-500/10", count: threats.length, label: "Threats" },
+            { icon: ShieldAlert, color: "text-amber-400", bg: "bg-amber-500/10", count: alerts.length, label: "Alerts" },
+            { icon: Radar, color: "text-primary", bg: "bg-primary/10", count: events.length, label: "Total Events" },
+          ].map((stat, i) => (
+            <div key={i} className="nsa-card p-4 flex items-center gap-3">
+              <div className={`h-9 w-9 rounded-lg ${stat.bg} flex items-center justify-center`}>
+                <stat.icon className={`h-4.5 w-4.5 ${stat.color}`} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{stat.count}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{stat.label}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{connections.length}</p>
-              <p className="text-xs text-muted-foreground">Active Connections</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-              <ShieldAlert className="h-5 w-5 text-red-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{threats.length}</p>
-              <p className="text-xs text-muted-foreground">Active Threats</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-              <ShieldAlert className="h-5 w-5 text-yellow-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{alerts.length}</p>
-              <p className="text-xs text-muted-foreground">Alerts</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Radar className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{events.length}</p>
-              <p className="text-xs text-muted-foreground">Total Events</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          ))}
+        </div>
 
-      {/* Event Log */}
-      <Card className="flex-1 bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base text-foreground">Event Log</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <ScrollArea className="h-[calc(100vh-380px)]">
+        {/* Event Log */}
+        <div className="nsa-card flex-1 flex flex-col overflow-hidden">
+          <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground/60">Event Log</p>
+            <p className="text-[11px] text-muted-foreground">{events.length} events</p>
+          </div>
+          <ScrollArea className="flex-1 max-h-[calc(100vh-340px)]">
             {events.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                <Shield className="h-12 w-12 opacity-20 mb-3" />
+                <Shield className="h-10 w-10 opacity-20 mb-3" />
                 <p className="text-sm">No events recorded. Run a scan to begin monitoring.</p>
               </div>
             ) : (
-              <div className="divide-y divide-border">
-                {events.map(event => {
-                  const Icon = typeIcons[event.eventType] || Shield;
-                  return (
-                    <div key={event.id} className={cn(
-                      "flex items-center gap-4 px-6 py-3 hover:bg-accent/30 transition-colors",
-                      event.resolved && "opacity-50"
-                    )}>
-                      <Icon className={cn("h-4 w-4 shrink-0",
-                        event.eventType === "threat" ? "text-red-400" :
-                        event.eventType === "alert" ? "text-yellow-400" : "text-muted-foreground"
-                      )} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground truncate">{event.description}</p>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                          {event.sourceIp && <span>{event.sourceIp}</span>}
-                          {event.destIp && <span>→ {event.destIp}</span>}
-                          {event.port && <span>:{event.port}</span>}
-                          {event.protocol && <span className="uppercase">{event.protocol}</span>}
-                        </div>
-                      </div>
-                      <Badge variant="outline" className={cn("text-xs shrink-0", severityColors[event.severity])}>
-                        {event.severity}
-                      </Badge>
-                      {!event.resolved && (event.eventType === "threat" || event.eventType === "alert") && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resolveMutation.mutate({ id: event.id })}
-                          className="shrink-0 text-xs gap-1 text-muted-foreground hover:text-green-400"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5" /> Resolve
-                        </Button>
-                      )}
-                      {event.resolved && (
-                        <span className="text-xs text-green-400/60 shrink-0">Resolved</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/30">
+                    <th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Type</th>
+                    <th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Description</th>
+                    <th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Source</th>
+                    <th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Severity</th>
+                    <th className="text-left px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {events.map(event => {
+                    const Icon = typeIcons[event.eventType] || Shield;
+                    return (
+                      <tr key={event.id} className={cn(
+                        "border-b border-border/20 hover:bg-white/[0.02] transition-colors",
+                        event.resolved && "opacity-40"
+                      )}>
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <Icon className={cn("h-3.5 w-3.5",
+                              event.eventType === "threat" ? "text-red-400" :
+                              event.eventType === "alert" ? "text-amber-400" : "text-muted-foreground"
+                            )} />
+                            <span className="text-[13px] text-foreground capitalize">{event.eventType}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5 text-[13px] text-muted-foreground max-w-xs truncate">{event.description}</td>
+                        <td className="px-4 py-2.5 text-[13px] text-muted-foreground font-mono">
+                          {event.sourceIp || "—"}
+                          {event.port ? `:${event.port}` : ""}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-semibold ${severityStyle[event.severity] || "status-info"}`}>
+                            {event.severity.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          {!event.resolved && (event.eventType === "threat" || event.eventType === "alert") ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => resolveMutation.mutate({ id: event.id })}
+                              className="h-7 text-[11px] gap-1 rounded-md text-muted-foreground hover:text-green-400"
+                            >
+                              <CheckCircle2 className="h-3 w-3" /> Resolve
+                            </Button>
+                          ) : event.resolved ? (
+                            <span className="text-[11px] text-green-400/60">Resolved</span>
+                          ) : null}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
           </ScrollArea>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

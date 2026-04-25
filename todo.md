@@ -19,5 +19,12 @@
 - [x] Vitest tests for backend procedures
 - [x] Fix chat send flow — first message should create conversation AND send message in one action
 - [x] Add LLM error handling and user-visible error states for chat, engineering, and plugin flows
-- [ ] Add syntax highlighting to code editor (future enhancement)
+- [x] Add syntax highlighting to code editor with line numbers and keyword coloring
 - [x] Expand vitest coverage for actual procedure behavior
+- [x] Sync all Seraphim project files to user's local SeraphimGPT/Seraphim folder
+- [x] Restyle Seraphim to match Pearl design system (deep navy gradient bg, oklch blue primary, rounded-2xl/3xl cards, Bahnschrift font, border-white/10 patterns, uppercase tracking labels)
+- [x] Restyle to NSA Dashboard Concept aesthetic: near-black bg (#0a0e1a), teal/cyan primary (#14b8a6), intelligence-analyst card layouts, status badges, teal sidebar indicators
+- [x] Update index.css with NSA color palette (teal primary, near-black bg, dark navy cards)
+- [x] Update DashboardLayout sidebar with teal active indicators and darker bg
+- [x] Update all 8 pages with NSA card styling (teal borders, status badges, denser layouts)
+- [x] Re-sync updated files to user's local SeraphimGPT/Seraphim folder
