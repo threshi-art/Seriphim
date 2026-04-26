@@ -4,19 +4,21 @@ import {
   Brain, Shield, Code2, Globe, Newspaper, Cloud, Plane, Eye, Zap, Lock,
   Activity, Monitor, Instagram, Settings, Sparkles, ArrowRight, Clock,
   AlertTriangle, CheckCircle2, XCircle, TrendingUp, BarChart3, Cpu,
-  Satellite, RefreshCw, Wrench, Wifi, ScrollText,
+  Satellite, RefreshCw, Wrench, Wifi, ScrollText, TerminalSquare,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 
 /* ── Module definitions for live preview windows ── */
 const MODULES = [
   { id: "chat", label: "AI Copilot", icon: Brain, path: "/chat", color: "#55d9ff", desc: "GPT-powered reasoning engine" },
+  { id: "agent", label: "Local Agent", icon: TerminalSquare, path: "/agent", color: "#5ef0a2", desc: "Local tools and desktop bridge" },
   { id: "network", label: "Network Defense", icon: Shield, path: "/network", color: "#ff6b6b", desc: "Threat monitoring & analysis" },
   { id: "argus", label: "Argus Vigil", icon: Eye, path: "/argus-vigil", color: "#55d9ff", desc: "Browser packet analysis dashboard" },
   { id: "terra", label: "Argus Terra", icon: Satellite, path: "/argus-terra", color: "#5f8dff", desc: "3D spatial intelligence dashboard" },
   { id: "code", label: "Code Engine", icon: Code2, path: "/code", color: "#ae7dff", desc: "Multi-language code assistant" },
   { id: "engineering", label: "Engineering", icon: Wrench, path: "/engineering", color: "#5f8dff", desc: "Technical calculators and analysis" },
   { id: "analysis", label: "EiRAM Analysis", icon: Eye, path: "/analysis", color: "#ffca56", desc: "Narrative intelligence engine" },
+  { id: "insightforge", label: "InsightForge", icon: BarChart3, path: "/insightforge", color: "#5ef0a2", desc: "Data analyst agent" },
   { id: "discover", label: "Web Discovery", icon: Globe, path: "/discover", color: "#5ef0a2", desc: "Interest-based exploration" },
   { id: "news", label: "News Intel", icon: Newspaper, path: "/news", color: "#5f8dff", desc: "Multi-source aggregation" },
   { id: "weather", label: "Weather Radar", icon: Cloud, path: "/weather", color: "#55d9ff", desc: "Live conditions & forecast" },
@@ -185,12 +187,14 @@ export default function CommandDeckPage() {
 
     return {
       chat: "12 modes active · Seraphim online",
+      agent: "Local bridge ready · Port 8767",
       network: "Monitoring active · 0 threats detected",
       argus: "NetScope dashboard ready · Local backend optional",
       terra: "Spatial intelligence layer ready",
       code: "9 languages supported · Ready",
       engineering: "Technical calculator ready",
       analysis: "EiRAM pipeline ready · 6 modules loaded",
+      insightforge: "Data analyst agent ready - Reproducible workflow",
       discover: "Interest engine primed · Awaiting query",
       news: "Multi-source feed active",
       weather: "Weather service connected",
@@ -285,8 +289,8 @@ export default function CommandDeckPage() {
                 <div className="relative z-10">
                   <h3 className="text-[15px] font-bold text-[#d9ebff] mb-2.5">Operator Briefing</h3>
                   <p className="text-[13px] text-[#a9bfd6] leading-[1.5]">
-                    All 12 intelligence modules are online. Sentinel has 28 checks ready for local system scan.
-                    EiRAM deep analysis pipeline is active with 12 operating modes. Memory bank and audit trail recording.
+                    All 17 intelligence modules are online. Sentinel has 28 checks ready for local system scan.
+                    EiRAM and InsightForge analysis pipelines are active with 13 operating modes. Memory bank and audit trail recording.
                   </p>
                 </div>
               </div>
@@ -298,8 +302,8 @@ export default function CommandDeckPage() {
             KPI CARDS ROW
         ══════════════════════════════════════ */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-[18px]">
-          <KPICard label="Active Modules" value="16" sub="All operational" trend="up" trendLabel="+4 this build" />
-          <KPICard label="Operating Modes" value="12" sub="Chat mode variants" trend="up" trendLabel="Full spec" />
+          <KPICard label="Active Modules" value="17" sub="All operational" trend="up" trendLabel="+1 this build" />
+          <KPICard label="Operating Modes" value="13" sub="Chat mode variants" trend="up" trendLabel="InsightForge added" />
           <KPICard label="Sentinel Checks" value="28" sub="System integrity scans" trend="warn" trendLabel="Pending scan" />
           <KPICard label="Memory Entries" value={String(memoryQuery.data?.length ?? 0)} sub="Persistent knowledge" />
         </div>
@@ -320,10 +324,12 @@ export default function CommandDeckPage() {
               <div className="space-y-2.5">
                 {[
                   { icon: Brain, label: "AI Copilot", desc: "Start a conversation", path: "/chat", color: "#55d9ff" },
+                  { icon: TerminalSquare, label: "Local Agent", desc: "Use local tools", path: "/agent", color: "#5ef0a2" },
                   { icon: Newspaper, label: "News Intel", desc: "Open the news desk", path: "/news", color: "#5f8dff" },
                   { icon: Eye, label: "Argus Vigil", desc: "Packet analysis dashboard", path: "/argus-vigil", color: "#55d9ff" },
                   { icon: Satellite, label: "Argus Terra", desc: "3D world intelligence", path: "/argus-terra", color: "#5f8dff" },
                   { icon: Eye, label: "EiRAM Analysis", desc: "Deep narrative analysis", path: "/analysis", color: "#ffca56" },
+                  { icon: BarChart3, label: "InsightForge", desc: "Data analyst agent", path: "/insightforge", color: "#5ef0a2" },
                   { icon: Monitor, label: "System Sentinel", desc: "Run integrity checks", path: "/sentinel", color: "#ff6b6b" },
                   { icon: Wifi, label: "Net Intel", desc: "Labs and references", path: "/netintel", color: "#55d9ff" },
                   { icon: Plane, label: "Flight Monitor", desc: "Track live flights", path: "/flights", color: "#ae7dff" },
@@ -412,7 +418,7 @@ export default function CommandDeckPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { label: "Intelligence", pct: 100, count: 4, color: "#55d9ff" },
+                    { label: "Intelligence", pct: 100, count: 5, color: "#55d9ff" },
                     { label: "Defense", pct: 100, count: 2, color: "#ff6b6b" },
                     { label: "Engineering", pct: 100, count: 3, color: "#ae7dff" },
                     { label: "Discovery", pct: 100, count: 3, color: "#5ef0a2" },

@@ -13,6 +13,7 @@ import NetworkPage from "./pages/NetworkPage";
 import CodePage from "./pages/CodePage";
 import EngineeringPage from "./pages/EngineeringPage";
 import AnalysisPage from "./pages/AnalysisPage";
+import InsightForgePage from "./pages/InsightForgePage";
 import MemoryPage from "./pages/MemoryPage";
 import PluginsPage from "./pages/PluginsPage";
 import AuditPage from "./pages/AuditPage";
@@ -28,12 +29,14 @@ import NetworkIntelPage from "./pages/NetworkIntelPage";
 import ArgusVigilPage from "./pages/ArgusVigilPage";
 import ComponentShowcase from "./pages/ComponentShowcase";
 import ArgusTerraPage from "./pages/ArgusTerraPage";
+import LocalAgentPage from "./pages/LocalAgentPage";
 
 function DashboardRouter() {
   return (
     <DashboardLayout>
       <Switch>
         <Route path="/chat" component={ChatPage} />
+        <Route path="/agent" component={LocalAgentPage} />
         <Route path="/network" component={NetworkPage} />
         <Route path="/argus-vigil" component={ArgusVigilPage} />
         <Route path="/argus-terra" component={ArgusTerraPage} />
@@ -41,6 +44,7 @@ function DashboardRouter() {
         <Route path="/code" component={CodePage} />
         <Route path="/engineering" component={EngineeringPage} />
         <Route path="/analysis" component={AnalysisPage} />
+        <Route path="/insightforge" component={InsightForgePage} />
         <Route path="/memory" component={MemoryPage} />
         <Route path="/plugins" component={PluginsPage} />
         <Route path="/audit" component={AuditPage} />

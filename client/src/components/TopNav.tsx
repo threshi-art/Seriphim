@@ -10,11 +10,14 @@ const NAV_ITEMS = [
 
 const DASHBOARD_ROUTES = new Set([
   "/chat",
+  "/agent",
   "/network",
   "/argus-vigil",
+  "/argus-terra",
   "/code",
   "/engineering",
   "/analysis",
+  "/insightforge",
   "/memory",
   "/plugins",
   "/audit",

@@ -106,3 +106,17 @@
 - [x] Integrate Cursor v8 changes: TerraGlobe.tsx — Google Maps JS API integration with fallback
 - [x] Integrate Cursor v8 changes: ArgusTerraPage.tsx — pass googleTilesEnabled prop to TerraGlobe
 - [x] Integrate Cursor v8 changes: tsconfig.json — kept types array (needed for import.meta.env)
+- [x] Full project sync to local drive for v8.0 (185 files synced for Cursor handoff)
+- [x] Integrate Cursor v9: InsightForge shared types (shared/insightforge.ts)
+- [x] Integrate Cursor v9: InsightForge page (client/src/pages/InsightForgePage.tsx)
+- [x] Integrate Cursor v9: InsightForge router in server/routers.ts
+- [x] Integrate Cursor v9: Local Agent page (client/src/pages/LocalAgentPage.tsx)
+- [x] Integrate Cursor v9: Local Agent client lib (client/src/lib/localAgent.ts)
+- [x] Integrate Cursor v9: Local Agent server files (server/local-agent/)
+- [x] Integrate Cursor v9: Local Agent tests (commandRouter.test.ts, missionPlanner.test.ts)
+- [x] Integrate Cursor v9: Updated App.tsx routes (/agent, /insightforge)
+- [x] Integrate Cursor v9: Updated DashboardLayout.tsx sidebar entries
+- [x] Integrate Cursor v9: Updated TopNav.tsx dashboard routes
+- [x] Integrate Cursor v9: Updated CommandDeckPage.tsx module entries
+- [x] Integrate Cursor v9: Updated vitest.config.ts (testTimeout: 15000)
+- [x] Local Agent: Intentionally local-only scope — UI shell shows offline gate on deployed site; localhost:8767 bridge runs separately via `tsx server/local-agent/index.ts` on user's desktop

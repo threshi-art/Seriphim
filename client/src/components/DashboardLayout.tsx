@@ -16,19 +16,22 @@ import { useIsMobile } from "@/hooks/useMobile";
 import {
   MessageSquare, Shield, Code2, Wrench, Brain,
   Database, Puzzle, ScrollText, PanelLeft, Sparkles,
-  Compass, Newspaper, Cloud, Plane, Ship, Instagram, Settings, Monitor, Wifi, Eye, Satellite,
+  Compass, Newspaper, Cloud, Plane, Ship, Instagram, Settings, Monitor, Wifi, Eye, Satellite, TerminalSquare,
+  BarChart3,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 
 const menuItems = [
   { icon: MessageSquare, label: "Chat", path: "/chat" },
+  { icon: TerminalSquare, label: "Local Agent", path: "/agent" },
   { icon: Shield, label: "Network Defense", path: "/network" },
   { icon: Eye, label: "Argus Vigil", path: "/argus-vigil" },
   { icon: Satellite, label: "Argus Terra", path: "/argus-terra" },
   { icon: Code2, label: "Code", path: "/code" },
   { icon: Wrench, label: "Engineering", path: "/engineering" },
   { icon: Brain, label: "Analysis", path: "/analysis" },
+  { icon: BarChart3, label: "InsightForge", path: "/insightforge" },
   { icon: Compass, label: "Discover", path: "/discover" },
   { icon: Newspaper, label: "News", path: "/news" },
   { icon: Cloud, label: "Weather", path: "/weather" },

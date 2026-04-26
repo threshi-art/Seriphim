@@ -10,6 +10,12 @@ import { ENV } from "./_core/env";
 import { runEiram } from "./eiram";
 import * as db from "./db";
 import { MODE_PROMPTS, MODE_IDS } from "../shared/modes";
+import {
+  INSIGHTFORGE_AGENT,
+  INSIGHTFORGE_SYSTEM_PROMPT,
+  INSIGHTFORGE_TASKS,
+  INSIGHTFORGE_TOOL_SPECS,
+} from "../shared/insightforge";
 import { PORT_DATABASE } from "../shared/network-ports";
 import { COMMAND_LIBRARY } from "../shared/network-commands";
 import { LAB_REGISTRY } from "../shared/network-labs";
@@ -355,6 +361,104 @@ Now produce the full EiRAM Dashboard with all modules. Be thorough, precise, and
     }),
     history: protectedProcedure.query(async ({ ctx }) => {
       return db.getUserAnalysisResults(ctx.user.id);
+    }),
+  }),
+
+  // ── InsightForge Data Analyst Agent ──
+  insightforge: router({
+    spec: protectedProcedure.query(() => ({
+      agent: INSIGHTFORGE_AGENT,
+      tasks: INSIGHTFORGE_TASKS,
+      tools: INSIGHTFORGE_TOOL_SPECS,
+    })),
+    analyze: protectedProcedure.input(z.object({
+      goal: z.string().min(1),
+      task: z.enum([
+        "data_analysis",
+        "document_review",
+        "visualization",
+        "research",
+        "artifact_creation",
+        "coding_help",
+        "strategic_recommendation",
+      ]).default("data_analysis"),
+      context: z.string().optional(),
+      outputFormat: z.string().optional(),
+      files: z.array(z.object({
+        name: z.string(),
+        type: z.string().optional(),
+        size: z.number(),
+        kind: z.string().optional(),
+        preview: z.string().optional(),
+        profile: z.unknown().optional(),
+      })).default([]),
+    })).mutation(async ({ ctx, input }) => {
+      assertJsonSize(input, 750_000, "InsightForge request");
+
+      const toolSummary = INSIGHTFORGE_TOOL_SPECS.map(tool => ({
+        name: tool.name,
+        use_when: tool.use_when,
+        outputs: tool.outputs,
+        failure_modes: tool.failure_modes,
+      }));
+
+      const fileSummary = input.files.map(file => ({
+        name: file.name,
+        type: file.type || "unknown",
+        size: file.size,
+        kind: file.kind || "unknown",
+        profile: file.profile ?? null,
+        preview: file.preview ? file.preview.slice(0, 12000) : null,
+      }));
+
+      const prompt = `Run an InsightForge analysis.
+
+Task category: ${input.task}
+Desired output: ${input.outputFormat || "Concise decision-ready markdown report"}
+
+User goal:
+${input.goal}
+
+Additional context:
+${input.context || "None provided."}
+
+Inspected file profiles and previews:
+${JSON.stringify(fileSummary, null, 2)}
+
+Available modular tool specs:
+${JSON.stringify(toolSummary, null, 2)}
+
+Instructions:
+- Use the inspected file profiles before drawing conclusions.
+- If the supplied data is too small, truncated, ambiguous, or binary-only, say so and explain what is still possible.
+- Do not claim to have read any data beyond the profiles and previews above.
+- Do not fabricate current facts or citations. If current facts are needed, label the exact fresh-source check required.
+- Include a practical recommendation only when supported by evidence.
+- Close with a short reproducible workflow and validation checklist.`;
+
+      let report: string;
+      try {
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: INSIGHTFORGE_SYSTEM_PROMPT },
+            { role: "user", content: prompt },
+          ],
+        });
+        report = typeof response.choices[0]?.message?.content === "string"
+          ? response.choices[0].message.content
+          : "InsightForge could not produce a report from the supplied inputs.";
+      } catch (e: any) {
+        report = `InsightForge analysis error: ${e.message || "Unknown failure"}.`;
+      }
+
+      await db.addAuditLog(ctx.user.id, "InsightForge analysis executed", "analysis", input.goal.substring(0, 120));
+
+      return {
+        report,
+        generatedAt: new Date().toISOString(),
+        task: input.task,
+        filesInspected: input.files.length,
+      };
     }),
   }),
 

@@ -286,3 +286,52 @@ describe("Argus Terra Router", () => {
     expect(procedures).toHaveProperty("terra.report");
   });
 });
+
+// ── v9.0 Integration Tests: InsightForge + Local Agent ──
+describe("InsightForge Router", () => {
+  it("insightforge router has spec and analyze procedures", async () => {
+    const { appRouter } = await import("./routers");
+    const procedures = appRouter._def.procedures;
+    expect(procedures).toHaveProperty("insightforge.spec");
+    expect(procedures).toHaveProperty("insightforge.analyze");
+  });
+
+  it("shared/insightforge.ts exports required constants", async () => {
+    const mod = await import("../shared/insightforge");
+    expect(mod.INSIGHTFORGE_TASKS).toBeDefined();
+    expect(mod.INSIGHTFORGE_TASKS.length).toBe(7);
+    expect(mod.INSIGHTFORGE_AGENT).toBeDefined();
+    expect(mod.INSIGHTFORGE_AGENT.name).toBe("InsightForge");
+    expect(mod.INSIGHTFORGE_TOOL_SPECS).toBeDefined();
+    expect(mod.INSIGHTFORGE_TOOL_SPECS.length).toBe(6);
+    expect(mod.INSIGHTFORGE_SYSTEM_PROMPT).toBeDefined();
+    expect(typeof mod.INSIGHTFORGE_SYSTEM_PROMPT).toBe("string");
+  });
+
+  it("InsightForge task IDs cover all expected categories", async () => {
+    const { INSIGHTFORGE_TASKS } = await import("../shared/insightforge");
+    const ids = INSIGHTFORGE_TASKS.map(t => t.id);
+    expect(ids).toContain("data_analysis");
+    expect(ids).toContain("document_review");
+    expect(ids).toContain("visualization");
+    expect(ids).toContain("research");
+    expect(ids).toContain("artifact_creation");
+    expect(ids).toContain("coding_help");
+    expect(ids).toContain("strategic_recommendation");
+  });
+});
+
+describe("Local Agent Modules", () => {
+  it("commandRouter exports COMMAND_EXAMPLES and interpretLocalAgentCommand", async () => {
+    const mod = await import("./local-agent/commandRouter");
+    expect(mod.COMMAND_EXAMPLES).toBeDefined();
+    expect(Array.isArray(mod.COMMAND_EXAMPLES)).toBe(true);
+    expect(mod.COMMAND_EXAMPLES.length).toBeGreaterThan(5);
+    expect(typeof mod.interpretLocalAgentCommand).toBe("function");
+  });
+
+  it("missionPlanner exports planLocalAgentMission", async () => {
+    const mod = await import("./local-agent/missionPlanner");
+    expect(typeof mod.planLocalAgentMission).toBe("function");
+  });
+});
