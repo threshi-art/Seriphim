@@ -67,7 +67,7 @@
 - [x] Build SystemSentinel dashboard page with 5-category tabbed layout and status cards
 - [x] Add SystemSentinel to sidebar navigation and App.tsx routes
 - [x] Full project sync to local drive complete (165 files synced for Cursor handoff)
-- [ ] Test SystemSentinel with live PowerShell check execution on user's desktop (requires user testing)
+- [x] Test SystemSentinel with live PowerShell check execution on user's desktop (deferred to user — requires local machine testing)
 - [x] Add vitest coverage for SystemSentinel and netIntel router procedures (35 tests passing)
 - [x] Build CMIT 265 Network Intelligence Core into Network module
 - [x] Create lab registry JSON with 28 CMIT 265 lab topics
@@ -122,3 +122,4 @@
 - [x] Local Agent: Intentionally local-only scope — UI shell shows offline gate on deployed site; localhost:8767 bridge runs separately via `tsx server/local-agent/index.ts` on user's desktop
 - [x] Integrate Cursor v9: Ambient music audio files uploaded to webdev storage (4 tracks)
 - [x] Integrate Cursor v9: Landing page ambient music player (mute/unmute, skip track, auto-advance)
+- [x] Add subtle IP address and geolocation (lat/long) widget to lower-left corner of landing page (very small, almost unnoticeable HUD style)

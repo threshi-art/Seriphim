@@ -110,6 +110,20 @@ export default function LandingPage() {
   const heroY = useTransform(scrollYProgress, [0, 0.15], [0, -100]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
 
+  /* ── Visitor geo-location ── */
+  const [geoInfo, setGeoInfo] = useState<{ ip: string; lat: string; lon: string } | null>(null);
+
+  useEffect(() => {
+    fetch("https://ipapi.co/json/")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ip && d.latitude !== undefined) {
+          setGeoInfo({ ip: d.ip, lat: Number(d.latitude).toFixed(4), lon: Number(d.longitude).toFixed(4) });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   /* ── Ambient music state ── */
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [trackIdx, setTrackIdx] = useState(0);
@@ -266,6 +280,22 @@ export default function LandingPage() {
             <ChevronDown className="h-4 w-4 text-[oklch(0.35_0.02_230)]" />
           </motion.div>
         </motion.div>
+
+        {/* ── Visitor geo HUD (bottom-left, very subtle) ── */}
+        {geoInfo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 3, duration: 1.5 }}
+            className="fixed bottom-6 left-6 z-50 pointer-events-none select-none"
+          >
+            <div className="font-mono text-[8px] leading-[1.4] text-[oklch(0.22_0.01_230)] tracking-wider">
+              <span>{geoInfo.ip}</span>
+              <br />
+              <span>{geoInfo.lat}  {geoInfo.lon}</span>
+            </div>
+          </motion.div>
+        )}
 
         {/* ── Ambient music control (bottom-right) ── */}
         {audioReady && (
