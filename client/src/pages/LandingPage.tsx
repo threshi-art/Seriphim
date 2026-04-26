@@ -3,14 +3,23 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import {
   Brain, ChevronDown, Code2, Globe, Newspaper, Plane, Shield, Sparkles,
   Cloud, Zap, Eye, Lock, ArrowRight, Activity, Cpu, Satellite,
+  Volume2, VolumeX, SkipForward,
 } from "lucide-react";
-import { useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 
 const HERO_IMG = "/manus-storage/seraphim-hero_3de3500d.jpg";
 const NSOC_IMG = "/manus-storage/seraphim-nsoc_75aed095.jpg";
 const EYE_IMG = "/manus-storage/seraphim-eye_c80a8562.jpg";
 const OCEAN_IMG = "/manus-storage/seraphim-ocean_593e84b5.jpg";
+
+/* ── Ambient music tracks ── */
+const TRACKS = [
+  { src: "/manus-storage/amarantamusic-skoll-dark-cinematic-horror-suspense-ambient-204962_3394937a.mp3", name: "Skoll — Dark Cinematic" },
+  { src: "/manus-storage/the_mountain-suspense-dramatic-ambient-375987_b02575eb.mp3", name: "The Mountain — Suspense" },
+  { src: "/manus-storage/leberch-tension-background-250877_a3bc97fe.mp3", name: "Tension Background" },
+  { src: "/manus-storage/leberch-background-suspense-255436_17277f46.mp3", name: "Background Suspense" },
+];
 
 /* ── Feature cards ── */
 const features = [
@@ -101,7 +110,64 @@ export default function LandingPage() {
   const heroY = useTransform(scrollYProgress, [0, 0.15], [0, -100]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
 
+  /* ── Ambient music state ── */
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [trackIdx, setTrackIdx] = useState(0);
+  const [muted, setMuted] = useState(true);
+  const [audioReady, setAudioReady] = useState(false);
+
+  useEffect(() => {
+    const audio = new Audio(TRACKS[0].src);
+    audio.loop = false;
+    audio.volume = 0.18;
+    audio.muted = true;
+    audioRef.current = audio;
+    setAudioReady(true);
+
+    const onEnded = () => {
+      setTrackIdx((prev) => {
+        const next = (prev + 1) % TRACKS.length;
+        audio.src = TRACKS[next].src;
+        audio.play().catch(() => {});
+        return next;
+      });
+    };
+    audio.addEventListener("ended", onEnded);
+
+    // Attempt autoplay (muted — browsers allow this)
+    audio.play().catch(() => {});
+
+    return () => {
+      audio.removeEventListener("ended", onEnded);
+      audio.pause();
+      audio.src = "";
+    };
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    if (!audioRef.current) return;
+    const next = !muted;
+    audioRef.current.muted = next;
+    if (!next) audioRef.current.play().catch(() => {});
+    setMuted(next);
+  }, [muted]);
+
+  const skipTrack = useCallback(() => {
+    if (!audioRef.current) return;
+    setTrackIdx((prev) => {
+      const next = (prev + 1) % TRACKS.length;
+      audioRef.current!.src = TRACKS[next].src;
+      audioRef.current!.play().catch(() => {});
+      return next;
+    });
+  }, []);
+
   const handleEnter = () => {
+    // Stop music when entering the dashboard
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+    }
     setLocation("/deck");
   };
 
@@ -200,6 +266,40 @@ export default function LandingPage() {
             <ChevronDown className="h-4 w-4 text-[oklch(0.35_0.02_230)]" />
           </motion.div>
         </motion.div>
+
+        {/* ── Ambient music control (bottom-right) ── */}
+        {audioReady && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 2.2 }}
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-2"
+          >
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[rgba(5,10,18,0.85)] backdrop-blur-xl border border-[oklch(0.15_0.02_230)] shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+              <button
+                onClick={toggleMute}
+                className="p-1.5 rounded-lg hover:bg-[oklch(0.70_0.14_175_/_0.1)] transition-colors"
+                title={muted ? "Unmute ambient music" : "Mute"}
+              >
+                {muted ? (
+                  <VolumeX className="h-4 w-4 text-[oklch(0.40_0.02_230)]" />
+                ) : (
+                  <Volume2 className="h-4 w-4 text-[oklch(0.70_0.14_175)]" />
+                )}
+              </button>
+              <button
+                onClick={skipTrack}
+                className="p-1.5 rounded-lg hover:bg-[oklch(0.70_0.14_175_/_0.1)] transition-colors"
+                title="Next track"
+              >
+                <SkipForward className="h-3.5 w-3.5 text-[oklch(0.40_0.02_230)]" />
+              </button>
+              <span className="text-[9px] text-[oklch(0.35_0.02_230)] max-w-[120px] truncate pl-1">
+                {TRACKS[trackIdx].name}
+              </span>
+            </div>
+          </motion.div>
+        )}
       </section>
 
       {/* ═══════════════════════════════════════════

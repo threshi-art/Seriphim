@@ -120,3 +120,5 @@
 - [x] Integrate Cursor v9: Updated CommandDeckPage.tsx module entries
 - [x] Integrate Cursor v9: Updated vitest.config.ts (testTimeout: 15000)
 - [x] Local Agent: Intentionally local-only scope — UI shell shows offline gate on deployed site; localhost:8767 bridge runs separately via `tsx server/local-agent/index.ts` on user's desktop
+- [x] Integrate Cursor v9: Ambient music audio files uploaded to webdev storage (4 tracks)
+- [x] Integrate Cursor v9: Landing page ambient music player (mute/unmute, skip track, auto-advance)
