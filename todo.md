@@ -123,3 +123,19 @@
 - [x] Integrate Cursor v9: Ambient music audio files uploaded to webdev storage (4 tracks)
 - [x] Integrate Cursor v9: Landing page ambient music player (mute/unmute, skip track, auto-advance)
 - [x] Add subtle IP address and geolocation (lat/long) widget to lower-left corner of landing page (very small, almost unnoticeable HUD style)
+- [x] v10 Integration: Port restructured pages (pages/dashboard/ barrel with 22 page modules)
+- [x] v10 Integration: Port new ChatSessionContext provider
+- [x] v10 Integration: Port new ChatWorkspace + SeraphimChatSheet components
+- [x] v10 Integration: Port NavigationCommandPalette (Cmd+K palette)
+- [x] v10 Integration: Port dashboard-navigation config
+- [x] v10 Integration: Port TeamDashboardPage (new /dashboard workspace)
+- [x] v10 Integration: Port MonitorSituationDeck + CalculatorWidget + workspace-theorems
+- [x] v10 Integration: Port newsflow-flags lib + useNewsflowFlagCounts hook
+- [x] v10 Integration: Port server/news/ backend (fetch-major-news, rss-xml, major-outlets, test)
+- [x] v10 Integration: Port updated App.tsx, DashboardLayout, TopNav, main.tsx, LandingPage
+- [x] v10 Integration: Port updated routers.ts (replaced LLM news with RSS-based fetchMajorOutletNews)
+- [x] v10 Integration: Port updated NewsPage (full NewsFlow rewrite in pages/dashboard/)
+- [x] v10 Integration: Port CommandDeckPage updates
+- [x] v10 Integration: Verify TypeScript compiles with 0 errors
+- [x] v10 Integration: All tests pass (56 tests across 7 files)
+- [x] v10 Integration: Browser verify key pages work (landing, dashboard, chat, news, deck) — all rendering correctly

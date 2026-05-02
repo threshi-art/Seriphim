@@ -19,6 +19,7 @@ import {
 import { PORT_DATABASE } from "../shared/network-ports";
 import { COMMAND_LIBRARY } from "../shared/network-commands";
 import { LAB_REGISTRY } from "../shared/network-labs";
+import { fetchMajorOutletNews } from "./news/fetch-major-news";
 
 const MAX_UPLOAD_BASE64_LENGTH = 28_000_000;
 const MAX_INSTAGRAM_SYNC_BYTES = 1_000_000;
@@ -601,57 +602,14 @@ Instructions:
 
   // ── News Aggregator ──
   news: router({
-    fetch: protectedProcedure.input(z.object({
+    fetch: publicProcedure.input(z.object({
       category: z.string().default("general"),
       query: z.string().optional(),
-    })).query(async ({ ctx, input }) => {
-      try {
-        const prompt = input.query
-          ? `Find 10 current real news headlines about "${input.query}". Return JSON array.`
-          : `Find 10 current real news headlines in the "${input.category}" category. Return JSON array.`;
-        const response = await invokeLLM({
-          messages: [
-            { role: "system", content: `You are a news aggregation engine. Return the latest real news headlines as a JSON array. Each item must have: title (string), source (string, the news outlet), url (string, real URL to the article), summary (string, 1-2 sentences), category (string), publishedAt (string, ISO date estimate). Use real, current news from reputable sources. Today is ${new Date().toISOString().split("T")[0]}.` },
-            { role: "user", content: prompt },
-          ],
-          response_format: {
-            type: "json_schema",
-            json_schema: {
-              name: "news_feed",
-              strict: true,
-              schema: {
-                type: "object",
-                properties: {
-                  articles: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        title: { type: "string" },
-                        source: { type: "string" },
-                        url: { type: "string" },
-                        summary: { type: "string" },
-                        category: { type: "string" },
-                        publishedAt: { type: "string" },
-                      },
-                      required: ["title", "source", "url", "summary", "category", "publishedAt"],
-                      additionalProperties: false,
-                    },
-                  },
-                },
-                required: ["articles"],
-                additionalProperties: false,
-              },
-            },
-          },
-        });
-        const content = typeof response.choices[0]?.message?.content === "string" ? response.choices[0].message.content : '{"articles":[]}';
-        const parsed = JSON.parse(content);
-        await db.addAuditLog(ctx.user.id, "News fetch", "news", `Category: ${input.category}, ${parsed.articles?.length || 0} articles`);
-        return parsed.articles || [];
-      } catch (e: any) {
-        return [];
-      }
+    }).optional()).query(async ({ input }) => {
+      const category = input?.category ?? "general";
+      const query = input?.query;
+      const articles = await fetchMajorOutletNews(category, query);
+      return articles;
     }),
   }),
 

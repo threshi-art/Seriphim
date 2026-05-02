@@ -6,35 +6,41 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
 import TopNav from "./components/TopNav";
+import { NavigationCommandPalette } from "./components/NavigationCommandPalette";
 import LandingPage from "./pages/LandingPage";
 import CommandDeckPage from "./pages/CommandDeckPage";
-import ChatPage from "./pages/ChatPage";
-import NetworkPage from "./pages/NetworkPage";
-import CodePage from "./pages/CodePage";
-import EngineeringPage from "./pages/EngineeringPage";
-import AnalysisPage from "./pages/AnalysisPage";
-import InsightForgePage from "./pages/InsightForgePage";
-import MemoryPage from "./pages/MemoryPage";
-import PluginsPage from "./pages/PluginsPage";
-import AuditPage from "./pages/AuditPage";
-import DiscoverPage from "./pages/DiscoverPage";
-import NewsPage from "./pages/NewsPage";
-import WeatherPage from "./pages/WeatherPage";
-import FlightsPage from "./pages/FlightsPage";
-import MarineTrafficPage from "./pages/MarineTrafficPage";
-import SettingsPage from "./pages/SettingsPage";
-import InstagramPage from "./pages/InstagramPage";
-import SentinelPage from "./pages/SentinelPage";
-import NetworkIntelPage from "./pages/NetworkIntelPage";
-import ArgusVigilPage from "./pages/ArgusVigilPage";
 import ComponentShowcase from "./pages/ComponentShowcase";
-import ArgusTerraPage from "./pages/ArgusTerraPage";
-import LocalAgentPage from "./pages/LocalAgentPage";
+import {
+  AnalysisPage,
+  ArgusTerraPage,
+  ArgusVigilPage,
+  AuditPage,
+  ChatPage,
+  CodePage,
+  DiscoverPage,
+  EngineeringPage,
+  FlightsPage,
+  InsightForgePage,
+  InstagramPage,
+  LocalAgentPage,
+  MarineTrafficPage,
+  MemoryPage,
+  NetworkIntelPage,
+  NetworkPage,
+  NewsPage,
+  PluginsPage,
+  SentinelPage,
+  SettingsPage,
+  TeamDashboardPage,
+  WeatherPage,
+} from "./pages/dashboard";
+import { SeraphimChatSheet } from "./components/chat/SeraphimChatSheet";
 
 function DashboardRouter() {
   return (
     <DashboardLayout>
       <Switch>
+        <Route path="/dashboard" component={TeamDashboardPage} />
         <Route path="/chat" component={ChatPage} />
         <Route path="/agent" component={LocalAgentPage} />
         <Route path="/network" component={NetworkPage} />
@@ -70,7 +76,6 @@ function Router() {
       <Route path="/deck" component={CommandDeckPage} />
       <Route path="/components" component={ComponentShowcase} />
       <Route path="/404" component={NotFound} />
-      {/* All dashboard routes */}
       <Route component={DashboardRouter} />
     </Switch>
   );
@@ -84,6 +89,8 @@ function App() {
           <Toaster />
           <TopNav />
           <Router />
+          <SeraphimChatSheet />
+          <NavigationCommandPalette />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

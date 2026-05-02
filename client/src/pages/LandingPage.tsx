@@ -182,7 +182,7 @@ export default function LandingPage() {
       audioRef.current.pause();
       audioRef.current.src = "";
     }
-    setLocation("/deck");
+    setLocation("/dashboard");
   };
 
   return (
