@@ -461,14 +461,19 @@ export default function TeamDashboardPage() {
               <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-border/60 bg-black">
                 <iframe
                   title="Workspace video"
-                  src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
+                  src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1`}
                   className="absolute inset-0 h-full w-full"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
+                  referrerPolicy="no-referrer"
                 />
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-300 [iframe[src]:not([src=''])~&]:opacity-0">
+                  <p className="text-xs text-muted-foreground">Loading stream...</p>
+                </div>
               </div>
               <p className="mt-1 text-[10px] text-muted-foreground">
-                Public streams only. Replace preset with any YouTube video ID in code or extend with your sources.
+                Public streams only. If video shows unavailable, open directly on{" "}
+                <a href={`https://youtube.com/watch?v=${videoId}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">YouTube</a>.
               </p>
             </CardContent>
           </Card>

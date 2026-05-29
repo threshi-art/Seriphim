@@ -301,10 +301,11 @@ export function MonitorSituationDeck({
                 <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-md border border-border/60 bg-black">
                   <iframe
                     title="Live news video"
-                    src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
+                    src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1`}
                     className="absolute inset-0 h-full w-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
+                    referrerPolicy="no-referrer"
                   />
                 </div>
                 <Select value={videoId} onValueChange={onVideoId}>

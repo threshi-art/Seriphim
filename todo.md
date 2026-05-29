@@ -139,3 +139,5 @@
 - [x] v10 Integration: Verify TypeScript compiles with 0 errors
 - [x] v10 Integration: All tests pass (56 tests across 7 files)
 - [x] v10 Integration: Browser verify key pages work (landing, dashboard, chat, news, deck) — all rendering correctly
+- [x] Bug fix: YouTube embed — added referrerPolicy="no-referrer", modestbranding, direct YouTube link fallback text
+- [x] Bug fix: Geo widget — added ip-api.com fallback when ipapi.co fails (CORS in some environments)

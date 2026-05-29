@@ -115,13 +115,23 @@ export default function LandingPage() {
 
   useEffect(() => {
     fetch("https://ipapi.co/json/")
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
       .then((d) => {
         if (d.ip && d.latitude !== undefined) {
           setGeoInfo({ ip: d.ip, lat: Number(d.latitude).toFixed(4), lon: Number(d.longitude).toFixed(4) });
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        // Fallback to ip-api.com
+        fetch("http://ip-api.com/json/?fields=query,lat,lon")
+          .then((r) => r.json())
+          .then((d) => {
+            if (d.query && d.lat !== undefined) {
+              setGeoInfo({ ip: d.query, lat: Number(d.lat).toFixed(4), lon: Number(d.lon).toFixed(4) });
+            }
+          })
+          .catch(() => {});
+      });
   }, []);
 
   /* ── Ambient music state ── */
