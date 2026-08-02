@@ -1,0 +1,53 @@
+# Dependencies / envs
+node_modules/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Build / package outputs
+dist/
+build/
+target/
+out/
+*.exe
+*.zip
+*.7z
+*.rar
+
+# IDE / OS
+.idea/
+.vscode/
+.cursor/
+.DS_Store
+Thumbs.db
+Desktop.ini
+__MACOSX/
+*.iml
+
+# Logs / caches
+logs/
+*.log
+.pytest_cache/
+__pycache__/
+.dart_tool/
+.pnpm-store/
+
+# Secrets
+*.pem
+*.key
+credentials*
+*.secret.*
+
+# Large / binary media (keep repo source-focused)
+*.iso
+*.bin
+*.cue
+*.toc
+*.torrent
+*.mp3
+*.mp4
+*.wav
+
+.seraphim-agent/

@@ -1,0 +1,1 @@
+ALTER TABLE `audit_logs` MODIFY COLUMN `category` enum('chat','network','code','engineering','analysis','memory','plugin','system','discover','news','weather','flights') NOT NULL;

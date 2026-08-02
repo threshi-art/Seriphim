@@ -1,0 +1,54 @@
+# Requirements Trace Matrix
+
+**Status legend:** `planned` | `partial` | `implemented` | `verified` | `deferred`
+
+| Requirement ID | Requirement text | Source | Module or component | Design artifact | Implementation file or planned file | Test case | Verification status | Risk level | Notes |
+|----------------|------------------|--------|---------------------|-----------------|-------------------------------------|-----------|---------------------|------------|-------|
+| HLR-CHAT-001 | Chat modes in web app | WP v8 | Web Chat | agent_behavior_design.md | `shared/modes.ts`, `server/routers.ts` | existing chat tests | implemented | low | 12 modes live |
+| HLR-MEM-001 | Persistent memory | WP v8 | Web Memory | detailed_design.md | `drizzle/schema.ts`, memory router | memory tests | implemented | low | DB-backed |
+| HLR-AUD-001 | Audit logging | WP v8 | Web Audit | security_architecture.md | `server/db.ts`, audit router | audit tests | implemented | moderate | Categories in schema |
+| HLR-APR-001 | Yellow/Red approvals UI | Platform v9 | Desktop Approvals | human_approval_procedure.md | `seraphim_desktop_companion/src/views/ApprovalsView.tsx` | VC-DESK-APR-001 | partial | high | Mock state only |
+| HLR-WS-001 | Approved workspace path | Platform v9 | Desktop Settings/Files | tool_permission_matrix.md | `SeraphimState.tsx` settings, `FilesView.tsx` bridge config display | VC-DESK-WS-001, VC-DESK-FILES-001 | partial | moderate | Desktop now displays bridge-approved root when live; operator live verification remains open |
+| HLR-TOOL-001 | Tool permission matrix | Platform v9 | Docs + Desktop | tool_permission_matrix.md | `docs/03_design/tool_permission_matrix.md` | review | partial | high | Enforcement later via bridge |
+| HLR-BRG-001 | Local bridge health and Green read binding | Platform v9 | Desktop Local Bridge / Files | interface_control_document.md | `bridgeClient.ts`, `LocalBridgeView.tsx`, `FilesView.tsx`, `seraphim_local_bridge/main.py` | VC-DESK-BRG-001, VC-DESK-FILES-001 | partial | moderate | Phase 3 GET /health and Phase 4 M3 desktop workspace read client on :8768 |
+| HLR-SEN-001 | Sentinel checks catalog (28 in code / 29 claimed in WP) | WP v8 / v9 | Desktop Sentinel | detailed_design.md | `mockData.ts` sentinel list | VC-DESK-SEN-001 | partial | moderate | Matches `SENTINEL_CATALOG` (28); simulated only |
+| HLR-FILE-001 | File read restrictions | Platform v9 | Bridge + Desktop Files | phase4_workspace_read_api.md | `seraphim_local_bridge/workspace_guard.py`, `bridgeClient.ts`, `FilesView.tsx` | VC-BRG-WS-004, VC-DESK-FILES-001 | implemented | high | Phase 4 M3 implemented; M4 live operator verification remains open |
+| HLR-FILE-002 | File write approval | Platform v9 | Approvals + Bridge | human_approval_procedure.md | ApprovalsView mock | VC-DESK-APR-001 | partial | high | No real write in MVP |
+| HLR-SHL-001 | Shell command approval | Platform v9 | Approvals + Bridge | human_approval_procedure.md | ApprovalsView mock | VC-DESK-APR-001 | partial | critical | No real shell in MVP |
+| HLR-SEC-001 | Secret handling | Platform v9 | Desktop Settings | security_architecture.md | SettingsView placeholder field | VC-DESK-SEC-001 | partial | critical | Placeholder only |
+| HLR-PI-001 | Prompt injection defense | Platform v9 | Agent/tool router | prompt_injection_threat_model.md | docs + future router | review | planned | high | Design-first |
+| HLR-RB-001 | Rollback and recovery | Platform v9 | Approvals | rollback_and_recovery_plan.md | approval.rollbackPlan field | review | partial | moderate | Shown in UI |
+| HLR-DESK-001 | Desktop dashboard cockpit | Platform v9 | Desktop shell | ui_design_specification.md | `AppShell.tsx` + views | VC-DESK-NAV-001 | implemented | low | 12 screens + tests |
+| HLR-MOB-001 | Mobile approval cockpit | Platform v9 | Mobile (future) | software_architecture.md | planned | deferred | deferred | high | Phase 13 |
+| HLR-DOC-001 | Documentation package | Platform v9 | docs/ | document_index.md | `docs/**` | review | implemented | low | First draft |
+| SYS-005 | Green/Yellow/Red classes | Platform v9 | Desktop + docs | tool_permission_matrix.md | types + RiskBadge | VC-DESK-SAFE-001 | partial | high | UI + docs |
+| SYS-008 | No API keys in localStorage | Platform v9 | Desktop Settings | security_architecture.md | `SeraphimState.tsx` strips apiKeyPlaceholder on save | VC-DESK-SEC-001 | partial | critical | Enforced in persistence |
+| SYS-009 | Mock labeling | Platform v9 | Desktop UI | ui_design_specification.md | views warning copy | VC-DESK-NAV-001 | partial | moderate | Explicit labels |
+| SYS-001 | Preserve Web Command Center | WP v8 / v9 | Web app | software_architecture.md | `client/`, `server/` | existing router tests | implemented | low | Primary surface |
+| SYS-002 | Desktop Companion | Platform v9 | Desktop | ui_design_specification.md | `seraphim_desktop_companion/` | VC-DESK-NAV-001 | partial | low | WebView2 host |
+| SYS-003 | Plan local bridge | Platform v9 | Bridge | interface_control_document.md | `seraphim_local_bridge/main.py` | VC-BRG-WS-001 | partial | moderate | Phase 3 health + Phase 4 read |
+| SYS-004 | Plan mobile cockpit | Platform v9 | Mobile (future) | software_architecture.md | planned | deferred | deferred | high | Phase 13 |
+| SYS-006 | No Red without approval | Platform v9 | Desktop + docs | human_approval_procedure.md | mock approvals | VC-DESK-APR-001 | partial | critical | No real Red in MVP |
+| SYS-007 | Audit evidence | Platform v9 | Web + Desktop | security_architecture.md | `server/db.ts`, activity log | audit tests | partial | moderate | Desktop local log |
+| SYS-010 | DO-178 style docs | Platform v9 | docs/ | document_index.md | `docs/**` | review | implemented | low | Trace matrix maintained |
+| LLR-DESK-001 | Left nav switches views | Platform v9 | Desktop nav | ui_design_specification.md | `LeftNav.tsx` | VC-DESK-NAV-001 | partial | low | |
+| LLR-DESK-002 | Chat send appends mock messages | Platform v9 | Desktop chat | agent_behavior_design.md | `SeraphimState.sendMessage` | VC-DESK-CHAT-001 | partial | low | Data-style briefing |
+| LLR-DESK-003 | Chat persists localStorage | Platform v9 | Desktop chat | detailed_design.md | `seraphim_chat` key | VC-DESK-CHAT-001 | partial | low | |
+| LLR-DESK-004 | Workspace path persists | Platform v9 | Desktop settings | tool_permission_matrix.md | `seraphim_settings` | VC-DESK-WS-001 | partial | moderate | |
+| LLR-DESK-005 | Approve without execution | Platform v9 | Desktop approvals | human_approval_procedure.md | `approveRequest` | VC-DESK-APR-001 | partial | high | Mock only |
+| LLR-DESK-006 | Reject without execution | Platform v9 | Desktop approvals | human_approval_procedure.md | `rejectRequest` | VC-DESK-APR-001 | partial | high | Mock only |
+| LLR-DESK-007 | Activity log events | Platform v9 | Desktop log | detailed_design.md | `SeraphimState.addLog` | review | partial | moderate | |
+| LLR-DESK-008 | Sentinel catalog non-executing | Platform v9 | Desktop Sentinel | detailed_design.md | `mockData.ts` | VC-DESK-SEN-001 | partial | moderate | 28 checks |
+| LLR-DESK-009 | API key placeholder only | Platform v9 | Desktop settings | security_architecture.md | `settingsPolicy.ts` | VC-DESK-SEC-001 | partial | critical | Stripped on save |
+| LLR-DESK-010 | Bridge health GET only | Platform v9 | Bridge client | interface_control_document.md | `bridgeClient.ts` | bridgeClient.test.ts | partial | moderate | |
+| LLR-DESK-011 | Desktop Files lists and previews approved workspace through Green GET routes only | Platform v9 | Desktop Files | phase4_workspace_read_api.md | `FilesView.tsx`, `bridgeClient.ts` | VC-DESK-FILES-001, bridgeClient.test.ts | implemented | moderate | Falls back to mock when bridge offline/unconfigured; no write/delete/execute routes |
+| LLR-WEB-001 | LLM via central helper | WP v8 | Web server | software_architecture.md | `server/_core/llm.ts` | review | implemented | moderate | |
+| LLR-WEB-002 | Mutations audit logged | WP v8 | Web server | security_architecture.md | `server/db.ts` | audit tests | partial | moderate | |
+| HAZ-001 | Unapproved shell | Platform v9 | Docs + legacy agent | tool_permission_matrix.md | AGENTS.md, LOCAL_AGENT.md | review | partial | critical | Red gated |
+| HAZ-002 | File deletion | Platform v9 | Bridge (future) | rollback_and_recovery_plan.md | not implemented | deferred | deferred | critical | |
+| HAZ-003 | Secret leakage localStorage | Platform v9 | Desktop | security_architecture.md | `settingsPolicy.ts` | settingsPolicy.test.ts | partial | critical | |
+| HAZ-004 | Prompt injection to tools | Platform v9 | Future router | prompt_injection_threat_model.md | docs only | review | planned | high | |
+| HAZ-005 | Mobile remote execution | Platform v9 | Mobile (future) | security_architecture.md | planned | deferred | deferred | critical | |
+| HAZ-006 | Autonomous destructive loops | Platform v9 | Desktop + docs | AGENTS.md | mock labels | review | partial | critical | |
+| HAZ-007 | Workspace escape | Platform v9 | Bridge | phase4_workspace_read_api.md | `workspace_guard.resolve_relative` | VC-BRG-WS-004 | partial | high | Unit tests |
+| HAZ-008 | False safety from mock UI | Platform v9 | Desktop UI | ui_design_specification.md | MOCK banners | VC-DESK-NAV-001 | partial | moderate | |

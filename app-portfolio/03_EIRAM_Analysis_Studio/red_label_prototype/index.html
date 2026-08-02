@@ -1,0 +1,1237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EI-RAM Analysis Studio - Red Label Prototype</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0d10;
+      --panel: #12161b;
+      --panel-2: #171d23;
+      --line: #28313a;
+      --line-strong: #39444f;
+      --text: #ecf1f4;
+      --muted: #9ba9b3;
+      --faint: #6f7e89;
+      --teal: #25c4b7;
+      --teal-dim: rgba(37, 196, 183, 0.16);
+      --amber: #e3b341;
+      --red: #ff4d5c;
+      --red-dim: rgba(255, 77, 92, 0.16);
+      --violet: #b79cff;
+      --green: #75d483;
+      --font: Inter, "Segoe UI", Arial, sans-serif;
+      --mono: "Cascadia Code", Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      letter-spacing: 0;
+    }
+
+    button,
+    textarea,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #090b0e;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(37, 196, 183, 0.18), rgba(255, 77, 92, 0.14));
+      color: var(--teal);
+      font-family: var(--mono);
+      font-weight: 700;
+    }
+
+    .brand-title {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .brand-title strong {
+      font-size: 14px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-title span {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .red-label {
+      display: inline-flex;
+      align-items: center;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 77, 92, 0.6);
+      color: #ffd7dc;
+      background: var(--red-dim);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .btn {
+      min-height: 32px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: #11161b;
+      color: var(--text);
+      padding: 0 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-size: 13px;
+    }
+
+    .btn:hover {
+      border-color: var(--teal);
+      background: #132026;
+    }
+
+    .btn.primary {
+      border-color: rgba(37, 196, 183, 0.75);
+      background: #123230;
+      color: #eafffd;
+    }
+
+    .btn.danger {
+      border-color: rgba(255, 77, 92, 0.5);
+      color: #ffd7dc;
+      background: #251216;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(240px, 280px) minmax(420px, 1fr) minmax(280px, 360px);
+      min-height: 0;
+    }
+
+    aside,
+    main,
+    .right-rail {
+      min-width: 0;
+      min-height: 0;
+    }
+
+    aside {
+      border-right: 1px solid var(--line);
+      background: #0d1014;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .right-rail {
+      border-left: 1px solid var(--line);
+      background: #0d1014;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .panel-head {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .panel-head h2,
+    .panel-head h3 {
+      margin: 0;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #d8e2e7;
+    }
+
+    .case-list {
+      overflow: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .case-item {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: left;
+      color: var(--text);
+    }
+
+    .case-item.active {
+      border-color: var(--teal);
+      background: var(--teal-dim);
+    }
+
+    .case-title {
+      display: block;
+      font-weight: 700;
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .case-meta {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .sidebar-foot {
+      border-top: 1px solid var(--line);
+      padding: 12px 14px;
+      color: var(--faint);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    main {
+      display: grid;
+      grid-template-rows: auto minmax(260px, 0.92fr) minmax(220px, 0.72fr);
+      background: #0b0d10;
+    }
+
+    .workspace-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) minmax(140px, 180px) minmax(140px, 190px);
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .field {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: #0f1419;
+      color: var(--text);
+      outline: none;
+    }
+
+    input,
+    select {
+      height: 34px;
+      padding: 0 10px;
+    }
+
+    textarea {
+      min-height: 160px;
+      resize: none;
+      padding: 12px;
+      line-height: 1.5;
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 2px rgba(37, 196, 183, 0.14);
+    }
+
+    .input-zone {
+      padding: 16px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 10px;
+      border-bottom: 1px solid var(--line);
+      min-height: 0;
+    }
+
+    .input-toolbar,
+    .result-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .status-line {
+      color: var(--muted);
+      font-size: 12px;
+      min-height: 18px;
+    }
+
+    .result-zone {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(260px, 0.8fr) minmax(320px, 1.2fr);
+      gap: 0;
+    }
+
+    .summary-panel,
+    .evidence-panel {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .summary-panel {
+      border-right: 1px solid var(--line);
+    }
+
+    .section-title {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .section-title h3 {
+      margin: 0;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .summary-body,
+    .evidence-list,
+    .rail-scroll {
+      overflow: auto;
+      padding: 14px;
+    }
+
+    .summary-body p {
+      margin: 0 0 12px;
+      color: #d9e2e6;
+      line-height: 1.55;
+      font-size: 13px;
+    }
+
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px;
+      background: var(--panel);
+      min-width: 0;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--faint);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 17px;
+    }
+
+    .evidence-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .evidence-item header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .evidence-item p {
+      margin: 0;
+      color: #dce5e9;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 22px;
+      border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      padding: 0 8px;
+      font-size: 11px;
+      color: var(--muted);
+      background: #10151a;
+      white-space: nowrap;
+    }
+
+    .pill.red {
+      border-color: rgba(255, 77, 92, 0.45);
+      color: #ffd7dc;
+      background: var(--red-dim);
+    }
+
+    .pill.amber {
+      border-color: rgba(227, 179, 65, 0.45);
+      color: #ffe8a8;
+      background: rgba(227, 179, 65, 0.15);
+    }
+
+    .pill.teal {
+      border-color: rgba(37, 196, 183, 0.45);
+      color: #d9fffb;
+      background: var(--teal-dim);
+    }
+
+    .score-grid {
+      display: grid;
+      gap: 9px;
+    }
+
+    .score-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .score-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .score-top strong {
+      font-size: 13px;
+    }
+
+    .score-top span {
+      font-family: var(--mono);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .bar {
+      height: 8px;
+      border-radius: 999px;
+      background: #0b0e12;
+      overflow: hidden;
+      border: 1px solid #202933;
+    }
+
+    .bar > i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: var(--teal);
+    }
+
+    .score-card.warning .bar > i {
+      background: var(--amber);
+    }
+
+    .score-card.high .bar > i {
+      background: var(--red);
+    }
+
+    .score-note {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .forecast-box,
+    .limitations-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 12px;
+      color: #d9e2e6;
+      line-height: 1.5;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .limitations-box {
+      border-color: rgba(227, 179, 65, 0.38);
+      background: rgba(227, 179, 65, 0.08);
+    }
+
+    .empty-state {
+      height: 100%;
+      min-height: 110px;
+      display: grid;
+      place-items: center;
+      color: var(--faint);
+      text-align: center;
+      padding: 16px;
+      font-size: 13px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.68);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 10;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      width: min(860px, 100%);
+      max-height: min(760px, 92vh);
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: #0f1318;
+      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.48);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+    }
+
+    .modal header,
+    .modal footer {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .modal footer {
+      border-top: 1px solid var(--line);
+      border-bottom: 0;
+      justify-content: flex-end;
+    }
+
+    .modal h3 {
+      margin: 0;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .report-output {
+      margin: 0;
+      padding: 14px;
+      overflow: auto;
+      white-space: pre-wrap;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      color: #edf5f7;
+      background: #0b0e12;
+    }
+
+    @media (max-width: 1180px) {
+      .layout {
+        grid-template-columns: 240px minmax(360px, 1fr);
+      }
+
+      .right-rail {
+        grid-column: 1 / -1;
+        border-left: 0;
+        border-top: 1px solid var(--line);
+        min-height: 280px;
+      }
+    }
+
+    @media (max-width: 840px) {
+      .layout,
+      main,
+      .result-zone,
+      .workspace-head,
+      .field-grid {
+        display: block;
+      }
+
+      aside,
+      .right-rail {
+        border: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .case-list,
+      .rail-scroll,
+      .summary-body,
+      .evidence-list {
+        max-height: 360px;
+      }
+
+      .workspace-head,
+      .input-zone {
+        padding: 12px;
+      }
+
+      .field {
+        margin-bottom: 10px;
+      }
+
+      .summary-panel {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">ER</div>
+        <div class="brand-title">
+          <strong>EI-RAM Analysis Studio</strong>
+          <span>Developmental red label interface</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span class="red-label">Red Label</span>
+        <button class="btn" id="loadSampleBtn" type="button">Load Sample</button>
+        <button class="btn primary" id="runBtn" type="button">Run Analysis</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside>
+        <div class="panel-head">
+          <h2>Cases</h2>
+          <button class="btn" id="newBtn" type="button">New</button>
+        </div>
+        <div class="case-list" id="caseList"></div>
+        <div class="sidebar-foot">
+          Local prototype state is stored in browser localStorage. This red-label build is not the final product baseline.
+        </div>
+      </aside>
+
+      <main>
+        <section class="workspace-head">
+          <div class="field-grid">
+            <div class="field">
+              <label for="caseTitle">Case title</label>
+              <input id="caseTitle" type="text" value="Untitled EI-RAM Case">
+            </div>
+            <div class="field">
+              <label for="sourceType">Source type</label>
+              <select id="sourceType">
+                <option value="pasted_text">Pasted text</option>
+                <option value="markdown">Markdown</option>
+                <option value="txt">Text file</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="sourceLabel">Source label</label>
+              <input id="sourceLabel" type="text" value="Manual input">
+            </div>
+          </div>
+          <div class="top-actions">
+            <button class="btn" id="saveBtn" type="button">Save Case</button>
+            <button class="btn" id="exportBtn" type="button">Export Markdown</button>
+          </div>
+        </section>
+
+        <section class="input-zone">
+          <div class="input-toolbar">
+            <label for="sourceText">Source text</label>
+            <span class="status-line" id="statusLine">Ready</span>
+          </div>
+          <textarea id="sourceText" spellcheck="false"></textarea>
+          <div class="input-toolbar">
+            <span class="status-line" id="charCount">0 characters</span>
+            <button class="btn danger" id="clearBtn" type="button">Clear Text</button>
+          </div>
+        </section>
+
+        <section class="result-zone">
+          <div class="summary-panel">
+            <div class="section-title">
+              <h3>Assessment</h3>
+              <span class="pill teal" id="riskPill">No analysis</span>
+            </div>
+            <div class="summary-body" id="summaryBody">
+              <div class="empty-state">Run an analysis to populate the assessment panel.</div>
+            </div>
+          </div>
+
+          <div class="evidence-panel">
+            <div class="section-title">
+              <h3>Evidence</h3>
+              <span class="pill" id="evidenceCount">0 items</span>
+            </div>
+            <div class="evidence-list" id="evidenceList">
+              <div class="empty-state">Evidence snippets will appear here.</div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <section class="right-rail">
+        <div class="panel-head">
+          <h3>Module Scores</h3>
+          <span class="pill" id="engineVersion">mock-0.1</span>
+        </div>
+        <div class="rail-scroll">
+          <div class="score-grid" id="scoreGrid"></div>
+          <div class="section-title" style="padding-left:0;padding-right:0;margin-top:14px;">
+            <h3>Forecast</h3>
+          </div>
+          <div class="forecast-box" id="forecastBox">No forecast generated.</div>
+          <div class="section-title" style="padding-left:0;padding-right:0;">
+            <h3>Limitations</h3>
+          </div>
+          <div class="limitations-box" id="limitationsBox">This prototype uses mock local scoring for interface validation only.</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="reportModal" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+    <div class="modal">
+      <header>
+        <h3 id="reportTitle">Markdown Report</h3>
+        <button class="btn" id="closeReportBtn" type="button">Close</button>
+      </header>
+      <pre class="report-output" id="reportOutput"></pre>
+      <footer>
+        <button class="btn" id="copyReportBtn" type="button">Copy Text</button>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "eiram.redlabel.cases";
+    const MAX_INPUT = 50000;
+
+    const modules = [
+      { id: "IRI", label: "Ideological Rigidity", terms: ["betray", "enemy", "pure", "corrupt", "traitor", "absolute", "evil"] },
+      { id: "VDM", label: "Vulnerability Dynamics", terms: ["alone", "humiliated", "ignored", "desperate", "loss", "fear", "betrayed"] },
+      { id: "ECS", label: "Escalation Signals", terms: ["fight", "attack", "destroy", "war", "revenge", "crush", "force"] },
+      { id: "EEM", label: "Epistemic Elasticity", terms: ["maybe", "evidence", "uncertain", "review", "question", "revise", "consider"] },
+      { id: "PFM", label: "Predictive Forecast", terms: ["soon", "next", "will", "must", "inevitable", "plan", "prepare"] }
+    ];
+
+    const els = {
+      caseTitle: document.getElementById("caseTitle"),
+      sourceType: document.getElementById("sourceType"),
+      sourceLabel: document.getElementById("sourceLabel"),
+      sourceText: document.getElementById("sourceText"),
+      charCount: document.getElementById("charCount"),
+      statusLine: document.getElementById("statusLine"),
+      caseList: document.getElementById("caseList"),
+      summaryBody: document.getElementById("summaryBody"),
+      evidenceList: document.getElementById("evidenceList"),
+      scoreGrid: document.getElementById("scoreGrid"),
+      forecastBox: document.getElementById("forecastBox"),
+      limitationsBox: document.getElementById("limitationsBox"),
+      riskPill: document.getElementById("riskPill"),
+      evidenceCount: document.getElementById("evidenceCount"),
+      reportModal: document.getElementById("reportModal"),
+      reportOutput: document.getElementById("reportOutput")
+    };
+
+    let cases = loadCases();
+    let activeCaseId = null;
+    let currentAnalysis = null;
+
+    function uid(prefix) {
+      return prefix + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+    }
+
+    function loadCases() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function persistCases() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cases));
+    }
+
+    function setStatus(message) {
+      els.statusLine.textContent = message;
+    }
+
+    function updateCharCount() {
+      const count = els.sourceText.value.length;
+      els.charCount.textContent = count.toLocaleString() + " characters";
+      if (count > MAX_INPUT) {
+        els.charCount.style.color = "var(--red)";
+      } else {
+        els.charCount.style.color = "var(--muted)";
+      }
+    }
+
+    function scoreText(text) {
+      const lower = text.toLowerCase();
+      const words = lower.match(/[a-z0-9']+/g) || [];
+      const wordCount = words.length || 1;
+      const sentenceCount = Math.max(1, (text.match(/[.!?]+/g) || []).length);
+
+      const evidence = [];
+      const scores = modules.map((mod) => {
+        let hits = 0;
+        const matched = [];
+        mod.terms.forEach((term) => {
+          const regex = new RegExp("\\\\b" + term.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&") + "\\\\b", "gi");
+          const found = text.match(regex) || [];
+          if (found.length) {
+            hits += found.length;
+            matched.push(term);
+          }
+        });
+
+        const density = Math.min(100, Math.round((hits / wordCount) * 800 + hits * 7));
+        const score = mod.id === "EEM" ? Math.max(0, 100 - density) : density;
+        const note = matched.length
+          ? "Matched terms: " + matched.slice(0, 5).join(", ")
+          : "No strong local keyword matches.";
+
+        if (matched.length) {
+          evidence.push({
+            module: mod.id,
+            label: mod.label,
+            confidence: hits > 2 ? "moderate" : "low",
+            text: extractSnippet(text, matched[0])
+          });
+        }
+
+        return { id: mod.id, label: mod.label, score, note };
+      });
+
+      const escalation = scores.find((s) => s.id === "ECS").score;
+      const rigidity = scores.find((s) => s.id === "IRI").score;
+      const elasticity = scores.find((s) => s.id === "EEM").score;
+      const vulnerability = scores.find((s) => s.id === "VDM").score;
+      const overall = Math.round((escalation * 0.32) + (rigidity * 0.28) + (vulnerability * 0.22) + ((100 - elasticity) * 0.18));
+      const risk = overall >= 66 ? "High" : overall >= 36 ? "Moderate" : "Low";
+      const confidence = wordCount > 160 ? "Moderate" : "Low";
+
+      return {
+        id: uid("analysis"),
+        createdAt: new Date().toISOString(),
+        summary: buildSummary(risk, confidence, wordCount, sentenceCount),
+        moduleScores: scores,
+        evidence,
+        riskVector: { score: overall, label: risk, confidence },
+        forecast: buildForecast(risk, escalation, rigidity, elasticity),
+        limitations: "Prototype scoring uses local keyword heuristics. It is suitable for UI validation only and is not a diagnostic, legal, or threat determination.",
+        engineVersion: "red-label-mock-0.1"
+      };
+    }
+
+    function buildSummary(risk, confidence, words, sentences) {
+      return "The submitted text produced a " + risk.toLowerCase() + " prototype risk vector with " + confidence.toLowerCase() + " confidence. The passage contains " + words + " words across approximately " + sentences + " sentence units. This interface separates source evidence from inference so an analyst can review the basis for any score before using the result.";
+    }
+
+    function buildForecast(risk, escalation, rigidity, elasticity) {
+      if (risk === "High") {
+        return "Prototype forecast: the text presents clustered rigidity and escalation indicators. Analyst review should focus on context, source reliability, and whether counter-evidence changes the interpretation.";
+      }
+      if (risk === "Moderate") {
+        return "Prototype forecast: the text contains some pressure indicators but does not support a strong conclusion by itself. Additional source context would materially improve confidence.";
+      }
+      if (elasticity > 70) {
+        return "Prototype forecast: the text shows signs of uncertainty, review, or openness to revision. Current local scoring does not indicate strong escalation pressure.";
+      }
+      return "Prototype forecast: current local scoring remains low. The result should be treated as evidence-limited until more source material is available.";
+    }
+
+    function extractSnippet(text, term) {
+      const index = text.toLowerCase().indexOf(term.toLowerCase());
+      if (index < 0) return text.slice(0, 180);
+      const start = Math.max(0, index - 80);
+      const end = Math.min(text.length, index + term.length + 120);
+      return text.slice(start, end).trim();
+    }
+
+    function renderScores(analysis) {
+      els.scoreGrid.innerHTML = "";
+      const scores = analysis ? analysis.moduleScores : modules.map((m) => ({ id: m.id, label: m.label, score: 0, note: "Awaiting analysis." }));
+      scores.forEach((score) => {
+        const card = document.createElement("div");
+        const level = score.score >= 66 ? "high" : score.score >= 36 ? "warning" : "";
+        card.className = "score-card " + level;
+        card.innerHTML = `
+          <div class="score-top">
+            <strong>${score.id} - ${score.label}</strong>
+            <span>${score.score}</span>
+          </div>
+          <div class="bar"><i style="width:${score.score}%"></i></div>
+          <div class="score-note">${score.note}</div>
+        `;
+        els.scoreGrid.appendChild(card);
+      });
+    }
+
+    function renderAnalysis(analysis) {
+      currentAnalysis = analysis;
+      renderScores(analysis);
+
+      if (!analysis) {
+        els.summaryBody.innerHTML = '<div class="empty-state">Run an analysis to populate the assessment panel.</div>';
+        els.evidenceList.innerHTML = '<div class="empty-state">Evidence snippets will appear here.</div>';
+        els.forecastBox.textContent = "No forecast generated.";
+        els.limitationsBox.textContent = "This prototype uses mock local scoring for interface validation only.";
+        els.riskPill.className = "pill teal";
+        els.riskPill.textContent = "No analysis";
+        els.evidenceCount.textContent = "0 items";
+        return;
+      }
+
+      const riskClass = analysis.riskVector.label === "High" ? "red" : analysis.riskVector.label === "Moderate" ? "amber" : "teal";
+      els.riskPill.className = "pill " + riskClass;
+      els.riskPill.textContent = analysis.riskVector.label + " / " + analysis.riskVector.score;
+      els.summaryBody.innerHTML = `
+        <p>${analysis.summary}</p>
+        <div class="metric-strip">
+          <div class="metric"><span>Risk</span><strong>${analysis.riskVector.label}</strong></div>
+          <div class="metric"><span>Score</span><strong>${analysis.riskVector.score}</strong></div>
+          <div class="metric"><span>Confidence</span><strong>${analysis.riskVector.confidence}</strong></div>
+        </div>
+      `;
+      els.forecastBox.textContent = analysis.forecast;
+      els.limitationsBox.textContent = analysis.limitations;
+      els.evidenceCount.textContent = analysis.evidence.length + " items";
+
+      if (!analysis.evidence.length) {
+        els.evidenceList.innerHTML = '<div class="empty-state">No keyword-backed evidence snippets were detected by the prototype scorer.</div>';
+      } else {
+        els.evidenceList.innerHTML = "";
+        analysis.evidence.forEach((item) => {
+          const row = document.createElement("article");
+          row.className = "evidence-item";
+          row.innerHTML = `
+            <header>
+              <strong>${item.module} - ${item.label}</strong>
+              <span class="pill">${item.confidence}</span>
+            </header>
+            <p>${escapeHtml(item.text)}</p>
+          `;
+          els.evidenceList.appendChild(row);
+        });
+      }
+    }
+
+    function renderCases() {
+      els.caseList.innerHTML = "";
+      if (!cases.length) {
+        els.caseList.innerHTML = '<div class="empty-state">No saved cases.</div>';
+        return;
+      }
+      cases.slice().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).forEach((item) => {
+        const btn = document.createElement("button");
+        btn.className = "case-item" + (item.id === activeCaseId ? " active" : "");
+        btn.type = "button";
+        btn.innerHTML = `
+          <span class="case-title">${escapeHtml(item.title)}</span>
+          <span class="case-meta">
+            <span>${escapeHtml(item.sourceType)}</span>
+            <span>${new Date(item.updatedAt).toLocaleDateString()}</span>
+          </span>
+        `;
+        btn.addEventListener("click", () => loadCase(item.id));
+        els.caseList.appendChild(btn);
+      });
+    }
+
+    function runAnalysis() {
+      const text = els.sourceText.value.trim();
+      if (!text) {
+        setStatus("Source text is empty.");
+        return;
+      }
+      if (text.length > MAX_INPUT) {
+        setStatus("Input exceeds the prototype limit.");
+        return;
+      }
+      const analysis = scoreText(text);
+      renderAnalysis(analysis);
+      setStatus("Analysis generated.");
+    }
+
+    function saveCase() {
+      const text = els.sourceText.value.trim();
+      if (!text) {
+        setStatus("Cannot save an empty case.");
+        return;
+      }
+      if (!currentAnalysis) {
+        currentAnalysis = scoreText(text);
+      }
+      const now = new Date().toISOString();
+      const payload = {
+        id: activeCaseId || uid("case"),
+        title: els.caseTitle.value.trim() || "Untitled EI-RAM Case",
+        sourceType: els.sourceType.value,
+        sourceLabel: els.sourceLabel.value.trim(),
+        inputText: text,
+        analysis: currentAnalysis,
+        createdAt: now,
+        updatedAt: now
+      };
+      const existing = cases.findIndex((item) => item.id === payload.id);
+      if (existing >= 0) {
+        payload.createdAt = cases[existing].createdAt;
+        cases[existing] = payload;
+      } else {
+        cases.push(payload);
+      }
+      activeCaseId = payload.id;
+      persistCases();
+      renderCases();
+      renderAnalysis(payload.analysis);
+      setStatus("Case saved locally.");
+    }
+
+    function loadCase(id) {
+      const item = cases.find((candidate) => candidate.id === id);
+      if (!item) return;
+      activeCaseId = item.id;
+      els.caseTitle.value = item.title;
+      els.sourceType.value = item.sourceType;
+      els.sourceLabel.value = item.sourceLabel || "";
+      els.sourceText.value = item.inputText;
+      updateCharCount();
+      renderCases();
+      renderAnalysis(item.analysis);
+      setStatus("Case loaded.");
+    }
+
+    function newCase() {
+      activeCaseId = null;
+      currentAnalysis = null;
+      els.caseTitle.value = "Untitled EI-RAM Case";
+      els.sourceType.value = "pasted_text";
+      els.sourceLabel.value = "Manual input";
+      els.sourceText.value = "";
+      updateCharCount();
+      renderCases();
+      renderAnalysis(null);
+      setStatus("New case ready.");
+    }
+
+    function buildReport() {
+      const text = els.sourceText.value.trim();
+      const analysis = currentAnalysis || (text ? scoreText(text) : null);
+      if (!analysis) {
+        setStatus("Run an analysis before export.");
+        return "";
+      }
+      const title = els.caseTitle.value.trim() || "Untitled EI-RAM Case";
+      const evidence = analysis.evidence.length
+        ? analysis.evidence.map((item) => `- ${item.module} (${item.confidence}): ${item.text}`).join("\\n")
+        : "- No prototype evidence snippets detected.";
+      const scores = analysis.moduleScores.map((score) => `| ${score.id} | ${score.label} | ${score.score} | ${score.note} |`).join("\\n");
+      return `# EI-RAM Prototype Report
+
+## Case
+
+- Title: ${title}
+- Source Type: ${els.sourceType.value}
+- Source Label: ${els.sourceLabel.value.trim() || "Unlabeled"}
+- Generated: ${new Date().toISOString()}
+- Engine: ${analysis.engineVersion}
+
+## Summary
+
+${analysis.summary}
+
+## Module Scores
+
+| Module | Label | Score | Notes |
+|---|---|---:|---|
+${scores}
+
+## Evidence
+
+${evidence}
+
+## Risk Vector
+
+- Label: ${analysis.riskVector.label}
+- Score: ${analysis.riskVector.score}
+- Confidence: ${analysis.riskVector.confidence}
+
+## Forecast
+
+${analysis.forecast}
+
+## Limitations
+
+${analysis.limitations}
+
+## Analyst Responsibility
+
+This output is a prototype analytical aid and requires human review. It is not a diagnostic, legal, law-enforcement, or certainty claim.
+`;
+    }
+
+    function showReport() {
+      const report = buildReport();
+      if (!report) return;
+      els.reportOutput.textContent = report;
+      els.reportModal.classList.add("open");
+      setStatus("Markdown report generated.");
+    }
+
+    function loadSample() {
+      els.caseTitle.value = "Sample Civic Rhetoric Review";
+      els.sourceType.value = "pasted_text";
+      els.sourceLabel.value = "Prototype sample";
+      els.sourceText.value = "We should review the evidence carefully before deciding what comes next. Some people feel ignored and betrayed, and that pressure can make public arguments harder to resolve. The responsible path is to question weak claims, consider alternatives, and avoid treating political opponents as enemies.";
+      updateCharCount();
+      setStatus("Sample loaded.");
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    document.getElementById("runBtn").addEventListener("click", runAnalysis);
+    document.getElementById("saveBtn").addEventListener("click", saveCase);
+    document.getElementById("newBtn").addEventListener("click", newCase);
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      els.sourceText.value = "";
+      updateCharCount();
+      setStatus("Text cleared.");
+    });
+    document.getElementById("loadSampleBtn").addEventListener("click", loadSample);
+    document.getElementById("exportBtn").addEventListener("click", showReport);
+    document.getElementById("closeReportBtn").addEventListener("click", () => els.reportModal.classList.remove("open"));
+    document.getElementById("copyReportBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(els.reportOutput.textContent);
+        setStatus("Report copied.");
+      } catch {
+        setStatus("Copy failed; select report text manually.");
+      }
+    });
+    els.reportModal.addEventListener("click", (event) => {
+      if (event.target === els.reportModal) els.reportModal.classList.remove("open");
+    });
+    els.sourceText.addEventListener("input", updateCharCount);
+
+    renderCases();
+    renderScores(null);
+    updateCharCount();
+  </script>
+</body>
+</html>

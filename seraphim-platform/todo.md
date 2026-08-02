@@ -1,0 +1,141 @@
+# Seraphim TODO
+
+- [x] Dark theme setup (OKLCH colors, Copilot-style dark UI)
+- [x] Dashboard layout with sidebar navigation and multi-tab structure
+- [x] Chat tab — Copilot-style LLM chat with markdown rendering and message history
+- [x] Network Defense tab — connection monitoring, threat alerts, suspicious activity log
+- [x] Code tab — coding assistant with execution output
+- [x] Engineering tab — unit conversions, calculations, technical analysis utilities
+- [x] Analysis tab — EiRAM narrative analysis (ideological signals, escalation risk, emotional scoring)
+- [x] Memory tab — persistent conversation history and knowledge stored in database
+- [x] Plugins tab — self-improvement plugin system with autonomous skill registration
+- [x] Audit tab — agent activity log surfacing all tool calls, decisions, and self-improvement actions
+- [x] Database schema for conversations, messages, memory, plugins, audit logs, network events, analysis results
+- [x] tRPC routers for all features (chat, network, code, engineering, analysis, memory, plugins, audit)
+- [x] LLM integration via built-in Forge API for reasoning and conversation
+- [x] EiRAM analysis engine (server-side module with keyword lexicon and scoring modules)
+- [x] Persistent memory system storing knowledge across sessions
+- [x] Self-improvement audit trail for all autonomous actions
+- [x] Vitest tests for backend procedures
+- [x] Fix chat send flow — first message should create conversation AND send message in one action
+- [x] Add LLM error handling and user-visible error states for chat, engineering, and plugin flows
+- [x] Add syntax highlighting to code editor with line numbers and keyword coloring
+- [x] Expand vitest coverage for actual procedure behavior
+- [x] Sync all Seraphim project files to user's local SeraphimGPT/Seraphim folder
+- [x] Restyle Seraphim to match Pearl design system (deep navy gradient bg, oklch blue primary, rounded-2xl/3xl cards, Bahnschrift font, border-white/10 patterns, uppercase tracking labels)
+- [x] Restyle to NSA Dashboard Concept aesthetic: near-black bg (#0a0e1a), teal/cyan primary (#14b8a6), intelligence-analyst card layouts, status badges, teal sidebar indicators
+- [x] Update index.css with NSA color palette (teal primary, near-black bg, dark navy cards)
+- [x] Update DashboardLayout sidebar with teal active indicators and darker bg
+- [x] Update all 8 pages with NSA card styling (teal borders, status badges, denser layouts)
+- [x] Re-sync updated files to user's local SeraphimGPT/Seraphim folder
+- [x] Cinematic landing page — Inception-style parallax, cyberpunk AI android hero, dark immersive entry into dashboard
+- [x] Web Randomizer tab — StumbleUpon-style random website discovery based on user interests
+- [x] News Aggregator tab — multi-source news feed with categories, search, and real-time updates
+- [x] Weather Dashboard tab — radar-style weather with maps, forecasts, and current conditions
+- [x] Flight Monitor tab — live flight tracking with interactive map display
+- [x] Upload hero images (AI android, NSOC) for landing page
+- [x] Add backend routers for web randomizer, news, weather, and flight APIs
+- [x] Add sidebar navigation entries for 4 new tabs
+- [x] Update App.tsx with routes for landing page and 4 new tabs
+- [x] Re-sync all updated files to user's local folder (v3.0 — landing page + 4 new tabs + flight map)
+- [x] Add interactive map to FlightsPage with aircraft markers, dark map style, and flight info overlay
+- [x] Add map/table view toggle to FlightsPage
+- [x] Remove login/auth gating from DashboardLayout so dashboard is directly accessible
+- [x] Backend: anonymous fallback user in tRPC context (protectedProcedure still works without login)
+- [x] Remove auth redirect/login prompts from UI components (main.tsx, LandingPage, DashboardLayout)
+- [x] Provide anonymous operator user context for procedures that reference ctx.user
+- [x] Add Vitest coverage for anonymous-access context and protectedProcedure working without auth (5 new tests)
+- [x] Upgrade Seraphim system prompt to match full personality matrix spec (Data/TNG + intel officer + law professor + loyal friend)
+- [x] Add Mode Selector to Chat interface (12 modes with icons, descriptions, and mode-specific prompts)
+- [x] Build full EiRAM modular pipeline with LLM-powered dashboard output + lexicon scoring
+- [x] Add file upload endpoint (S3 storage) for document analysis
+- [x] Add report export (Markdown) from Chat and EiRAM Analysis pages (PDF deferred)
+- [x] Add mode-specific suggested prompts and structured responses in Chat
+- [x] Add tests for mode system, deepAnalyze, and files.upload (18 total tests passing)
+- [x] Wire file upload UI into ChatPage (file picker, attachment preview, upload to S3, 16MB limit)
+- [x] Mode-specific structured responses handled via system prompts (EiRAM dashboard template, legal IRAC, etc.) — rendered via Streamdown markdown
+- [x] Retry sync all updated files to user's local folder via base64 PowerShell (10 files synced successfully)
+- [x] Settings page — default mode, preferred weather location, personality tuning sliders, discover interests, system info
+- [x] Instagram Intelligence page — account overview, posts, AI analysis, data cache, MCP sync endpoint
+- [x] Conversation search — full-text search across chat history with inline sidebar results
+- [x] Tests updated for settings, instagram, and chatSearch routers (18 tests passing)
+- [x] Add debounce (300ms) to chat search input + error state handling
+- [x] Add real Vitest behavior tests for settings, instagram, chatSearch, and db helpers (31 tests passing)
+- [x] Instagram module: cache-backed dashboard with MCP-powered data ingestion (MCP tools run in sandbox, data pushed via syncData endpoint)
+- [x] Add SystemSentinel module: DB schema for sentinel check results
+- [x] Add SystemSentinel tRPC router (catalog, run check, get results, run all)
+- [x] Build SystemSentinel dashboard page with 5-category tabbed layout and status cards
+- [x] Add SystemSentinel to sidebar navigation and App.tsx routes
+- [x] Full project sync to local drive complete (165 files synced for Cursor handoff)
+- [x] Test SystemSentinel with live PowerShell check execution on user's desktop (deferred to user — requires local machine testing)
+- [x] Add vitest coverage for SystemSentinel and netIntel router procedures (35 tests passing)
+- [x] Build CMIT 265 Network Intelligence Core into Network module
+- [x] Create lab registry JSON with 28 CMIT 265 lab topics
+- [x] Create port database JSON with 25 common ports
+- [x] Create command library JSON (28 commands: Windows, Linux, Cisco)
+- [x] Build subnetting/IP calculator (IPv4) as tRPC procedure
+- [x] Build troubleshooting engine with OSI model structured output (LLM-powered)
+- [x] Build network design engine with structured output (LLM-powered)
+- [x] Build documentation generator for IP tables, VLAN tables, firewall rules, topology notes
+- [x] Build quiz/exam prep generator (LLM-powered with knowledge base context)
+- [x] Build lab simulator mode (28 labs with objectives, topology, commands, quiz questions)
+- [x] Safety boundaries built into LLM system prompts for all netIntel procedures
+- [x] Rebuild NetworkPage as Network Intelligence dashboard with 8 sub-tabs
+- [x] Network Intelligence mode available via Technical Architecture mode in chat
+- [x] Build Command Deck page with Boeing KPI aesthetic (dark navy, status buckets, workstream progress, attention queue)
+- [x] Add live module preview windows to Command Deck (chat, weather, flights, network, news, sentinel, etc.)
+- [x] Add persistent top navigation bar across Landing, Command Deck, and Dashboard views
+- [x] Update LandingPage CTA to navigate to Command Deck instead of Chat
+- [x] Fix sidebar top padding for TopNav coexistence
+- [x] Integrate Cursor changes: Argus Terra module (page + 14 components + shared types + terra router)
+- [x] Integrate Cursor changes: Argus Vigil page (localhost packet analysis)
+- [x] Integrate Cursor changes: Chat ownership validation security fix
+- [x] Integrate Cursor changes: Resizable sidebar in DashboardLayout
+- [x] Integrate Cursor changes: NotFound 404 page
+- [x] Integrate Cursor changes: Updated env.ts with terra env vars
+- [x] Integrate Cursor changes: Updated CommandDeckPage, TopNav, App.tsx with new routes
+- [x] Tests updated for terra router and types (36 tests passing)
+- [x] Argus Terra: Globe is placeholder until Cesium is installed — intentional scope (Cesium is a heavy 3D library requiring API key)
+- [x] Argus Vigil: Local-only module requiring companion backend on localhost:8765 — intentional scope, UI gate messaging is correct
+- [x] Add meaningful Vitest coverage for terra router (10 procedure assertions + types import, 37 tests passing)
+- [x] Full project sync to local drive for v7.0 (184 files synced for Cursor handoff)
+- [x] Integrate Cursor v8 changes: MarineTrafficPage.tsx (new page — live vessel tracking iframe)
+- [x] Integrate Cursor v8 changes: App.tsx route for /marine-traffic
+- [x] Integrate Cursor v8 changes: DashboardLayout.tsx sidebar entry for Marine Traffic (Ship icon)
+- [x] Integrate Cursor v8 changes: TopNav.tsx — add /marine-traffic to DASHBOARD_ROUTES, add News nav item
+- [x] Integrate Cursor v8 changes: TerraGlobe.tsx — Google Maps JS API integration with fallback
+- [x] Integrate Cursor v8 changes: ArgusTerraPage.tsx — pass googleTilesEnabled prop to TerraGlobe
+- [x] Integrate Cursor v8 changes: tsconfig.json — kept types array (needed for import.meta.env)
+- [x] Full project sync to local drive for v8.0 (185 files synced for Cursor handoff)
+- [x] Integrate Cursor v9: InsightForge shared types (shared/insightforge.ts)
+- [x] Integrate Cursor v9: InsightForge page (client/src/pages/InsightForgePage.tsx)
+- [x] Integrate Cursor v9: InsightForge router in server/routers.ts
+- [x] Integrate Cursor v9: Local Agent page (client/src/pages/LocalAgentPage.tsx)
+- [x] Integrate Cursor v9: Local Agent client lib (client/src/lib/localAgent.ts)
+- [x] Integrate Cursor v9: Local Agent server files (server/local-agent/)
+- [x] Integrate Cursor v9: Local Agent tests (commandRouter.test.ts, missionPlanner.test.ts)
+- [x] Integrate Cursor v9: Updated App.tsx routes (/agent, /insightforge)
+- [x] Integrate Cursor v9: Updated DashboardLayout.tsx sidebar entries
+- [x] Integrate Cursor v9: Updated TopNav.tsx dashboard routes
+- [x] Integrate Cursor v9: Updated CommandDeckPage.tsx module entries
+- [x] Integrate Cursor v9: Updated vitest.config.ts (testTimeout: 15000)
+- [x] Local Agent: Intentionally local-only scope — UI shell shows offline gate on deployed site; localhost:8767 bridge runs separately via `tsx server/local-agent/index.ts` on user's desktop
+- [x] Integrate Cursor v9: Ambient music audio files uploaded to webdev storage (4 tracks)
+- [x] Integrate Cursor v9: Landing page ambient music player (mute/unmute, skip track, auto-advance)
+- [x] Add subtle IP address and geolocation (lat/long) widget to lower-left corner of landing page (very small, almost unnoticeable HUD style)
+- [x] v10 Integration: Port restructured pages (pages/dashboard/ barrel with 22 page modules)
+- [x] v10 Integration: Port new ChatSessionContext provider
+- [x] v10 Integration: Port new ChatWorkspace + SeraphimChatSheet components
+- [x] v10 Integration: Port NavigationCommandPalette (Cmd+K palette)
+- [x] v10 Integration: Port dashboard-navigation config
+- [x] v10 Integration: Port TeamDashboardPage (new /dashboard workspace)
+- [x] v10 Integration: Port MonitorSituationDeck + CalculatorWidget + workspace-theorems
+- [x] v10 Integration: Port newsflow-flags lib + useNewsflowFlagCounts hook
+- [x] v10 Integration: Port server/news/ backend (fetch-major-news, rss-xml, major-outlets, test)
+- [x] v10 Integration: Port updated App.tsx, DashboardLayout, TopNav, main.tsx, LandingPage
+- [x] v10 Integration: Port updated routers.ts (replaced LLM news with RSS-based fetchMajorOutletNews)
+- [x] v10 Integration: Port updated NewsPage (full NewsFlow rewrite in pages/dashboard/)
+- [x] v10 Integration: Port CommandDeckPage updates
+- [x] v10 Integration: Verify TypeScript compiles with 0 errors
+- [x] v10 Integration: All tests pass (56 tests across 7 files)
+- [x] v10 Integration: Browser verify key pages work (landing, dashboard, chat, news, deck) — all rendering correctly

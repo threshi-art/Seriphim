@@ -1,0 +1,23 @@
+# Verification Results
+
+| ID | Result | Date | Notes |
+|----|--------|------|-------|
+| VC-WEB-REG-001 | pass | 2026-07-05 | `pnpm verify`: tsc + desktop tsc + **70** tests |
+| VC-DESK-NAV-001 | pass (automated) | 2026-07-04 | `navigation.test.ts` — 12 screens |
+| VC-DESK-CHAT-001 | pass (automated) | 2026-07-04 | `operatorVoice.test.ts` — briefing structure |
+| VC-DESK-WS-001 | pass (automated) | 2026-07-04 | `localStorageService.test.ts` — workspace round-trip |
+| VC-DESK-APR-001 | pass (automated) | 2026-07-04 | `approvalLogic.test.ts` — status only, no execution |
+| VC-DESK-BRG-001 | pass (automated) | 2026-07-04 | `bridgeClient.test.ts` — offline/degraded/online |
+| VC-DESK-FILES-001 | pass (automated) | 2026-07-11 | `bridgeClient.test.ts` — Phase 4 workspace config/list/read client; UI integrated in `FilesView.tsx`; live operator bridge verification remains M4 |
+| VC-DESK-SEN-001 | pass (automated) | 2026-07-04 | `mockData.test.ts` — 28 checks, requires_bridge |
+| VC-DESK-SEC-001 | pass (automated) | 2026-07-04 | `settingsPolicy.test.ts` — api key stripped |
+| VC-DESK-PAIR-001 | pass (mock) | 2026-07-04 | UI mock pairing + `GET /pairing/status` stub |
+| VC-DESK-PUB-001 | pass | 2026-07-05 | `pnpm verify:desktop-publish` — EXE, wwwroot, repo-docs, nav bundle |
+| VC-BRG-HEALTH-001 | pass | 2026-07-05 | `GET http://127.0.0.1:8768/health` — `executionEnabled: false` |
+| VC-DESK-MANUAL-001 | pass | 2026-07-05 | `pnpm walkthrough:desktop` — 13/13 HTTP + unit corpus |
+| VC-BRG-WS-001 | pass (smoke) | 2026-07-05 | `GET /workspace/config` with `SERAPHIM_BRIDGE_WORKSPACE_ROOT` set |
+| VC-BRG-WS-002 | pass (smoke) | 2026-07-05 | `GET /workspace/list?relativePath=docs` |
+| VC-BRG-WS-004 | pass (unit) | 2026-07-05 | `pnpm bridge:test` — escape traversal rejected |
+| VC-BRG-WS-006 | pass (smoke) | 2026-07-05 | Audit lines in `logs/bridge_audit.jsonl` |
+
+Phase 4 M3 Desktop Files implementation is complete. Full live bridge operator verification for VC-BRG-WS-* and end-to-end Files view remains open under M4.

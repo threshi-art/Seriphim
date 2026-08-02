@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>SeraphimDesktopCompanion</AssemblyName>
+    <RootNamespace>SeraphimDesktopCompanion</RootNamespace>
+    <ApplicationIcon />
+    <Product>Seraphim Desktop Companion</Product>
+    <Company>Seraphim Platform</Company>
+    <Version>0.1.0</Version>
+    <Description>Seraphim Platform v9 Desktop Companion — mock-only local cockpit</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="wwwroot\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Seraphim Preview</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050a12;
+        --panel: rgba(15, 27, 45, 0.84);
+        --panel-2: rgba(17, 33, 57, 0.95);
+        --line: rgba(123, 193, 255, 0.16);
+        --line-strong: rgba(85, 217, 255, 0.42);
+        --text: #eef6ff;
+        --muted: #a9bfd6;
+        --cyan: #55d9ff;
+        --green: #5ef0a2;
+        --violet: #ae7dff;
+        --amber: #ffca56;
+        --red: #ff6b6b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 18% 0%, rgba(85, 217, 255, 0.18), transparent 28rem),
+          radial-gradient(circle at 78% 8%, rgba(174, 125, 255, 0.14), transparent 30rem),
+          linear-gradient(180deg, #07111d, var(--bg));
+        color: var(--text);
+        font-family: "Segoe UI", Arial, sans-serif;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 18px;
+        background: rgba(7, 17, 29, 0.92);
+        border-bottom: 1px solid rgba(123, 193, 255, 0.12);
+        backdrop-filter: blur(16px);
+      }
+
+      .brand,
+      .tabs,
+      .status,
+      .row {
+        display: flex;
+        align-items: center;
+      }
+
+      .brand {
+        gap: 10px;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+      }
+
+      .mark {
+        width: 24px;
+        height: 24px;
+        display: grid;
+        place-items: center;
+        border-radius: 7px;
+        background: linear-gradient(135deg, var(--cyan), #4da2ff);
+        color: #050a12;
+      }
+
+      .tabs {
+        gap: 6px;
+      }
+
+      .tab {
+        border: 1px solid transparent;
+        border-radius: 10px;
+        padding: 7px 13px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .tab.active {
+        border-color: rgba(85, 217, 255, 0.25);
+        background: rgba(85, 217, 255, 0.12);
+        color: var(--cyan);
+      }
+
+      .status {
+        gap: 8px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: var(--green);
+        box-shadow: 0 0 8px var(--green);
+      }
+
+      .shell {
+        width: min(1520px, calc(100vw - 28px));
+        margin: 0 auto;
+        padding: 18px 0 32px;
+      }
+
+      .hero,
+      .panel,
+      .card,
+      .side-card {
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, var(--panel), rgba(8, 15, 27, 0.88));
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.32);
+      }
+
+      .hero {
+        min-height: 260px;
+        border-radius: 18px;
+        overflow: hidden;
+        padding: 28px;
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        gap: 18px;
+      }
+
+      .eyebrow {
+        color: var(--cyan);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-weight: 800;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        margin-top: 8px;
+        font-size: clamp(34px, 4vw, 58px);
+        line-height: 1;
+      }
+
+      .lead {
+        margin-top: 12px;
+        max-width: 760px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 34px;
+      }
+
+      .chip {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .chip strong {
+        color: var(--cyan);
+      }
+
+      .hero-stack {
+        display: grid;
+        gap: 14px;
+      }
+
+      .mini {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 20px;
+        background: rgba(12, 26, 45, 0.72);
+      }
+
+      .health {
+        margin: 8px 0;
+        color: var(--green);
+        font-size: 42px;
+        font-weight: 900;
+      }
+
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .panel {
+        border-radius: 18px;
+        padding: 20px;
+      }
+
+      .kpi-value {
+        margin: 10px 0;
+        font-size: 36px;
+        font-weight: 900;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .quick-list,
+      .module-grid,
+      .findings,
+      .stats-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .quick-button,
+      .module-card {
+        border: 1px solid rgba(123, 193, 255, 0.14);
+        border-radius: 14px;
+        background: linear-gradient(180deg, var(--panel-2), rgba(9, 18, 31, 0.96));
+        color: inherit;
+      }
+
+      .quick-button {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 42px 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 12px;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .quick-button:hover,
+      .module-card:hover {
+        border-color: var(--line-strong);
+      }
+
+      .icon {
+        width: 36px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(85, 217, 255, 0.08);
+      }
+
+      .module-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .module-card {
+        min-height: 138px;
+        padding: 16px;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .module-title {
+        margin-top: 14px;
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .module-desc {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .signal {
+        margin-top: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.25);
+        padding: 8px;
+        color: var(--cyan);
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .section {
+        display: none;
+      }
+
+      .section.active {
+        display: block;
+      }
+
+      .news-grid,
+      .argus-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      .table th,
+      .table td {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 10px;
+        text-align: left;
+      }
+
+      .table th {
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .pill {
+        display: inline-flex;
+        border-radius: 8px;
+        padding: 3px 7px;
+        background: rgba(85, 217, 255, 0.12);
+        color: var(--cyan);
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .preview-note {
+        margin-top: 18px;
+        border: 1px solid rgba(255, 202, 86, 0.2);
+        border-radius: 14px;
+        background: rgba(255, 202, 86, 0.1);
+        color: #ffe2a2;
+        padding: 14px;
+        font-size: 13px;
+      }
+
+      @media (max-width: 1100px) {
+        .hero,
+        .layout,
+        .news-grid,
+        .argus-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .module-grid,
+        .kpis {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 720px) {
+        .tabs {
+          overflow-x: auto;
+        }
+
+        .status {
+          display: none;
+        }
+
+        .module-grid,
+        .kpis {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="topbar">
+      <div class="brand"><span class="mark">S</span> SERAPHIM</div>
+      <div class="tabs">
+        <button class="tab active" data-target="deck">Command Deck</button>
+        <button class="tab" data-target="news">News</button>
+        <button class="tab" data-target="dashboard">Dashboard</button>
+        <button class="tab" data-target="argus">Argus Vigil</button>
+      </div>
+      <div class="status"><span class="dot"></span> Static Preview</div>
+    </nav>
+
+    <main class="shell">
+      <section id="deck" class="section active">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">Seraphim Command Deck</div>
+            <h1>Mission Control</h1>
+            <p class="lead">
+              Unified operations dashboard for all Seraphim intelligence modules. Live status, module health,
+              quick launch, and attention queue are represented here for preview without Node or pnpm.
+            </p>
+            <div class="chips">
+              <span class="chip"><strong>Mode</strong> Live Operations</span>
+              <span class="chip"><strong>Status</strong> All Systems Nominal</span>
+              <span class="chip"><strong>Operator</strong> loki</span>
+            </div>
+          </div>
+          <div class="hero-stack">
+            <div class="mini">
+              <h3>System Health</h3>
+              <div class="health">94%</div>
+              <p class="lead">Based on module availability, sentinel checks, and app route coverage.</p>
+            </div>
+            <div class="mini">
+              <h3>Operator Briefing</h3>
+              <p class="lead">News is promoted to the top bar. Every sidebar/deck link now points to a route.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="panel"><div class="eyebrow">Active Modules</div><div class="kpi-value">17</div><p class="lead">All routed</p></div>
+          <div class="panel"><div class="eyebrow">Top Tabs</div><div class="kpi-value">4</div><p class="lead">Home, Deck, News, Dashboard</p></div>
+          <div class="panel"><div class="eyebrow">Argus Routes</div><div class="kpi-value">23</div><p class="lead">FastAPI endpoints</p></div>
+          <div class="panel"><div class="eyebrow">EI-RAM Tests</div><div class="kpi-value">2/2</div><p class="lead">Passing</p></div>
+        </div>
+
+        <div class="layout">
+          <aside class="panel">
+            <div class="row" style="justify-content: space-between; margin-bottom: 14px">
+              <h2>Quick Launch</h2>
+              <span class="eyebrow">Jump</span>
+            </div>
+            <div class="quick-list" id="quickLaunch"></div>
+          </aside>
+          <section class="panel">
+            <div class="row" style="justify-content: space-between; margin-bottom: 14px">
+              <h2>Live Module Status</h2>
+              <span class="eyebrow">All Routes Covered</span>
+            </div>
+            <div class="module-grid" id="moduleGrid"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="news" class="section">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">News Intel</div>
+            <h1>Top-Level News Desk</h1>
+            <p class="lead">
+              The News module now sits beside the Command Deck and Dashboard in the top navigation,
+              with its own active state instead of being grouped under Dashboard.
+            </p>
+          </div>
+          <div class="mini">
+            <h3>Preview Feed</h3>
+            <p class="lead">Live article generation still depends on the Seraphim backend and LLM configuration.</p>
+          </div>
+        </div>
+        <div class="news-grid">
+          <section class="panel">
+            <table class="table">
+              <thead><tr><th>Source</th><th>Headline</th><th>Category</th></tr></thead>
+              <tbody>
+                <tr><td>Defense Wire</td><td>Analysts review local network telemetry trends</td><td><span class="pill">Security</span></td></tr>
+                <tr><td>Tech Ledger</td><td>Browser dashboards continue moving admin workflows local-first</td><td><span class="pill">Technology</span></td></tr>
+                <tr><td>Ops Brief</td><td>Command centers emphasize route coverage and status clarity</td><td><span class="pill">Operations</span></td></tr>
+              </tbody>
+            </table>
+          </section>
+          <aside class="panel">
+            <h2>Controls</h2>
+            <div class="stats-list" style="margin-top: 14px">
+              <span class="chip"><strong>Category</strong> General</span>
+              <span class="chip"><strong>Query</strong> Optional</span>
+              <span class="chip"><strong>Export</strong> Future</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="dashboard" class="section">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">Dashboard</div>
+            <h1>Seraphim Modules</h1>
+            <p class="lead">
+              This tab represents the routed dashboard area: Chat, Network Defense, Code, Engineering,
+              Analysis, Memory, Plugins, Audit, Discover, Weather, Flights, Instagram, Sentinel, Net Intel, and Argus Vigil.
+            </p>
+          </div>
+          <div class="mini">
+            <h3>No Dead Ends</h3>
+            <p class="lead">The orphan Component Showcase breadcrumb now has a `/components` route.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="argus" class="section">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">Argus Vigil</div>
+            <h1>Browser Dashboard + Local Backend</h1>
+            <p class="lead">
+              Argus now checks the local backend, loads interfaces from `/interfaces`, and uploads PCAP files to `/pcap/upload`
+              when the backend is online.
+            </p>
+          </div>
+          <div class="mini">
+            <h3>Local Backend</h3>
+            <p class="lead"><code>python -m uvicorn app.main:app --host 127.0.0.1 --port 8765</code></p>
+          </div>
+        </div>
+        <div class="argus-grid">
+          <section class="panel">
+            <table class="table">
+              <thead><tr><th>No.</th><th>Source</th><th>Destination</th><th>Protocol</th><th>Info</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>192.168.1.20</td><td>8.8.8.8</td><td><span class="pill">DNS</span></td><td>Standard query A example.com</td></tr>
+                <tr><td>2</td><td>192.168.1.20</td><td>93.184.216.34</td><td><span class="pill">TCP</span></td><td>443 SYN</td></tr>
+                <tr><td>3</td><td>93.184.216.34</td><td>192.168.1.20</td><td><span class="pill">TLS</span></td><td>Metadata only, no decryption</td></tr>
+              </tbody>
+            </table>
+          </section>
+          <aside class="panel">
+            <h2>Defensive Findings</h2>
+            <div class="findings" style="margin-top: 14px">
+              <span class="chip"><strong>High</strong> Cleartext HTTP traffic</span>
+              <span class="chip"><strong>Medium</strong> Repeated DNS volume</span>
+              <span class="chip"><strong>Low</strong> Long-lived TLS connection</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <div class="preview-note">
+        This is a Python-served static preview created because Node/pnpm are not available on PATH in this shell.
+        It mirrors the current navigation and module layout but does not replace the real React app.
+      </div>
+    </main>
+
+    <script>
+      const modules = [
+        ["AI Copilot", "Chat reasoning engine", "12 modes active", "🧠"],
+        ["Network Defense", "Threat monitoring", "0 threats detected", "🛡"],
+        ["Argus Vigil", "Packet analysis dashboard", "Local backend optional", "👁"],
+        ["Code Engine", "Multi-language assistant", "Ready", "⌘"],
+        ["Engineering", "Technical calculators", "Ready", "🛠"],
+        ["EiRAM Analysis", "Narrative intelligence", "6 modules loaded", "◈"],
+        ["Web Discovery", "Interest exploration", "Awaiting query", "🌐"],
+        ["News Intel", "Top-level news desk", "Feed active", "📰"],
+        ["Weather Radar", "Forecasts and conditions", "Connected", "☁"],
+        ["Flight Monitor", "Live flight tracking", "Tracking", "✈"],
+        ["System Sentinel", "Local integrity console", "28 checks pending", "▣"],
+        ["Net Intel", "Labs and commands", "Library loaded", "⌁"],
+        ["Memory Bank", "Persistent knowledge", "Initialized", "◆"],
+        ["Plugin System", "Self-improvement", "Active", "⚡"],
+        ["Instagram Intel", "Social analysis", "Ready", "◎"],
+        ["Audit Log", "Activity trail", "Recording", "▤"],
+        ["Settings", "Operator preferences", "Configurable", "⚙"]
+      ];
+
+      const quick = [
+        ["AI Copilot", "Start a conversation", "🧠"],
+        ["News Intel", "Open the news desk", "📰"],
+        ["Argus Vigil", "Packet dashboard", "👁"],
+        ["EiRAM Analysis", "Deep narrative analysis", "◈"],
+        ["System Sentinel", "Run integrity checks", "▣"],
+        ["Net Intel", "Labs and references", "⌁"],
+        ["Flight Monitor", "Track live flights", "✈"],
+        ["Network Defense", "Threat monitoring", "🛡"]
+      ];
+
+      document.getElementById("moduleGrid").innerHTML = modules
+        .map(([title, desc, signal, icon]) => `
+          <button class="module-card">
+            <div class="icon">${icon}</div>
+            <div class="module-title">${title}</div>
+            <div class="module-desc">${desc}</div>
+            <div class="signal">${signal}</div>
+          </button>
+        `)
+        .join("");
+
+      document.getElementById("quickLaunch").innerHTML = quick
+        .map(([title, desc, icon]) => `
+          <button class="quick-button">
+            <div class="icon">${icon}</div>
+            <div><strong>${title}</strong><div class="module-desc">${desc}</div></div>
+            <span>›</span>
+          </button>
+        `)
+        .join("");
+
+      document.querySelectorAll(".tab").forEach(tab => {
+        tab.addEventListener("click", () => {
+          document.querySelectorAll(".tab").forEach(item => item.classList.remove("active"));
+          document.querySelectorAll(".section").forEach(item => item.classList.remove("active"));
+          tab.classList.add("active");
+          document.getElementById(tab.dataset.target).classList.add("active");
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "name": "seraphim-desktop-companion",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Seraphim Desktop Companion MVP — mock-only local cockpit",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "check": "tsc --noEmit --pretty false",
+    "test": "vitest run --config ../vitest.config.ts seraphim_desktop_companion"
+  },
+  "dependencies": {
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.1",
+    "@types/react-dom": "^19.2.1",
+    "@vitejs/plugin-react": "^5.0.4",
+    "typescript": "5.9.3",
+    "vite": "^7.1.7"
+  }
+}

@@ -1,0 +1,155 @@
+.root {
+    -fx-background-color: #0a0e1a;
+    -fx-text-fill: #e0e0e0;
+}
+
+.title-bar {
+    -fx-background-color: #0f1626;
+    -fx-alignment: center-left;
+}
+
+.title-text {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #4a9eff;
+}
+
+.tab-pane {
+    -fx-background-color: #0a0e1a;
+}
+
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: #0f1626;
+}
+
+.tab-pane .tab {
+    -fx-background-color: #1a1f2e;
+    -fx-text-fill: #b0b0b0;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #1e2a3a;
+    -fx-text-fill: #4a9eff;
+}
+
+.progress-bar {
+    -fx-background-color: #1a1f2e;
+}
+
+.progress-bar .bar {
+    -fx-background-color: #4a9eff;
+}
+
+.text-area {
+    -fx-background-color: #0f1626;
+    -fx-text-fill: #e0e0e0;
+    -fx-control-inner-background: #0f1626;
+}
+
+.text-area .content {
+    -fx-background-color: #0f1626;
+}
+
+/* Operation Card Styles */
+.operation-card {
+    -fx-background-color: #1a1f2e;
+    -fx-background-radius: 5;
+    -fx-border-color: #2a2f3e;
+    -fx-border-radius: 5;
+    -fx-border-width: 1;
+    -fx-padding: 10;
+    -fx-spacing: 5;
+}
+
+.operation-name {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e0e0e0;
+}
+
+.operation-status {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.operation-details {
+    -fx-font-size: 11px;
+    -fx-text-fill: #b0b0b0;
+    -fx-padding: 5 0 0 20;
+}
+
+/* Button Styles */
+.run-button {
+    -fx-background-color: #4a9eff;
+    -fx-text-fill: #0a0e1a;
+    -fx-font-weight: bold;
+    -fx-padding: 8 15;
+    -fx-background-radius: 4;
+}
+
+.run-button:hover {
+    -fx-background-color: #5aaeff;
+}
+
+.run-button:pressed {
+    -fx-background-color: #3a8eef;
+}
+
+.card-run-button {
+    -fx-background-color: #2a3f5a;
+    -fx-text-fill: #e0e0e0;
+    -fx-font-size: 11px;
+    -fx-padding: 4 10;
+    -fx-background-radius: 3;
+    -fx-min-width: 50;
+}
+
+.card-run-button:hover {
+    -fx-background-color: #3a4f6a;
+}
+
+.card-run-button:pressed {
+    -fx-background-color: #1a2f4a;
+}
+
+.card-run-button:disabled {
+    -fx-background-color: #1a1f2e;
+    -fx-text-fill: #606060;
+}
+
+/* Menu Bar Styles */
+.menu-bar {
+    -fx-background-color: #0f1626;
+}
+
+.menu {
+    -fx-text-fill: #e0e0e0;
+}
+
+.menu:hover {
+    -fx-background-color: #1a1f2e;
+}
+
+.menu-item {
+    -fx-background-color: #0f1626;
+    -fx-text-fill: #e0e0e0;
+}
+
+.menu-item:hover {
+    -fx-background-color: #1a1f2e;
+}
+
+/* ScrollPane Styles */
+.scroll-pane {
+    -fx-background-color: #0a0e1a;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: #0a0e1a;
+}
+
+/* Icon Styles */
+.image-view {
+    -fx-effect: dropshadow(gaussian, rgba(74, 158, 255, 0.3), 5, 0.5, 0, 0);
+}
+
