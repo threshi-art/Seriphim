@@ -16,11 +16,11 @@ research dumps are excluded.
 | Seraphim Command Center | **Active build** | React client, Express/tRPC services, shared contracts, database schema, and program documentation |
 | Desktop companion and local bridge | **Prototype / integration work** | React cockpit, C# WebView2 host, and bounded FastAPI bridge source |
 | Argus Vigil | **Early defensive MVP** | Architecture, API/database design, backend shell, and dashboard route plan |
-| EI-RAM Analysis Studio | **Starter scaffold** | Product thesis, MVP scope, directory structure, and references to an external local engine not imported here |
+| EI-RAM Analysis Studio | **Phase-1 prototype** | Imported rule-based FastAPI engine, desktop shell, tests, safe sample input, product thesis, and local-first MVP scaffold |
 | Remaining app portfolio | **Placeholders** | Mission statements and proposed architecture only; not implemented products |
 
 The repository does not claim a public production deployment, autonomous AGI,
-or completed satellite applications.
+validated predictive accuracy, or completed satellite applications.
 
 ## Strongest showpieces
 

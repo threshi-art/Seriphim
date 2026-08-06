@@ -8,7 +8,8 @@ The goal is to turn the existing EI-RAM analysis engine into a focused local-fir
 
 | Folder | Purpose |
 |---|---|
-| `app/backend` | Future API service, engine adapter, storage layer, and report endpoints |
+| `engine-api` | Curated Phase-1 rule-based FastAPI engine, desktop shell, and tests |
+| `app/backend` | Future workbench API adapter, storage layer, and report endpoints |
 | `app/frontend` | Future analyst UI |
 | `app/shared` | Shared types, schemas, prompts, and report templates |
 | `data/samples` | Safe sample inputs for demos and tests |
@@ -16,13 +17,15 @@ The goal is to turn the existing EI-RAM analysis engine into a focused local-fir
 | `research` | EI-RAM source notes and references |
 | `tests` | Future unit, API, and workflow tests |
 
-## Starting Assumption
+## Imported engine baseline
 
-The first build should reuse the existing FastAPI EI-RAM engine from:
+The existing FastAPI EI-RAM engine is now curated into `engine-api/`. Generated
+builds, logs, caches, backups, and private research material were excluded. See
+`engine-api/PROVENANCE.md` for the extraction boundary.
 
-`C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT\AGI Training\EI-RAM\eiram API`
-
-That keeps the initial project grounded in working code instead of inventing a second engine.
+The imported engine provides an implementation baseline instead of requiring a
+second engine to be invented. Its scores remain rule-based prototype outputs,
+not validated psychological, ideological, legal, or security determinations.
 
 ## First Milestone
 
