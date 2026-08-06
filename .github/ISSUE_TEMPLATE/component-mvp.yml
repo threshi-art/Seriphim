@@ -1,0 +1,29 @@
+name: Component MVP
+description: Track an implemented milestone without presenting a scaffold as complete.
+title: "[MVP] "
+labels:
+  - enhancement
+body:
+  - type: input
+    id: component
+    attributes:
+      label: Component
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current implemented state
+      description: List only behavior supported by source or evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: MVP acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Explicit non-goals and safety boundaries

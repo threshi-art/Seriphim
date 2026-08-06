@@ -1,17 +1,26 @@
 # Seriphim
 
-Christopher Richardson — personal AI platform and related app concepts.
+Private curated source for the Seraphim AI platform and related application
+concepts. The repository name is `Seriphim`; product documentation inside the
+source primarily uses `Seraphim`. That naming inconsistency is preserved until
+it is resolved intentionally.
 
-Curated source from the local SeraphimGPT workspace. Dependency folders, build
-outputs, archives, and personal research dumps are excluded.
+This repository is a portfolio snapshot, not a reconstruction of the original
+development timeline. Dependency folders, build outputs, archives, and personal
+research dumps are excluded.
 
-## Layout
+## Evidence-based status
 
-| Path | What it is |
-|------|------------|
-| `seraphim-platform/` | Main Seraphim web/desktop platform (React client, Express/tRPC server, local bridge, docs) |
-| `app-portfolio/` | Planning scaffolds for satellite apps (EI-RAM, SystemSentinel, OSINT, etc.) |
-| `HANDOFF_SETUP.md` | Local runbook (paths updated for this machine’s Programs folder) |
+| Area | Status | What exists today |
+|---|---|---|
+| Seraphim Command Center | **Active build** | React client, Express/tRPC services, shared contracts, database schema, and program documentation |
+| Desktop companion and local bridge | **Prototype / integration work** | React cockpit, C# WebView2 host, and bounded FastAPI bridge source |
+| Argus Vigil | **Early defensive MVP** | Architecture, API/database design, backend shell, and dashboard route plan |
+| EI-RAM Analysis Studio | **Starter scaffold** | Product thesis, MVP scope, directory structure, and references to an external local engine not imported here |
+| Remaining app portfolio | **Placeholders** | Mission statements and proposed architecture only; not implemented products |
+
+The repository does not claim a public production deployment, autonomous AGI,
+or completed satellite applications.
 
 ## Strongest showpieces
 
@@ -31,7 +40,14 @@ outputs, archives, and personal research dumps are excluded.
 
 - Repo is **private**.
 - Product baseline lives in `seraphim-platform/SERAPHIM_WHITE_PAPER.md`.
-- Local working tree: `C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT`
+- The current two-commit history records repository initialization and a curated
+  source import; it is not the underlying project's original history.
+- Machine-specific paths in handoff documents are local references, not portable
+  setup instructions.
+- Public release requires a focused extraction and review of credentials,
+  local data, research sources, third-party assets, and reproducible setup.
+
+See [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md) for validation gates.
 
 ## Quick start (platform)
 

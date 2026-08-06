@@ -1,0 +1,28 @@
+name: Platform verification
+description: Track a reproducible build, test, integration, or safety-boundary check.
+title: "[Verify] "
+labels:
+  - verification
+body:
+  - type: input
+    id: component
+    attributes:
+      label: Component
+    validations:
+      required: true
+  - type: textarea
+    id: claim
+    attributes:
+      label: Claim or boundary being verified
+    validations:
+      required: true
+  - type: textarea
+    id: method
+    attributes:
+      label: Reproduction method
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence, result, and limitations
