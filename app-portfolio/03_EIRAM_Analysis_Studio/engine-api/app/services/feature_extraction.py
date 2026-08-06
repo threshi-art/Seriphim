@@ -176,4 +176,3 @@ def extract_features(text: str) -> Dict[str, Any]:
         "token_count": total_tokens,
         "evidence_candidates": evidence_candidates[:5],
     }
-

@@ -27,4 +27,3 @@ def analyze(features: Dict[str, float]) -> Dict[str, Union[str, float]]:
             "(phase-1 contradiction/deception proxy; requires multi-statement comparison in later phases)."
         ),
     }
-

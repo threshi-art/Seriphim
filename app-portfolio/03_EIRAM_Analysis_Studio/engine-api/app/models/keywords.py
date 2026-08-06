@@ -192,4 +192,3 @@ ESCALATION_PHRASES: FrozenSet[str] = frozenset(
         "do what must be done",
     }
 )
-

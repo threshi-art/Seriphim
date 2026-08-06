@@ -15,4 +15,3 @@ def test_run_eiram_returns_valid_response() -> None:
     assert "ecs" in result.module_scores
     assert 0.0 <= result.risk_vector["overall_risk"] <= 1.0
     assert isinstance(result.evidence, list)
-

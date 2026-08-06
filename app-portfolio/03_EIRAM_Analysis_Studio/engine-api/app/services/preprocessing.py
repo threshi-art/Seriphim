@@ -9,4 +9,3 @@ def preprocess_text(text: str) -> str:
     """Normalize raw input text for downstream feature extraction."""
     normalized = normalize_whitespace(text)
     return normalized
-

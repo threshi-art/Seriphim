@@ -10,4 +10,3 @@ router = APIRouter()
 def analyze(payload: AnalyzeRequest) -> AnalyzeResponse:
     """Analyze provided text and return EiRAM dashboard JSON."""
     return run_eiram(payload)
-

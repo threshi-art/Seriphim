@@ -30,4 +30,3 @@ def analyze(features: Dict[str, float]) -> Dict[str, Union[str, float]]:
             f"narrative_entropy={features['narrative_entropy_score']} (phase-1 temporal drift proxy)."
         ),
     }
-

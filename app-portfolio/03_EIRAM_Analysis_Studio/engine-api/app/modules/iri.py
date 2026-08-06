@@ -41,4 +41,3 @@ def analyze(features: Dict[str, float]) -> Dict[str, Union[str, float]]:
         "label": label,
         "rationale": rationale,
     }
-

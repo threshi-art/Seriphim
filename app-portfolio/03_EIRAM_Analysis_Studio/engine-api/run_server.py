@@ -73,4 +73,3 @@ if __name__ == "__main__":
     # double-click. Opening /docs makes it obvious the server started.
     is_frozen = getattr(sys, "frozen", False)
     main(open_browser=is_frozen)
-

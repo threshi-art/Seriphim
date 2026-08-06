@@ -24,4 +24,3 @@ def min_max_scale(value: float, *, min_value: float = 0.0, max_value: float = 1.
     if value > max_value:
         return max_value
     return value
-

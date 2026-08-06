@@ -48,4 +48,3 @@ def run_eiram(payload: AnalyzeRequest) -> AnalyzeResponse:
         evidence=result["evidence"],
         forecast=result["forecast"],
     )
-

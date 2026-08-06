@@ -93,4 +93,3 @@ def aggregate_results(
         "evidence": evidence,
         "forecast": forecast,
     }
-
