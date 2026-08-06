@@ -17,8 +17,10 @@ development history of the underlying platform.
   bridge.
 - Argus Vigil is bounded to authorized defensive analysis in its documentation
   and currently presents an early MVP structure rather than a finished product.
-- EI-RAM Analysis Studio is explicitly a starter scaffold. Its README references
-  an external local engine that is not included here.
+- EI-RAM Analysis Studio now includes a curated Phase-1 engine import under
+  `app-portfolio/03_EIRAM_Analysis_Studio/engine-api/`. It is a deterministic,
+  rule-based prototype with a FastAPI surface, desktop shell, and tests; it is
+  not a validated predictive model.
 - Most other satellite applications are placeholders.
 
 ## Validation still required
@@ -29,7 +31,9 @@ development history of the underlying platform.
    machine-local state.
 3. Validate the Windows desktop build and packaged entry point.
 4. Exercise the local bridge's permission boundaries and negative cases.
-5. Define a focused public showcase that excludes private research and imported
+5. Validate EI-RAM terminology, scoring limitations, public-handle research
+   boundaries, and desktop behavior before considering any public extraction.
+6. Define a focused public showcase that excludes private research and imported
    artifacts.
 
 ## Public-release rule
