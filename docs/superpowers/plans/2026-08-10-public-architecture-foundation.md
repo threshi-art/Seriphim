@@ -30,7 +30,7 @@
 - Consumes: capability identifiers and routing roles defined by the design specification.
 - Produces: `capability-manifest.json` entries with `id`, `name`, `category`, `status`, `owner_role`, and `public_package`; routing cases referencing those identifiers through `expected.primary`, `expected.supporting`, and `expected.dormant`.
 
-- [ ] **Step 1: Write the failing manifest validation test**
+- [x] **Step 1: Write the failing manifest validation test**
 
 ```python
 def test_capability_manifest_is_internally_consistent():
@@ -40,17 +40,17 @@ def test_capability_manifest_is_internally_consistent():
     assert set(item["status"] for item in manifest["capabilities"]) <= ALLOWED_STATUSES
 ```
 
-- [ ] **Step 2: Run the test to verify RED**
+- [x] **Step 2: Run the test to verify RED**
 
 Run: `python -m unittest tests.architecture.test_public_architecture -v`
 
 Expected: failure because `skills/capability-manifest.json` does not exist.
 
-- [ ] **Step 3: Add the capability and routing manifests**
+- [x] **Step 3: Add the capability and routing manifests**
 
 Create the JSON files with canonical capability identifiers and synthetic cases for context continuity, focus-over-modality, correction override, evidence-state preservation, prompt-injection quarantine, false-activation restraint, handoff fidelity, and blocked actions.
 
-- [ ] **Step 4: Run the test to verify GREEN**
+- [x] **Step 4: Run the test to verify GREEN**
 
 Run: `python -m unittest tests.architecture.test_public_architecture -v`
 
@@ -72,7 +72,7 @@ Expected: all architecture manifest tests pass.
 - Consumes: identifiers from `skills/capability-manifest.json`.
 - Produces: human-readable ownership, routing, handoff, evidence-state, safety, and source-handling contracts.
 
-- [ ] **Step 1: Extend the test with required-document assertions**
+- [x] **Step 1: Extend the test with required-document assertions**
 
 ```python
 def test_required_public_architecture_documents_exist():
@@ -80,17 +80,17 @@ def test_required_public_architecture_documents_exist():
         assert (ROOT / relative_path).is_file(), relative_path
 ```
 
-- [ ] **Step 2: Run the test to verify RED**
+- [x] **Step 2: Run the test to verify RED**
 
 Run: `python -m unittest tests.architecture.test_public_architecture -v`
 
 Expected: failure listing the first missing canonical document.
 
-- [ ] **Step 3: Write the canonical documents**
+- [x] **Step 3: Write the canonical documents**
 
 Define the routing chain, role assignment, correction behavior, handoff schema, evidence states, inference limits, package-status vocabulary, public-source rights review, and explicit exclusions.
 
-- [ ] **Step 4: Run the test to verify GREEN**
+- [x] **Step 4: Run the test to verify GREEN**
 
 Run: `python -m unittest tests.architecture.test_public_architecture -v`
 
@@ -110,7 +110,7 @@ Expected: all document and manifest tests pass.
 - Consumes: public boundaries and maturity vocabulary from Task 2.
 - Produces: an accurate public landing page, MIT license text matching `seraphim-platform/package.json`, security-reporting guidance, and contribution rules.
 
-- [ ] **Step 1: Extend the test with governance and visibility assertions**
+- [x] **Step 1: Extend the test with governance and visibility assertions**
 
 ```python
 def test_root_status_matches_public_repository():
@@ -119,17 +119,17 @@ def test_root_status_matches_public_repository():
     assert "Repo is **private**" not in readme
 ```
 
-- [ ] **Step 2: Run the test to verify RED**
+- [x] **Step 2: Run the test to verify RED**
 
 Run: `python -m unittest tests.architecture.test_public_architecture -v`
 
 Expected: failure because the README still says the repository is private.
 
-- [ ] **Step 3: Add governance files and correct repository status**
+- [x] **Step 3: Add governance files and correct repository status**
 
 Retain the `Seriphim` repository-name versus `Seraphim` product-name note, state that the repository is public, document the bounded portfolio purpose, and list material that remains intentionally excluded.
 
-- [ ] **Step 4: Run the test to verify GREEN**
+- [x] **Step 4: Run the test to verify GREEN**
 
 Run: `python -m unittest tests.architecture.test_public_architecture -v`
 
@@ -162,7 +162,7 @@ Expected: both JSON files parse and Git reports no whitespace errors.
 
 Run: `git status -sb` and `git diff --stat main...HEAD`.
 
-Run: `git grep -n -E "C:\\\\Users\\\\|@gmail\\.com|@outlook\\.com|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY" -- docs skills tests README.md PORTFOLIO_STATUS.md SECURITY.md CONTRIBUTING.md LICENSE`.
+Run: `git grep -n -E "C:\\\\Users\\\\|@gmail\\.com|@outlook\\.com|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY" -- docs/architecture docs/doctrine docs/provenance docs/safety skills tests README.md PORTFOLIO_STATUS.md SECURITY.md CONTRIBUTING.md LICENSE NOTICE.md`.
 
 Expected: only approved foundation files are changed and the privacy scan returns no matches.
 
@@ -177,4 +177,3 @@ git push -u origin agent/public-architecture-foundation
 - [ ] **Step 5: Open a draft pull request**
 
 Target `threshi-art/Seriphim`, base `main`, head `agent/public-architecture-foundation`. The pull request description must state the scope, public-release rationale, validation evidence, pre-existing Node lockfile issue, and explicitly deferred runtime cleanup.
-
