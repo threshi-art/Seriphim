@@ -180,7 +180,7 @@ The chat system supports 12 operating modes, each with a distinct system prompt 
 - **Export:** Markdown transcript export formatted as an intelligence report
 - **Conversation management:** Create, delete, switch between conversations
 
-**Key files:** `client/src/pages/ChatPage.tsx`, `shared/modes.ts`, `server/routers.ts` (chat router)
+**Key files:** `client/src/pages/dashboard/ChatPage.tsx`, `shared/modes.ts`, `server/routers.ts` (chat router)
 
 #### 5.2.2 EiRAM Analysis Engine
 
@@ -195,7 +195,7 @@ EiRAM (Enigma Inspired Resonance and Analysis Model) is a dual-layer analysis sy
 
 **Layer 2 — LLM Deep Analysis** (`analysis.deepAnalyze`): Feeds lexicon scores into a full LLM pipeline that produces a structured dashboard output with all five modules expanded.
 
-**Key files:** `server/eiram.ts`, `server/routers.ts` (analysis router), `client/src/pages/AnalysisPage.tsx`
+**Key files:** `server/eiram.ts`, `server/routers.ts` (analysis router), `client/src/pages/dashboard/AnalysisPage.tsx`
 
 #### 5.2.3 Argus Terra (Geospatial Intelligence)
 
@@ -209,7 +209,7 @@ A multi-layer geospatial intelligence module with 14 dedicated components. Featu
 - **Report export:** Structured markdown reports with findings, confidence levels, and limitations disclaimer
 - **Location search:** Preset city lookup (Seattle, London, Austin, Tokyo)
 
-**Key files:** `client/src/pages/ArgusTerraPage.tsx`, `client/src/components/terra/*` (14 components), `shared/terra.ts`, `server/routers.ts` (terra router)
+**Key files:** `client/src/pages/dashboard/ArgusTerraPage.tsx`, `client/src/components/terra/*` (14 components), `shared/terra.ts`, `server/routers.ts` (terra router)
 
 #### 5.2.4 Argus Vigil (Network Packet Analysis)
 
@@ -224,7 +224,7 @@ A **local-only** module that requires a companion Python backend running on `loc
 
 **Critical constraint:** This module does NOT use tRPC. It communicates directly with `http://127.0.0.1:8765` via fetch. The companion backend must be started separately with `uvicorn`. When the backend is offline, the UI shows a clear offline warning with startup instructions.
 
-**Key files:** `client/src/pages/ArgusVigilPage.tsx`
+**Key files:** `client/src/pages/dashboard/ArgusVigilPage.tsx`
 
 #### 5.2.5 Network Intelligence (CMIT 265)
 
@@ -241,7 +241,7 @@ An educational and operational network engineering toolkit with 8 sub-tabs:
 | Network Design | LLM-powered | Full network design document generator |
 | Documentation | LLM-powered | IP tables, VLAN tables, firewall rules, topology notes |
 
-**Key files:** `client/src/pages/NetworkIntelPage.tsx`, `shared/network-ports.ts`, `shared/network-commands.ts`, `shared/network-labs.ts`
+**Key files:** `client/src/pages/dashboard/NetworkIntelPage.tsx`, `shared/network-ports.ts`, `shared/network-commands.ts`, `shared/network-labs.ts`
 
 #### 5.2.6 SystemSentinel
 
@@ -257,7 +257,7 @@ A Windows system health monitoring module with 29 PowerShell checks organized in
 
 Check results are persisted in the database. The catalog is defined server-side in `SENTINEL_CATALOG` within `server/routers.ts`. The current implementation simulates execution client-side; live PowerShell execution on the operator's desktop is deferred scope.
 
-**Key files:** `client/src/pages/SentinelPage.tsx`, `server/routers.ts` (sentinel router)
+**Key files:** `client/src/pages/dashboard/SentinelPage.tsx`, `server/routers.ts` (sentinel router)
 
 #### 5.2.7 Command Deck
 

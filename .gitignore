@@ -51,3 +51,6 @@ credentials*
 *.wav
 
 .seraphim-agent/
+
+# Generated desktop documentation bundle
+seraphim-platform/desktop/SeraphimDesktopCompanion/wwwroot/repo-docs/
