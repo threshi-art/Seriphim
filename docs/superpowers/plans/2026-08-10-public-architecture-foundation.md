@@ -144,13 +144,13 @@ Expected: all governance, document, and manifest tests pass.
 - Consumes: the complete branch diff.
 - Produces: verified commits, a pushed branch, and a draft pull request against `main`.
 
-- [ ] **Step 1: Run focused verification**
+- [x] **Step 1: Run focused verification**
 
 Run: `python -m unittest tests.architecture.test_public_architecture -v`
 
 Expected: all tests pass with zero failures.
 
-- [ ] **Step 2: Run repository hygiene checks**
+- [x] **Step 2: Run repository hygiene checks**
 
 Run: `python -m json.tool skills/capability-manifest.json` and `python -m json.tool tests/skill-routing/cases.json`.
 
@@ -158,7 +158,7 @@ Run: `git diff --check`.
 
 Expected: both JSON files parse and Git reports no whitespace errors.
 
-- [ ] **Step 3: Review scope and privacy signals**
+- [x] **Step 3: Review scope and privacy signals**
 
 Run: `git status -sb` and `git diff --stat main...HEAD`.
 
@@ -166,7 +166,7 @@ Run: `git grep -n -E "C:\\\\Users\\\\|@gmail\\.com|@outlook\\.com|BEGIN (RSA|OPE
 
 Expected: only approved foundation files are changed and the privacy scan returns no matches.
 
-- [ ] **Step 4: Commit and push intentionally**
+- [x] **Step 4: Commit and push intentionally**
 
 ```text
 git add README.md PORTFOLIO_STATUS.md LICENSE SECURITY.md CONTRIBUTING.md docs skills tests
@@ -174,6 +174,6 @@ git commit -m "docs: add public architecture foundation"
 git push -u origin agent/public-architecture-foundation
 ```
 
-- [ ] **Step 5: Open a draft pull request**
+- [x] **Step 5: Open a draft pull request**
 
 Target `threshi-art/Seriphim`, base `main`, head `agent/public-architecture-foundation`. The pull request description must state the scope, public-release rationale, validation evidence, pre-existing Node lockfile issue, and explicitly deferred runtime cleanup.
