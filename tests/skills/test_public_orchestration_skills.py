@@ -12,5 +12,12 @@ class ContextSentinelTests(unittest.TestCase):
         package = ROOT / "skills" / "orchestration" / "context-sentinel"
         assert_valid_skill(self, package, "context-sentinel")
 
+
+class SemanticPriorityRouterTests(unittest.TestCase):
+    def test_package_is_portable_and_complete(self):
+        package = ROOT / "skills" / "orchestration" / "semantic-priority-router"
+        assert_valid_skill(self, package, "semantic-priority-router")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Semantic Priority Router"
+  short_description: "Separate user intent from carrier modality"
+  default_prompt: "Use $semantic-priority-router to identify the requested operation, primary object, and explicit emphasis."
