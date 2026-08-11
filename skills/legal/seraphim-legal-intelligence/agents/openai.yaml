@@ -1,0 +1,4 @@
+interface:
+  display_name: "Seraphim Legal Intelligence"
+  short_description: "Map legal issues and research limits"
+  default_prompt: "Use $seraphim-legal-intelligence to map this legal issue for a stated jurisdiction and date."
