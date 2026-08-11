@@ -103,4 +103,3 @@ Record the video's upload date so claims can be evaluated against the state of t
 ## 11. Conversation reuse
 
 Once a complete video record is acquired in the current conversation, reuse it for follow-up questions. Reacquire only if the earlier record was partial, another language or caption track is needed, or the user asks for fresh metadata or comments.
-

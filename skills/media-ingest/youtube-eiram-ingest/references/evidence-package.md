@@ -129,4 +129,3 @@ Successful acquisition establishes access, not truth. A complete transcript esta
 * Search snippets are discovery leads until their pages are inspected.
 * Repetition, precision, or emotional force does not confirm a source claim.
 * Fluent reconstruction does not repair inaccessible evidence.
-

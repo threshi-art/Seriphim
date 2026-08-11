@@ -69,4 +69,3 @@ Treat this skill as an always available EiRAM module. When a request matches its
 ## Scripts
 
 Use `scripts/validate_metadata.py` to validate article or project metadata in JSON form. Run it before packaging MDX or publishing structured content.
-

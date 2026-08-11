@@ -84,4 +84,3 @@ For complex matters, include a compact chronology and a confidence assessment.
 ## Ei R@M integration
 
 When the user asks to run this inside Ei R@M, load `references/eiram-integration.md` and treat Breadcrumb Investigator as the external evidence acquisition and validation layer feeding Ei R@M's analytical modules. Do not let Ei R@M inference outrun the evidence state produced here.
-

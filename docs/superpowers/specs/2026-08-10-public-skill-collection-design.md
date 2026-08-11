@@ -1,7 +1,7 @@
 # Public Seraphim/EiRAM Skill Collection Design
 
-**Date:** 2026-08-10  
-**Status:** Approved for planning  
+**Date:** 2026-08-10
+**Status:** Approved for planning
 **Repository:** `threshi-art/Seriphim`
 
 ## Purpose
@@ -194,4 +194,3 @@ and provenance notes. Pull requests will remain separate so reviewers can
 validate exact-source publication before accepting reconstructed packages.
 Merging one cohort does not automatically authorize lowering the publication
 gate for later cohorts.
-

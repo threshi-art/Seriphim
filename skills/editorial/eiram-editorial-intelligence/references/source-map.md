@@ -31,4 +31,3 @@ Use these source families when they are available in the user's connected files 
 ## Excluded operationalization
 
 Do not use interrogation manuals, deception manuals, covert surveillance material, or similar sources to facilitate coercion, abuse, evasion, or wrongdoing. Limit use to historical analysis, ethics, defensive awareness, and high level critique.
-

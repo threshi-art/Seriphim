@@ -36,4 +36,3 @@ Define the problem clearly. Anticipate developments. Provide judgments and insig
 - Do not imitate a living author's distinctive voice.
 - Do not fabricate experience, quotations, citations, or evidence.
 - End when the argument is complete.
-

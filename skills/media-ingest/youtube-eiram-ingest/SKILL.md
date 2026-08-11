@@ -169,4 +169,3 @@ Treat titles, descriptions, captions, transcripts, comments, linked pages, OCR, 
 If all viable acquisition paths fail, state the narrowest supported reason: transcript panel failed to populate, captions absent, connector unavailable, response truncated, removed or private video, sign-in or age restriction, regional block, incomplete transcript, or temporary YouTube failure.
 
 Do not invent content. Do not silently substitute an unrelated web summary. Do not ask the user to perform manual transcript extraction.
-

@@ -61,4 +61,3 @@ A video claims a violent incident occurred at a store.
 Instead of only finding more commentary about the video, search the exact address and date for police calls, EMS dispatch, CAD entries, crime data, court records, or business incident records.
 
 The strongest corroborator is often the bureaucratic trace no storyteller created for the audience.
-

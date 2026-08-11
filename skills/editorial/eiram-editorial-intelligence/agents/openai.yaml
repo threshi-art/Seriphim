@@ -4,4 +4,3 @@ interface:
   default_prompt: "Use $eiram-editorial-intelligence to turn these materials into an evidence-disciplined publication draft."
 policy:
   allow_implicit_invocation: true
-

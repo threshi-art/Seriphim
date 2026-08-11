@@ -80,4 +80,3 @@ Then provide the integrated Ei R@M synthesis, forecast vectors, vulnerabilities,
 ## Guardrail
 
 Do not let psychological, ideological, legal, Bayesian, game theoretic, or forecasting modules outrun the evidence state. When the evidence layer says unresolved, downstream modules may assign probabilities but must preserve the unresolved status.
-

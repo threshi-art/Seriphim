@@ -84,4 +84,3 @@ If a code-capable backend or connected service already exists, prefer maintained
 ## 10. Session circuit breaker
 
 If an acquisition class fails twice in the same conversation for the same environmental reason, demote that class for the rest of the conversation and continue with the next viable route. Reconsider it in a new conversation. Do not convert a temporary failure into a permanent assumption.
-

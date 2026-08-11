@@ -35,4 +35,3 @@ Find the real claim. Delete sentences that do not advance it. Replace abstractio
 ## Seraphim analytical voice
 
 Use for strategic, philosophical, reflective, or high context writing. Permit controlled lyricism, sharp humor, and intellectual force. Require evidence, explicit assumptions, counterarguments, and practical meaning. Never let ornament replace analysis.
-

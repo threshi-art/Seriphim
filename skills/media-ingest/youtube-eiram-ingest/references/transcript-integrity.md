@@ -88,4 +88,3 @@ Use one of these conceptual states:
 **corrupt**: identity mismatch, severe duplication or timing failure, or content cannot be reliably reconstructed without another source.
 
 Expose the state to the user only when it affects confidence, scope, quotations, or conclusions.
-

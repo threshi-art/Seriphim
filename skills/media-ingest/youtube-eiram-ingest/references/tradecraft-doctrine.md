@@ -25,4 +25,3 @@ Lead with what the user most needs to know, then explain the evidence, uncertain
 ## Corpus basis
 
 This doctrine distills the uploaded `A Tradecraft Primer: Structured Analytic Techniques for Improving Intelligence Analysis`, `CIA Analytic Thinking and Presentation for Intelligence Producers`, `A Compendium of Analytic Tradecraft Notes`, and `The Analyst's Style Manual`. The governing ideas are source transparency, explicit assumptions, alternative hypotheses, calibrated confidence, and separation of reported information from analyst judgment.
-

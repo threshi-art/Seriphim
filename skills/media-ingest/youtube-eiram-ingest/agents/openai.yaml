@@ -4,4 +4,3 @@ interface:
   default_prompt: "Use $youtube-eiram-ingest to acquire and analyze the evidence available from this public YouTube video."
 policy:
   allow_implicit_invocation: true
-

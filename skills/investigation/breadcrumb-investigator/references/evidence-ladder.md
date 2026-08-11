@@ -32,4 +32,3 @@ Before saying a record is absent, verify:
 4. Name variants or aliases.
 5. Whether the offense can proceed without booking.
 6. Whether records may be sealed, delayed, offline, or available only by request.
-

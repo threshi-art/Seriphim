@@ -20,4 +20,3 @@ Before delivery, verify:
 16. The next action is concrete.
 
 Block publication when metadata is invalid, a source is missing for a load bearing claim, an internal link is broken, or the evidence status is unclear.
-

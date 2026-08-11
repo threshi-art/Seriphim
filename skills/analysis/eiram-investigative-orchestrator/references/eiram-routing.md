@@ -51,4 +51,3 @@ Use this sequence:
 Maintain conceptual traceability from source to claim to inference to forecast.
 
 When a factual premise changes, identify which downstream conclusions must be recalculated.
-
