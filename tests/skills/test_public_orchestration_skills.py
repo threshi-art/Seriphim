@@ -19,5 +19,11 @@ class SemanticPriorityRouterTests(unittest.TestCase):
         assert_valid_skill(self, package, "semantic-priority-router")
 
 
+class OperatorRoutingTests(unittest.TestCase):
+    def test_package_is_portable_and_complete(self):
+        package = ROOT / "skills" / "orchestration" / "seraphim-operator-routing"
+        assert_valid_skill(self, package, "seraphim-operator-routing")
+
+
 if __name__ == "__main__":
     unittest.main()
