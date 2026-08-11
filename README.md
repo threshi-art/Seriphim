@@ -6,10 +6,9 @@ source primarily uses `Seraphim`. That naming inconsistency is preserved until
 it is resolved intentionally.
 
 This repository is a portfolio snapshot, not a reconstruction of the original
-development timeline. New dependency folders, build outputs, archives, and
-personal research dumps are excluded by policy. Some generated desktop assets
-and legacy media remain tracked pending a dedicated provenance and cleanup
-review.
+development timeline. New dependency folders, build outputs, archives,
+personal research dumps, and media without a documented redistribution basis
+are excluded by policy.
 
 ## Evidence-based status
 
@@ -70,10 +69,9 @@ marked `specified` are design records, not installable packages.
 - Product baseline lives in `seraphim-platform/SERAPHIM_WHITE_PAPER.md`.
 - The early commit history records repository initialization and curated source
   imports; it is not the underlying project's original development history.
-- Machine-specific paths in handoff documents are local references, not portable
-  setup instructions.
-- Public-facing components still require focused review of credentials, local
-  data, research sources, third-party assets, and reproducible setup.
+- The current curated tree has passed a focused review of credentials, local
+  paths, research sources, third-party assets, and reproducible setup. See the
+  public exposure audit under `docs/security/` for scope and limitations.
 
 See [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md) for validation gates.
 

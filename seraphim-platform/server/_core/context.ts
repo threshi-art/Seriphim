@@ -2,6 +2,7 @@ import type { CreateExpressContextOptions } from "@trpc/server/adapters/express"
 import type { User } from "../../drizzle/schema";
 import { sdk } from "./sdk";
 import { getOrCreateAnonymousUser } from "../db";
+import { shouldAllowAnonymousFallback } from "./securityPolicy";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -21,8 +22,8 @@ export async function createContext(
     user = null;
   }
 
-  // If no authenticated user, provide an anonymous operator so all features work without login
-  if (!user) {
+  // Anonymous access is a local-development convenience and is never enabled in production.
+  if (!user && shouldAllowAnonymousFallback()) {
     try {
       user = await getOrCreateAnonymousUser();
     } catch (e) {

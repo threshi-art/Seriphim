@@ -141,8 +141,12 @@ export const appRouter = router({
       return conv;
     }),
     delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
-      await db.deleteConversation(input.id, ctx.user.id);
+      const deleted = await db.deleteConversation(input.id, ctx.user.id);
+      if (!deleted) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Conversation not found" });
+      }
       await db.addAuditLog(ctx.user.id, "Deleted conversation", "chat");
+      return { success: true };
     }),
     messages: protectedProcedure.input(z.object({ conversationId: z.number() })).query(async ({ ctx, input }) => {
       const conversation = await db.getConversationForUser(input.conversationId, ctx.user.id);

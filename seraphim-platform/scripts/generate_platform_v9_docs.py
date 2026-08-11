@@ -81,7 +81,7 @@ Powerful, but safe. Useful, but auditable. Local, but permissioned. Agentic, but
         """
 # White Paper Baseline Reference
 
-**Authoritative source:** `SERAPHIM_WHITE_PAPER.md` (and `SERAPHIM_WHITE_PAPER.pdf` if present) at repository root.
+**Authoritative source:** `SERAPHIM_WHITE_PAPER.md` at repository root.
 
 **Version referenced:** 8.0  
 **Program name evolution:** Seraphim Program → Seraphim Platform v9
