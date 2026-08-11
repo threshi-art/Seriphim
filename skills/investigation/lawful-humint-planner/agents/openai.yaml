@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lawful HUMINT Collection Planner"
+  short_description: "Plan lawful, consensual human-source collection"
+  default_prompt: "Use $lawful-humint-planner to design a bounded, lawful collection plan for this information need."
