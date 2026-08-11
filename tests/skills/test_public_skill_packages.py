@@ -1,4 +1,8 @@
+import json
 import re
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -84,6 +88,53 @@ class InvestigativeOrchestratorTests(unittest.TestCase):
     def test_package_is_portable_and_complete(self):
         package = ROOT / "skills" / "analysis" / "eiram-investigative-orchestrator"
         assert_valid_skill(self, package, "eiram-investigative-orchestrator")
+
+
+class EditorialIntelligenceTests(unittest.TestCase):
+    def setUp(self):
+        self.package = ROOT / "skills" / "editorial" / "eiram-editorial-intelligence"
+
+    def test_package_is_portable_and_complete(self):
+        assert_valid_skill(self, self.package, "eiram-editorial-intelligence")
+
+    def test_metadata_validator_accepts_valid_and_rejects_invalid_articles(self):
+        script = self.package / "scripts" / "validate_metadata.py"
+        self.assertTrue(script.is_file(), f"missing {script.relative_to(ROOT)}")
+        valid = {
+            "title": "Evidence before inference",
+            "summary": "A compact assessment of source quality.",
+            "slug": "evidence-before-inference",
+            "contentType": "intelligence-assessment",
+            "evidenceStatus": "mixed",
+            "date": "2026-08-10",
+            "tags": ["evidence", "analysis"],
+            "readingMinutes": 4,
+        }
+        invalid = {**valid, "slug": "Not A Slug", "readingMinutes": 0}
+
+        with tempfile.TemporaryDirectory() as directory:
+            valid_path = Path(directory) / "valid.json"
+            invalid_path = Path(directory) / "invalid.json"
+            valid_path.write_text(json.dumps(valid), encoding="utf-8")
+            invalid_path.write_text(json.dumps(invalid), encoding="utf-8")
+            valid_run = subprocess.run(
+                [sys.executable, str(script), str(valid_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            invalid_run = subprocess.run(
+                [sys.executable, str(script), str(invalid_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        self.assertEqual(0, valid_run.returncode, valid_run.stderr)
+        self.assertEqual("Metadata valid", valid_run.stdout.strip())
+        self.assertEqual(1, invalid_run.returncode)
+        self.assertIn("slug: use lowercase words", invalid_run.stdout)
+        self.assertIn("readingMinutes: use a positive integer", invalid_run.stdout)
 
 
 if __name__ == "__main__":

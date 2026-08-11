@@ -177,8 +177,10 @@ quality gates, output modes, and the metadata validation script.
 
 - [ ] **Step 4: Verify GREEN, run the bundled script, and validate the package**
 
-Run the targeted unittest, invoke `validate_metadata.py` on the bundled
-`article-metadata.json`, and run `quick_validate.py`. Expected: all exit 0.
+Run the targeted unittest, invoke `validate_metadata.py` on a filled temporary
+copy of the bundled `article-metadata.json` template, and run
+`quick_validate.py`. Expected: all exit 0. The unfilled template itself is
+expected to fail because its required authoring fields are intentionally blank.
 
 - [ ] **Step 5: Commit**
 
