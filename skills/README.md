@@ -34,3 +34,6 @@ skills/
 
 Personal writing style, memory, relationships, and private Agent configuration
 remain outside the public repository.
+
+See `recovery/RECOVERY_MANIFEST.md` for the ranked recovery queue and its
+publication requirements.
