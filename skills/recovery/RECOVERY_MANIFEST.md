@@ -8,20 +8,17 @@ exports for Breadcrumb Investigator, Ei R@M Investigative Orchestrator, EiRAM
 Editorial Intelligence, and YouTube Ei R@M Ingest. Their reviewed public
 packages and source digests are now recorded under `skills/`.
 
-The capability manifest remains authoritative. Only those four recovered and
-validated exports are `packaged`; all other public candidates remain
-`specified` until their own publication review is complete.
+The capability manifest remains authoritative. Four packages are authoritative
+exports and five orchestration packages are labeled reconstructed public
+editions. All other public candidates remain `specified` until their own
+publication review is complete.
 
 ## Remaining recovery and reconstruction candidates
 
 | Priority | Capability | Recover because | Required before publication |
 |---|---|---|---|
-| 1 | Context Sentinel | Preserves continuity and distinguishes known context from novel material | Original package, synthetic continuity tests, privacy audit |
-| 1 | Semantic Priority Router | Separates user intent and emphasis from carrier modality | Original package, deterministic routing fixtures, trigger-collision review |
-| 1 | Chief of Staff | Assigns primary, supporting, constraint, and editorial roles | Original package, handoff-contract tests, unavailable-tool checks |
+| 1 | Chief of Staff | Internal architecture role distinct from the public Operator Routing package | Complete standalone contract or retain as architecture-only |
 | 1 | Plato Constraint | Enforces observation/inference/speculation boundaries and blocks clinical overreach | Original package, adversarial safety tests, scope review |
-| 1 | Skill Ecosystem Governor | Replays routing decisions and detects regressions or collisions | Original package, immutable fixtures, audit-output schema |
-| 2 | Action Controller | Separates proposed, approved, attempted, verified, and blocked actions | Original package, tool-state simulation, approval tests |
 | 3 | Decision Laboratory | Provides structured, reversible decision support | Original package, assumption and uncertainty fixtures |
 | 3 | Legal Intelligence | Provides governed legal research and analysis structure | Original package, jurisdiction/source tests, legal disclaimer review |
 | 3 | Life Operations | Coordinates personal workflows across connected services | Original package, aggressive personal-data removal, permission tests |
@@ -53,6 +50,6 @@ must not silently become the owner of an analytical judgment.
 6. Publish in a dedicated pull request and only then mark the capability
    `packaged` and `public_package: true`.
 
-This record is deliberately a recovery map, not a reconstructed Skill. Rewriting
-from conversational summaries would erase important operational details and
-could accidentally turn remembered claims into fabricated implementation.
+Reconstruction is allowed only from approved public architecture with explicit
+`reconstructed-public-edition` provenance. Conversation summaries alone do not
+justify claims of historical fidelity or authoritative implementation.

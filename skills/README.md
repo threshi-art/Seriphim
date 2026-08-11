@@ -16,6 +16,11 @@ tested is design evidence—not a substitute for reviewing the package body.
 | Ei R@M Investigative Orchestrator | Analytical owner | `analysis/eiram-investigative-orchestrator/` |
 | EiRAM Editorial Intelligence | Editorial owner | `editorial/eiram-editorial-intelligence/` |
 | YouTube Ei R@M Ingest | Media evidence supplier | `media-ingest/youtube-eiram-ingest/` |
+| Context Sentinel | Context resolver | `orchestration/context-sentinel/` |
+| Semantic Priority Router | Intent router | `orchestration/semantic-priority-router/` |
+| Seraphim Operator Routing | Role orchestrator | `orchestration/seraphim-operator-routing/` |
+| Seraphim Action Controller | External-effect controller | `orchestration/seraphim-action-controller/` |
+| Skill Ecosystem Governor | Routing auditor | `orchestration/skill-ecosystem-governor/` |
 
 Each directory is the installable package root. Copy only the selected package
 directory into a compatible Skills location; do not copy the category wrapper.
@@ -45,13 +50,14 @@ skills/
   analysis/
   editorial/
   media-ingest/
+  orchestration/
   provenance/
 ```
 
 Personal writing style, memory, relationships, and private Agent configuration
-remain outside the public repository. Reconstructed orchestration and
-specialized public editions will be reviewed in later pull requests; they are
-not implied by this release.
+remain outside the public repository. Published orchestration packages are
+explicitly labeled reconstructed public editions. Specialized public editions
+remain subject to a separate review.
 
 See `recovery/RECOVERY_MANIFEST.md` for the ranked recovery queue and its
 publication requirements.

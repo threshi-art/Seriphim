@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill Ecosystem Governor"
+  short_description: "Replay routes and audit capability collisions"
+  default_prompt: "Use $skill-ecosystem-governor to audit this completed routing decision for collisions and lost intent."

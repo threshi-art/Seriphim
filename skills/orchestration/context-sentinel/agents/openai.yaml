@@ -1,0 +1,4 @@
+interface:
+  display_name: "Context Sentinel"
+  short_description: "Resolve continuity and reference state safely"
+  default_prompt: "Use $context-sentinel to classify the context and unresolved references in this request."

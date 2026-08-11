@@ -18,9 +18,11 @@ because a historical chat reported that it was created or validated.
 
 ### Orchestration
 
-Context Sentinel, Semantic Priority Router, Chief of Staff, Action Controller,
-and Skill Ecosystem Governor manage continuity, intent classification, role
-assignment, external-effect state, and replay auditing.
+Context Sentinel, Semantic Priority Router, Seraphim Operator Routing, Action
+Controller, and Skill Ecosystem Governor manage continuity, intent
+classification, public role assignment, external-effect state, and replay
+auditing. Chief of Staff remains a specified internal architecture role rather
+than a standalone public package.
 
 ### Evidence and Analysis
 

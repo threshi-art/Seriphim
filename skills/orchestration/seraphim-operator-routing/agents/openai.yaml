@@ -1,0 +1,4 @@
+interface:
+  display_name: "Seraphim Operator Routing"
+  short_description: "Assign one owner and bounded support"
+  default_prompt: "Use $seraphim-operator-routing to assign one primary owner and the minimum useful supporting roles."

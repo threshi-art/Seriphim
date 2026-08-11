@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "validation_scope": "Deterministic expected-routing fixtures; not live-agent evaluation.",
+  "cases": [
+    {
+      "id": "context-positive-established-symbol",
+      "synthetic": true,
+      "kind": "positive",
+      "target_skill": "context-sentinel",
+      "features": ["continuity"],
+      "prompt": "What does this established project symbol mean now?",
+      "expected": {"primary": "eiram-investigative-orchestrator", "supporting": ["context-sentinel"]}
+    },
+    {
+      "id": "context-negative-self-contained-lookup",
+      "synthetic": true,
+      "kind": "negative",
+      "target_skill": "context-sentinel",
+      "prompt": "Convert 68 degrees Fahrenheit to Celsius.",
+      "expected": {"primary": "direct-response", "dormant": ["context-sentinel"]}
+    },
+    {
+      "id": "context-overlap-correction",
+      "synthetic": true,
+      "kind": "overlap",
+      "target_skill": "context-sentinel",
+      "features": ["correction", "continuity"],
+      "prompt": "Correction: the earlier model means the legal framework, not the diagram; analyze its assumptions.",
+      "expected": {"primary": "semantic-priority-router", "supporting": ["context-sentinel"]}
+    },
+    {
+      "id": "semantic-positive-ambiguous-sources",
+      "synthetic": true,
+      "kind": "positive",
+      "target_skill": "semantic-priority-router",
+      "prompt": "What do you make of these unrelated documents and images?",
+      "expected": {"primary": "semantic-priority-router", "supporting": ["context-sentinel"]}
+    },
+    {
+      "id": "semantic-negative-ordinary-conversation",
+      "synthetic": true,
+      "kind": "negative",
+      "target_skill": "semantic-priority-router",
+      "prompt": "Say hello in Spanish.",
+      "expected": {"primary": "direct-response", "dormant": ["semantic-priority-router"]}
+    },
+    {
+      "id": "semantic-overlap-focus-over-modality",
+      "synthetic": true,
+      "kind": "overlap",
+      "target_skill": "semantic-priority-router",
+      "prompt": "Analyze the recording, particularly the speaker's reasoning pattern.",
+      "expected": {"primary": "eiram-investigative-orchestrator", "supporting": ["semantic-priority-router", "youtube-eiram-ingest"]}
+    },
+    {
+      "id": "operator-positive-minimum-support",
+      "synthetic": true,
+      "kind": "positive",
+      "target_skill": "seraphim-operator-routing",
+      "prompt": "Investigate whether this reported event led to formal charges.",
+      "expected": {"primary": "breadcrumb-investigator", "supporting": ["seraphim-operator-routing", "eiram-investigative-orchestrator"]}
+    },
+    {
+      "id": "operator-negative-direct-response",
+      "synthetic": true,
+      "kind": "negative",
+      "target_skill": "seraphim-operator-routing",
+      "prompt": "Alphabetize these three words.",
+      "expected": {"primary": "direct-response", "dormant": ["seraphim-operator-routing"]}
+    },
+    {
+      "id": "operator-overlap-editorial",
+      "synthetic": true,
+      "kind": "overlap",
+      "target_skill": "seraphim-operator-routing",
+      "prompt": "Run EiRAM on the disputed claim and publish an evidence-disciplined assessment.",
+      "expected": {"primary": "eiram-investigative-orchestrator", "supporting": ["seraphim-operator-routing", "eiram-editorial-intelligence"]}
+    },
+    {
+      "id": "action-positive-send-with-target",
+      "synthetic": true,
+      "kind": "positive",
+      "target_skill": "seraphim-action-controller",
+      "features": ["action-gating"],
+      "prompt": "Send the approved report to the named recipient through the selected channel.",
+      "expected": {"primary": "seraphim-action-controller", "action_state": "approved"}
+    },
+    {
+      "id": "action-negative-draft-only",
+      "synthetic": true,
+      "kind": "negative",
+      "target_skill": "seraphim-action-controller",
+      "prompt": "Draft a message but do not send it.",
+      "expected": {"primary": "direct-response", "dormant": ["seraphim-action-controller"]}
+    },
+    {
+      "id": "action-overlap-missing-target",
+      "synthetic": true,
+      "kind": "overlap",
+      "target_skill": "seraphim-action-controller",
+      "features": ["action-gating"],
+      "prompt": "Send the final report now, but no recipient or channel is supplied.",
+      "expected": {"primary": "seraphim-action-controller", "supporting": ["seraphim-operator-routing"], "action_state": "blocked"}
+    },
+    {
+      "id": "governor-positive-route-audit",
+      "synthetic": true,
+      "kind": "positive",
+      "target_skill": "skill-ecosystem-governor",
+      "prompt": "Audit this completed route for lost emphasis, role collisions, and false completion.",
+      "expected": {"primary": "skill-ecosystem-governor"}
+    },
+    {
+      "id": "governor-negative-substantive-analysis",
+      "synthetic": true,
+      "kind": "negative",
+      "target_skill": "skill-ecosystem-governor",
+      "prompt": "Analyze the argument itself without auditing any routing decision.",
+      "expected": {"primary": "eiram-investigative-orchestrator", "dormant": ["skill-ecosystem-governor"]}
+    },
+    {
+      "id": "governor-overlap-correction-loss",
+      "synthetic": true,
+      "kind": "overlap",
+      "target_skill": "skill-ecosystem-governor",
+      "features": ["correction"],
+      "prompt": "Replay the route and determine whether the user's correction was lost before the final answer.",
+      "expected": {"primary": "skill-ecosystem-governor", "supporting": ["context-sentinel", "semantic-priority-router"]}
+    }
+  ]
+}
