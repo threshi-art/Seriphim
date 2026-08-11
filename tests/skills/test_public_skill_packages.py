@@ -137,5 +137,28 @@ class EditorialIntelligenceTests(unittest.TestCase):
         self.assertIn("readingMinutes: use a positive integer", invalid_run.stdout)
 
 
+class YouTubeEiramIngestTests(unittest.TestCase):
+    def setUp(self):
+        self.package = ROOT / "skills" / "media-ingest" / "youtube-eiram-ingest"
+
+    def test_package_is_portable_and_complete(self):
+        assert_valid_skill(self, self.package, "youtube-eiram-ingest")
+
+    def test_fallback_policy_protects_restricted_access_classes(self):
+        policy_file = self.package / "references" / "fallback-acquisition.md"
+        self.assertTrue(policy_file.is_file(), f"missing {policy_file.relative_to(ROOT)}")
+        policy = policy_file.read_text(encoding="utf-8").lower()
+        for protected_class in (
+            "sign in",
+            "private",
+            "members only",
+            "age",
+            "regional restrictions",
+        ):
+            with self.subTest(protected_class=protected_class):
+                self.assertIn(protected_class, policy)
+        self.assertRegex(policy, r"(?:do not|never) bypass")
+
+
 if __name__ == "__main__":
     unittest.main()

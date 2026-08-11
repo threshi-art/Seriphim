@@ -1,0 +1,7 @@
+interface:
+  display_name: "YouTube Ei R@M Ingest"
+  short_description: "Evidence-led YouTube transcript acquisition"
+  default_prompt: "Use $youtube-eiram-ingest to acquire and analyze the evidence available from this public YouTube video."
+policy:
+  allow_implicit_invocation: true
+
