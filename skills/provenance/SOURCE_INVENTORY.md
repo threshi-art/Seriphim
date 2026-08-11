@@ -49,8 +49,20 @@ collection design. They are not represented as historical exports:
 - Seraphim Action Controller;
 - Skill Ecosystem Governor.
 
+The same reconstruction standard applies to the specialized public editions:
+
+- Lawful HUMINT Collection Planner;
+- Seraphim Decision Laboratory;
+- Seraphim Legal Intelligence;
+- Repo Surgeon;
+- Workspace Auditor.
+
 The reconstruction preserves functional boundaries, routing states, handoff
 fields, correction precedence, external-effect states, and audit categories.
 It contains no private Agent prompt, personal memory, credential, installed
 Skill ID, or claim of unavailable runtime integration. Deterministic fixtures
 record reviewed expected outcomes but are not live independent-agent testing.
+
+The specialized editions add consent, non-deception, jurisdiction, authority
+hierarchy, decision ownership, exact-target, user-work preservation, and
+read-only audit boundaries without reproducing private case material.

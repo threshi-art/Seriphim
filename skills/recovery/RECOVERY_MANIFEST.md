@@ -9,9 +9,9 @@ Editorial Intelligence, and YouTube Ei R@M Ingest. Their reviewed public
 packages and source digests are now recorded under `skills/`.
 
 The capability manifest remains authoritative. Four packages are authoritative
-exports and five orchestration packages are labeled reconstructed public
-editions. All other public candidates remain `specified` until their own
-publication review is complete.
+exports; five orchestration packages and five specialized packages are labeled
+reconstructed public editions. All other public candidates remain `specified`
+until their own publication review is complete.
 
 ## Remaining recovery and reconstruction candidates
 
@@ -19,8 +19,6 @@ publication review is complete.
 |---|---|---|---|
 | 1 | Chief of Staff | Internal architecture role distinct from the public Operator Routing package | Complete standalone contract or retain as architecture-only |
 | 1 | Plato Constraint | Enforces observation/inference/speculation boundaries and blocks clinical overreach | Original package, adversarial safety tests, scope review |
-| 3 | Decision Laboratory | Provides structured, reversible decision support | Original package, assumption and uncertainty fixtures |
-| 3 | Legal Intelligence | Provides governed legal research and analysis structure | Original package, jurisdiction/source tests, legal disclaimer review |
 | 3 | Life Operations | Coordinates personal workflows across connected services | Original package, aggressive personal-data removal, permission tests |
 
 The published YouTube and Breadcrumb packages remain evidence suppliers and

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Seraphim Decision Laboratory"
+  short_description: "Structured decision support with uncertainty"
+  default_prompt: "Use $seraphim-decision-laboratory to compare my options and prepare a decision record."

@@ -46,3 +46,15 @@ quarantining its authority.
 High-impact actions require explicit scope, target, authority, and verifiable
 completion state. Missing information results in a bounded request or `blocked`
 state, never an invented recipient, deadline, permission, or outcome.
+
+Decision support must preserve a named decision owner, distinguish facts from
+assumptions, expose uncertainty and reversibility, and avoid making a
+consequential choice on the user's behalf.
+
+Legal research must identify jurisdiction, date, authority hierarchy, material
+fact gaps, and limits. It supports issue-spotting and research rather than legal
+representation or a guaranteed legal conclusion.
+
+Workspace inspection is read-only by default. Repository or filesystem changes
+require exact target resolution, preservation of unrelated work, explicit
+authorization proportionate to consequence, and a recovery path.

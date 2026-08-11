@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repo Surgeon"
+  short_description: "Diagnose and repair repositories safely"
+  default_prompt: "Use $repo-surgeon to diagnose this repository problem and propose a safe repair."
