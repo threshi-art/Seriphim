@@ -79,7 +79,8 @@ Run:
 
 ```powershell
 python -m unittest tests.skills.test_public_skill_packages.BreadcrumbInvestigatorTests -v
-python C:\Users\cyber\.codex\skills\.system\skill-creator\scripts\quick_validate.py skills\investigation\breadcrumb-investigator
+$skillValidator = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.codex\skills\.system\skill-creator\scripts\quick_validate.py'
+python $skillValidator skills\investigation\breadcrumb-investigator
 ```
 
 Expected: both commands exit 0.
