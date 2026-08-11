@@ -1,0 +1,4 @@
+interface:
+  display_name: "Breadcrumb Investigator"
+  short_description: "Reconstruct real world events from scattered public evidence"
+
