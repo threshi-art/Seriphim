@@ -203,8 +203,14 @@ export function MonitorSituationDeck({
           aria-hidden
         />
         <div
-          className="absolute inset-2 rounded-lg border border-white/10 bg-[url('https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg')] bg-cover bg-center opacity-[0.22] invert"
-          style={{ transform: `scale(${mapZoom})`, transformOrigin: "center center" }}
+          className="absolute inset-2 rounded-lg border border-white/10 opacity-[0.22]"
+          style={{
+            transform: `scale(${mapZoom})`,
+            transformOrigin: "center center",
+            backgroundImage: "linear-gradient(oklch(0.7 0.08 175 / 0.25) 1px, transparent 1px), linear-gradient(90deg, oklch(0.7 0.08 175 / 0.25) 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+          aria-hidden
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[oklch(0.06_0.02_230)] via-transparent to-transparent" />
 

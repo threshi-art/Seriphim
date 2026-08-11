@@ -39,7 +39,7 @@ seraphim_local_bridge/
 ### Operator setup (dev)
 
 ```powershell
-$env:SERAPHIM_BRIDGE_WORKSPACE_ROOT = "C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT\Seraphim"
+$env:SERAPHIM_BRIDGE_WORKSPACE_ROOT = (Resolve-Path ".").Path
 pnpm bridge:dev
 curl http://127.0.0.1:8768/workspace/config
 curl "http://127.0.0.1:8768/workspace/list?relativePath=docs"

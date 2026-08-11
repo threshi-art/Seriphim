@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 
-def _overall_label(avg_risk: float) -> str:
-    if avg_risk >= 0.7:
+def _overall_label(avg_signal: float) -> str:
+    if avg_signal >= 0.7:
         return "High"
-    if avg_risk >= 0.4:
+    if avg_signal >= 0.4:
         return "Moderate"
     return "Low"
 
@@ -38,25 +38,17 @@ def aggregate_results(
     forecast_hardening = module_outputs["pfm"]["score"]
 
     if overall_risk >= 0.8:
-        summary = (
-            "High risk profile with strong ideological lock, emotional destabilization, and escalation signals."
-        )
-        forecast = (
-            "Subject appears likely to harden further without interruption or countervailing social pressure."
-        )
+        summary = "High text-signal intensity in the prototype's selected categories."
+        forecast = "The submitted passage contains a dense cluster of the configured textual cues."
     elif overall_risk >= 0.6:
-        summary = (
-            "Elevated risk profile with notable grievance, rigidity, and directional hardening."
-        )
-        forecast = "Subject may continue moving toward more rigid and adversarial framing."
+        summary = "Elevated text-signal intensity in the prototype's selected categories."
+        forecast = "The submitted passage contains several configured grievance and rigidity cues."
     elif overall_risk >= 0.35:
-        summary = "Moderate risk profile with some ideological and emotional volatility."
-        forecast = (
-            "Subject may stabilize or harden depending on reinforcement, grievance exposure, and group identity cues."
-        )
+        summary = "Moderate text-signal intensity in the prototype's selected categories."
+        forecast = "The submitted passage contains some configured ideological and emotional cues."
     else:
-        summary = "Low to moderate risk profile with limited signs of ideological lock."
-        forecast = "Subject currently appears more stable than hardened."
+        summary = "Low text-signal intensity in the prototype's selected categories."
+        forecast = "The submitted passage contains relatively few of the configured textual cues."
 
     evidence = features.get("evidence_candidates", [])
     if not evidence:
@@ -92,4 +84,9 @@ def aggregate_results(
         },
         "evidence": evidence,
         "forecast": forecast,
+        "limitations": [
+            "This is text-signal description, not a behavioral forecast.",
+            "Scores are unvalidated deterministic heuristics and do not measure a person's beliefs, intent, mental state, dangerousness, or legal status.",
+            "Do not use this output as the sole basis for consequential decisions.",
+        ],
     }

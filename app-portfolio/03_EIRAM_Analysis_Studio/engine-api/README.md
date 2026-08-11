@@ -36,9 +36,11 @@ curl -X POST http://127.0.0.1:8000/research-handle \
   -d "{\"handle\":\"jack\",\"platform\":\"x\"}"
 ```
 
-Public-profile research uses ordinary public web queries and guessed direct
-profile URLs. It does not authenticate to social platforms, bypass access
-controls, or retrieve private content. Results require human verification.
+Public-profile research accepts a bounded public handle and a supported
+platform, then uses ordinary public web queries and guessed direct profile
+URLs. It does not authenticate to social platforms, bypass access controls,
+retrieve private content, establish identity, or infer personal traits.
+Results require human verification.
 
 ## Desktop command deck
 
@@ -63,6 +65,11 @@ The desktop command deck includes:
 - direct narrative intake wired to the existing `run_eiram()` engine
 - a public handle research tab for `x`, `instagram`, `linkedin`, and more
 - raw request/report panes for quick audit and export
+
+The interface's legacy `risk_vector` field is retained for compatibility. Its
+values describe configured textual cue density only; they are not a person-level
+risk assessment or behavioral prediction. Every analysis response includes
+explicit limitations.
 
 ## Tests
 
@@ -98,5 +105,7 @@ folder.
 - Desktop shell implemented but not validated across clean machines
 - Two focused unit tests imported from the source workspace
 - Predictive validity, calibration, fairness, and domain suitability unvalidated
+- input length and public-handle syntax are bounded at the API schema
+- search failures are reported without exposing internal exception details
 
 See [PROVENANCE.md](PROVENANCE.md) for the curated-import boundary.

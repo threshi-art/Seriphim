@@ -4,6 +4,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { COMMAND_EXAMPLES, interpretLocalAgentCommand } from "./commandRouter";
+import {
+  isAllowedAgentOrigin,
+  parseAllowedAgentOrigins,
+  requiresTrustedWorkspace,
+  resolveExistingPathWithinRoots,
+  resolveWritablePathWithinRoots,
+} from "./securityPolicy";
 import { planLocalAgentMission, type MissionPlan, type MissionStepPlan } from "./missionPlanner";
 
 type PermissionMode = "observe" | "trustedWorkspace";
@@ -102,6 +109,9 @@ const extraAllowedRoots = (process.env.SERAPHIM_AGENT_ALLOWED_ROOTS ?? "")
   .filter(Boolean)
   .map(root => path.resolve(root));
 const allowedRoots = Array.from(new Set([WORKSPACE_ROOT, ...extraAllowedRoots]));
+const allowedRemoteOrigins = parseAllowedAgentOrigins(
+  process.env.SERAPHIM_AGENT_ALLOWED_ORIGINS,
+);
 
 const tools: ToolDefinition[] = [
   {
@@ -153,6 +163,7 @@ const tools: ToolDefinition[] = [
     description: "Run the local TypeScript compiler for the Seraphim project.",
     category: "project",
     risk: "medium",
+    requiresTrustedWorkspace: true,
   },
   {
     id: "project.tests",
@@ -160,6 +171,7 @@ const tools: ToolDefinition[] = [
     description: "Run the local Vitest suite for backend and shared behavior coverage.",
     category: "project",
     risk: "medium",
+    requiresTrustedWorkspace: true,
   },
   {
     id: "project.build",
@@ -167,6 +179,7 @@ const tools: ToolDefinition[] = [
     description: "Run the local production build driver to validate the deployable web bundle.",
     category: "project",
     risk: "medium",
+    requiresTrustedWorkspace: true,
   },
   {
     id: "project.healthCheck",
@@ -174,6 +187,7 @@ const tools: ToolDefinition[] = [
     description: "Run git status, TypeScript validation, and Vitest in sequence.",
     category: "project",
     risk: "medium",
+    requiresTrustedWorkspace: true,
   },
   {
     id: "sentinel.catalog",
@@ -188,6 +202,7 @@ const tools: ToolDefinition[] = [
     description: "Run one approved SystemSentinel PowerShell check by script name.",
     category: "sentinel",
     risk: "high",
+    requiresTrustedWorkspace: true,
   },
   {
     id: "report.writeMarkdown",
@@ -195,6 +210,7 @@ const tools: ToolDefinition[] = [
     description: "Write an agent report into the local .seraphim-agent reports folder.",
     category: "report",
     risk: "medium",
+    requiresTrustedWorkspace: true,
   },
 ];
 
@@ -204,29 +220,12 @@ function jsonError(res: Response, status: number, message: string) {
   res.status(status).json({ ok: false, error: message });
 }
 
-function isAllowedOrigin(origin: string) {
-  try {
-    const url = new URL(origin);
-    const host = url.hostname.toLowerCase();
-    return (
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host === "::1" ||
-      host.endsWith(".manus.space") ||
-      host.endsWith(".manus.computer") ||
-      host.endsWith(".manuspre.computer") ||
-      host.endsWith(".manus-asia.computer") ||
-      host.endsWith(".manuscomputer.ai") ||
-      host.endsWith(".manusvm.computer")
-    );
-  } catch {
-    return false;
-  }
-}
-
 function cors(req: Request, res: Response, next: NextFunction) {
   const origin = req.headers.origin;
-  if (typeof origin === "string" && isAllowedOrigin(origin)) {
+  if (
+    typeof origin === "string" &&
+    isAllowedAgentOrigin(origin, allowedRemoteOrigins)
+  ) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
   } else if (!origin) {
@@ -241,18 +240,11 @@ function cors(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-function isWithinRoot(root: string, candidate: string) {
-  const relative = path.relative(root, candidate);
-  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
-}
-
-function resolveAllowedPath(inputPath = ".") {
+async function resolveAllowedPath(inputPath = ".", writable = false) {
   const candidate = path.resolve(WORKSPACE_ROOT, inputPath);
-  const matchedRoot = allowedRoots.find(root => isWithinRoot(root, candidate));
-  if (!matchedRoot) {
-    throw new Error("Path is outside approved Seraphim agent roots.");
-  }
-  return candidate;
+  return writable
+    ? resolveWritablePathWithinRoots(candidate, allowedRoots)
+    : resolveExistingPathWithinRoots(candidate, allowedRoots);
 }
 
 function relativeToWorkspace(absolutePath: string) {
@@ -349,7 +341,7 @@ function runProcess(command: string, args: string[], cwd: string, timeoutMs = DE
 }
 
 async function listPath(input: Record<string, unknown>) {
-  const target = resolveAllowedPath(typeof input.path === "string" ? input.path : ".");
+  const target = await resolveAllowedPath(typeof input.path === "string" ? input.path : ".");
   const depth = Math.max(0, Math.min(Number(input.depth ?? 1), 3));
   const entries: Array<{ path: string; type: "file" | "directory"; size: number | null; updatedAt: string }> = [];
 
@@ -396,7 +388,7 @@ async function readTextFile(input: Record<string, unknown>) {
   if (typeof input.path !== "string" || input.path.trim().length === 0) {
     throw new Error("workspace.read requires a path.");
   }
-  const target = resolveAllowedPath(input.path);
+  const target = await resolveAllowedPath(input.path);
   const stat = await fs.stat(target);
   if (!stat.isFile()) throw new Error("Path is not a file.");
   if (stat.size > MAX_TEXT_BYTES) {
@@ -417,7 +409,7 @@ async function writeTextFile(input: Record<string, unknown>) {
   if (typeof input.path !== "string" || typeof input.content !== "string") {
     throw new Error("workspace.writeText requires path and content.");
   }
-  const target = resolveAllowedPath(input.path);
+  const target = await resolveAllowedPath(input.path, true);
   await fs.mkdir(path.dirname(target), { recursive: true });
   await fs.writeFile(target, input.content, "utf8");
   return {
@@ -456,7 +448,7 @@ async function getProjectScriptCommand(script: ProjectScript) {
     },
   };
   const selected = scriptMap[script];
-  await fs.access(selected.path);
+  await resolveExistingPathWithinRoots(selected.path, allowedRoots);
   return {
     command: node,
     args: [selected.path, ...selected.args],
@@ -482,7 +474,10 @@ async function runProjectHealthCheck() {
 }
 
 async function getSentinelScripts() {
-  const scriptsDir = path.join(WORKSPACE_ROOT, "SystemSentinel", "scripts");
+  const scriptsDir = await resolveExistingPathWithinRoots(
+    path.join(WORKSPACE_ROOT, "SystemSentinel", "scripts"),
+    allowedRoots,
+  );
   const entries = await fs.readdir(scriptsDir, { withFileTypes: true });
   return entries
     .filter(entry => entry.isFile() && entry.name.startsWith("check-") && entry.name.endsWith(".ps1"))
@@ -502,7 +497,7 @@ async function runSentinelCheck(input: Record<string, unknown>) {
   if (!script) {
     throw new Error("Unknown or unapproved Sentinel script.");
   }
-  const scriptPath = resolveAllowedPath(script.path);
+  const scriptPath = await resolveAllowedPath(script.path);
   const powershell = process.env.SERAPHIM_AGENT_POWERSHELL ?? "powershell.exe";
   const result = await runProcess(
     powershell,
@@ -635,7 +630,7 @@ async function runMissionStep(stepPlan: MissionStepPlan, objective: string): Pro
       error: "Mission step maps to an unavailable tool.",
     };
   }
-  if (tool.requiresTrustedWorkspace && permissionMode !== "trustedWorkspace") {
+  if ((tool.requiresTrustedWorkspace || requiresTrustedWorkspace(tool.id)) && permissionMode !== "trustedWorkspace") {
     return {
       id: stepPlan.id,
       label: stepPlan.label,
@@ -950,7 +945,7 @@ async function main() {
       jsonError(res, 404, "Interpreted command maps to an unavailable tool.");
       return;
     }
-    if (tool.requiresTrustedWorkspace && permissionMode !== "trustedWorkspace") {
+    if ((tool.requiresTrustedWorkspace || requiresTrustedWorkspace(tool.id)) && permissionMode !== "trustedWorkspace") {
       jsonError(res, 403, "Tool requires trusted workspace mode.");
       return;
     }
@@ -1020,7 +1015,7 @@ async function main() {
       jsonError(res, 404, "Unknown tool.");
       return;
     }
-    if (tool.requiresTrustedWorkspace && permissionMode !== "trustedWorkspace") {
+    if ((tool.requiresTrustedWorkspace || requiresTrustedWorkspace(tool.id)) && permissionMode !== "trustedWorkspace") {
       jsonError(res, 403, "Tool requires trusted workspace mode.");
       return;
     }

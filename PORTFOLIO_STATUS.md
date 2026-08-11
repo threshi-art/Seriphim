@@ -1,12 +1,14 @@
 # Portfolio status and validation gates
 
-Last reviewed: 2026-08-05
+Last reviewed: 2026-08-10
 
 ## Provenance
 
-This repository was created as a private curated import. Its first two commits
-represent repository setup and snapshot curation, not the original start or full
-development history of the underlying platform.
+This repository was created as a curated import and is currently public. Its
+early commits represent repository setup and snapshot curation, not the
+original start or full development history of the underlying platform. Public
+visibility does not establish production readiness, source provenance, or
+redistribution rights for every tracked artifact.
 
 ## Current claims supported by tracked files
 
@@ -35,8 +37,17 @@ development history of the underlying platform.
    boundaries, and desktop behavior before considering any public extraction.
 6. Define a focused public showcase that excludes private research and imported
    artifacts.
+7. Repair the package/lockfile mismatch that currently prevents a frozen clean
+   install from reaching the declared verification command.
+8. Audit generated desktop documentation, duplicate page components,
+   machine-local paths, and third-party media before treating the current tree
+   as a release artifact.
 
 ## Public-release rule
 
-Do not make this complete monorepository public as a shortcut. Extract a bounded,
-reviewed showcase from a named source commit and retain this provenance note.
+Do not treat the complete public monorepository as a certified release or use
+its visibility as a shortcut around review. Extract or designate bounded,
+reviewed showcases from named source commits and retain this provenance note.
+Raw project conversations, private Agent configuration, personal dossiers,
+clinical instruments, restricted sources, and unaudited reference libraries
+remain outside GitHub.

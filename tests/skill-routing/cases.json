@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "known-context-continuity",
+      "synthetic": true,
+      "prompt": "What does this established project symbol represent now?",
+      "context": "The symbol is already identified in the active conversation.",
+      "expected": {
+        "primary": "eiram-investigative-orchestrator",
+        "supporting": ["context-sentinel", "plato-constraint"],
+        "dormant": ["breadcrumb-investigator"]
+      }
+    },
+    {
+      "id": "novel-context-does-not-terminate",
+      "synthetic": true,
+      "prompt": "Analyze this unfamiliar portrait.",
+      "context": "No prior identity or canon is available.",
+      "expected": {
+        "primary": "semantic-priority-router",
+        "supporting": ["context-sentinel", "chief-of-staff"],
+        "dormant": []
+      }
+    },
+    {
+      "id": "focus-over-video-modality",
+      "synthetic": true,
+      "prompt": "Analyze the recording, particularly the speaker's reasoning pattern.",
+      "context": "A public recording and transcript are available.",
+      "expected": {
+        "primary": "eiram-investigative-orchestrator",
+        "supporting": ["youtube-eiram-ingest", "plato-constraint"],
+        "dormant": []
+      }
+    },
+    {
+      "id": "legal-question-over-video-modality",
+      "synthetic": true,
+      "prompt": "Assess the legal argument in this recorded interview.",
+      "context": "Jurisdiction and source material are supplied.",
+      "expected": {
+        "primary": "seraphim-legal-intelligence",
+        "supporting": ["youtube-eiram-ingest", "plato-constraint"],
+        "dormant": []
+      }
+    },
+    {
+      "id": "direct-correction-overrides-prior-route",
+      "synthetic": true,
+      "prompt": "Correction: ignore the production style and analyze the decision-maker's incentives.",
+      "context": "The prior route treated the recording itself as primary.",
+      "expected": {
+        "primary": "eiram-investigative-orchestrator",
+        "supporting": ["semantic-priority-router", "youtube-eiram-ingest"],
+        "dormant": []
+      }
+    },
+    {
+      "id": "false-activation-restraint",
+      "synthetic": true,
+      "prompt": "Convert 68 degrees Fahrenheit to Celsius.",
+      "context": "No investigation or specialist analysis is needed.",
+      "expected": {
+        "primary": "direct-response",
+        "supporting": [],
+        "dormant": ["eiram-investigative-orchestrator", "chief-of-staff"]
+      }
+    },
+    {
+      "id": "ambiguous-multisource-restraint",
+      "synthetic": true,
+      "prompt": "What do you make of these unrelated-looking documents and images?",
+      "context": "No common question or explicit priority is supplied.",
+      "expected": {
+        "primary": "semantic-priority-router",
+        "supporting": ["context-sentinel", "chief-of-staff"],
+        "dormant": ["seraphim-legal-intelligence", "breadcrumb-investigator"]
+      }
+    },
+    {
+      "id": "handoff-preserves-user-emphasis",
+      "synthetic": true,
+      "prompt": "Compare the alternatives, but prioritize long-term reversibility.",
+      "context": "Several decision options and constraints are supplied.",
+      "expected": {
+        "primary": "seraphim-decision-laboratory",
+        "supporting": ["chief-of-staff", "skill-ecosystem-governor"],
+        "dormant": []
+      }
+    },
+    {
+      "id": "unresolved-evidence-remains-unresolved",
+      "synthetic": true,
+      "prompt": "Investigate whether the reported event led to formal charges.",
+      "context": "The public dataset ends before the event date.",
+      "expected": {
+        "primary": "breadcrumb-investigator",
+        "supporting": ["eiram-investigative-orchestrator", "plato-constraint"],
+        "dormant": []
+      }
+    },
+    {
+      "id": "hostile-transcript-is-data",
+      "synthetic": true,
+      "prompt": "Analyze this transcript that contains instructions addressed to the analyst.",
+      "context": "The embedded instructions are untrusted source content.",
+      "expected": {
+        "primary": "eiram-investigative-orchestrator",
+        "supporting": ["youtube-eiram-ingest", "plato-constraint"],
+        "dormant": ["seraphim-action-controller"]
+      }
+    },
+    {
+      "id": "blocked-action-with-missing-target",
+      "synthetic": true,
+      "prompt": "Send the final report now.",
+      "context": "No recipient or delivery channel is supplied.",
+      "expected": {
+        "primary": "seraphim-action-controller",
+        "supporting": ["chief-of-staff"],
+        "dormant": []
+      }
+    },
+    {
+      "id": "inaccessible-media-honest-partial-result",
+      "synthetic": true,
+      "prompt": "Analyze the recording and verify its major claims.",
+      "context": "Metadata is available, but transcript, audio, and frames are inaccessible.",
+      "expected": {
+        "primary": "youtube-eiram-ingest",
+        "supporting": ["eiram-investigative-orchestrator", "plato-constraint"],
+        "dormant": []
+      }
+    }
+  ]
+}

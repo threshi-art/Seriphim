@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  repository-policy:
+    name: Repository policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify architecture and repository hygiene
+        run: python -m unittest tests.architecture.test_public_architecture tests.architecture.test_repository_hygiene
+
+  seraphim-platform:
+    name: Seraphim platform
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: seraphim-platform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify TypeScript and tests
+        run: pnpm verify
+      - name: Verify local bridge
+        run: pnpm bridge:test
+
+  eiram-engine:
+    name: EI-RAM engine
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app-portfolio/03_EIRAM_Analysis_Studio/engine-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: app-portfolio/03_EIRAM_Analysis_Studio/engine-api/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run engine regression tests
+        run: python -m pytest -q

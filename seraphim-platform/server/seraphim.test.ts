@@ -151,7 +151,7 @@ describe("Router Structure", () => {
 // ── v8.0: Cursor Integration — MarineTraffic + TerraGlobe upgrade ──
 describe("v8.0 Cursor Integration", () => {
   it("MarineTrafficPage module exists and exports a default component", async () => {
-    const mod = await import("../client/src/pages/MarineTrafficPage");
+    const mod = await import("../client/src/pages/dashboard/MarineTrafficPage");
     expect(mod.default).toBeDefined();
     expect(typeof mod.default).toBe("function");
   });

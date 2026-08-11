@@ -1,5 +1,7 @@
 import type { Express } from "express";
 import { ENV } from "./env";
+import { sdk } from "./sdk";
+import { storageKeyBelongsToUser } from "./securityPolicy";
 
 export function registerStorageProxy(app: Express) {
   app.get("/manus-storage/*", async (req, res) => {
@@ -15,6 +17,16 @@ export function registerStorageProxy(app: Express) {
     }
 
     try {
+      const user = await sdk.authenticateRequest(req);
+      if (!user) {
+        res.status(401).send("Authentication required");
+        return;
+      }
+      if (!storageKeyBelongsToUser(key, user.id)) {
+        res.status(403).send("Storage key is outside the authenticated user scope");
+        return;
+      }
+
       const forgeUrl = new URL(
         "v1/storage/presign/get",
         ENV.forgeApiUrl.replace(/\/+$/, "") + "/",

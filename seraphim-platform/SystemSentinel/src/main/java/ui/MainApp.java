@@ -40,20 +40,6 @@ public class MainApp extends Application {
     private Stage primaryStage;
     private boolean runAllInProgress;
     
-    /**
-     * Gets the icon path for a feature, using available icons from assets/icons
-     * Maps icons to features based on the provided images:
-     * - Blue eye with code (19610.jpg) -> System Health/Integrity
-     * - Night King/orchestra (orchestra.JPG) -> Security
-     * - Terminator robot (photo.JPG) -> Performance
-     * - Earth from space (Screenshot 2025-04-04 024321.png) -> Inventory
-     * - Boy with equations (photo (2).jpg) -> Logs
-     */
-    private String getIconPath(String iconName) {
-        java.nio.file.Path iconPath = AppPaths.resolveIconPath(iconName);
-        return iconPath != null ? iconPath.toString() : null;
-    }
-    
     @Override
     public void start(Stage stage) {
         this.primaryStage = stage;
@@ -289,8 +275,7 @@ public class MainApp extends Application {
 
     private void addCards(VBox container, List<OperationCard> cards, String category, String[][] checks) {
         for (String[] check : checks) {
-            String iconPath = check.length > 2 ? getIconPath(check[2]) : null;
-            OperationCard card = new OperationCard(category, check[0], check[1], iconPath);
+            OperationCard card = new OperationCard(category, check[0], check[1], null);
             card.setRunCallback(this::runSingleCheck);
             cards.add(card);
             container.getChildren().add(card);

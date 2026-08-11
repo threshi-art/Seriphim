@@ -71,7 +71,7 @@ export async function getOrCreateAnonymousUser() {
       name: "Operator",
       email: null,
       loginMethod: null,
-      role: "admin" as const,
+      role: "user" as const,
       createdAt: new Date(),
       updatedAt: new Date(),
       lastSignedIn: new Date(),
@@ -80,7 +80,12 @@ export async function getOrCreateAnonymousUser() {
   // Try to find existing anonymous user
   const existing = await db.select().from(users).where(eq(users.openId, ANON_OPEN_ID)).limit(1);
   if (existing.length > 0) {
-    _anonUser = existing[0];
+    if (existing[0].role !== "user") {
+      await db.update(users).set({ role: "user" }).where(eq(users.openId, ANON_OPEN_ID));
+      _anonUser = { ...existing[0], role: "user" };
+    } else {
+      _anonUser = existing[0];
+    }
     return _anonUser;
   }
   // Create anonymous user
@@ -89,7 +94,7 @@ export async function getOrCreateAnonymousUser() {
     name: "Operator",
     email: null,
     loginMethod: null,
-    role: "admin",
+    role: "user",
     lastSignedIn: new Date(),
   });
   const created = await db.select().from(users).where(eq(users.openId, ANON_OPEN_ID)).limit(1);
@@ -123,9 +128,12 @@ export async function getConversationForUser(conversationId: number, userId: num
 
 export async function deleteConversation(id: number, userId: number) {
   const db = await getDb();
-  if (!db) return;
+  if (!db) return false;
+  const owned = await getConversationForUser(id, userId);
+  if (!owned) return false;
   await db.delete(messages).where(eq(messages.conversationId, id));
   await db.delete(conversations).where(and(eq(conversations.id, id), eq(conversations.userId, userId)));
+  return true;
 }
 
 // ── Messages ──

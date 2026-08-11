@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "status_definitions": {
+    "specified": "Behavior is documented, but no audited portable package is present.",
+    "packaged": "An audited portable package is present.",
+    "implemented": "Runtime source and verification evidence are present.",
+    "private": "The capability is intentionally excluded from public distribution."
+  },
+  "capabilities": [
+    {
+      "id": "direct-response",
+      "name": "Direct Response",
+      "category": "orchestration",
+      "status": "specified",
+      "owner_role": "primary",
+      "public_package": false
+    },
+    {
+      "id": "context-sentinel",
+      "name": "Context Sentinel",
+      "category": "orchestration",
+      "status": "specified",
+      "owner_role": "context",
+      "public_package": false
+    },
+    {
+      "id": "semantic-priority-router",
+      "name": "Semantic Priority Router",
+      "category": "orchestration",
+      "status": "specified",
+      "owner_role": "router",
+      "public_package": false
+    },
+    {
+      "id": "chief-of-staff",
+      "name": "Chief of Staff",
+      "category": "orchestration",
+      "status": "specified",
+      "owner_role": "orchestrator",
+      "public_package": false
+    },
+    {
+      "id": "eiram-investigative-orchestrator",
+      "name": "Ei R@M Investigative Orchestrator",
+      "category": "analysis",
+      "status": "specified",
+      "owner_role": "primary",
+      "public_package": false
+    },
+    {
+      "id": "breadcrumb-investigator",
+      "name": "Breadcrumb Investigator",
+      "category": "investigation",
+      "status": "specified",
+      "owner_role": "evidence_supplier",
+      "public_package": false
+    },
+    {
+      "id": "youtube-eiram-ingest",
+      "name": "YouTube Ei R@M Ingest",
+      "category": "media-ingest",
+      "status": "specified",
+      "owner_role": "evidence_supplier",
+      "public_package": false
+    },
+    {
+      "id": "eiram-editorial-intelligence",
+      "name": "EiRAM Editorial Intelligence",
+      "category": "editorial",
+      "status": "specified",
+      "owner_role": "editor",
+      "public_package": false
+    },
+    {
+      "id": "plato-constraint",
+      "name": "Plato Constraint",
+      "category": "safety",
+      "status": "specified",
+      "owner_role": "constraint",
+      "public_package": false
+    },
+    {
+      "id": "seraphim-action-controller",
+      "name": "Seraphim Action Controller",
+      "category": "orchestration",
+      "status": "specified",
+      "owner_role": "action_controller",
+      "public_package": false
+    },
+    {
+      "id": "skill-ecosystem-governor",
+      "name": "Skill Ecosystem Governor",
+      "category": "maintenance",
+      "status": "specified",
+      "owner_role": "auditor",
+      "public_package": false
+    },
+    {
+      "id": "seraphim-legal-intelligence",
+      "name": "Seraphim Legal Intelligence",
+      "category": "legal",
+      "status": "specified",
+      "owner_role": "primary",
+      "public_package": false
+    },
+    {
+      "id": "seraphim-decision-laboratory",
+      "name": "Seraphim Decision Laboratory",
+      "category": "decision-support",
+      "status": "specified",
+      "owner_role": "primary",
+      "public_package": false
+    },
+    {
+      "id": "seraphim-life-operations",
+      "name": "Seraphim Life Operations",
+      "category": "personal-operations",
+      "status": "specified",
+      "owner_role": "primary",
+      "public_package": false
+    },
+    {
+      "id": "lawful-humint-planner",
+      "name": "Lawful HUMINT Collection Planner",
+      "category": "investigation",
+      "status": "specified",
+      "owner_role": "evidence_supplier",
+      "public_package": false
+    },
+    {
+      "id": "personal-writing-style",
+      "name": "Personal Writing Style",
+      "category": "private-personalization",
+      "status": "private",
+      "owner_role": "editor",
+      "public_package": false
+    }
+  ]
+}

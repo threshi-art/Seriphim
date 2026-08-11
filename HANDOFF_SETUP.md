@@ -1,123 +1,49 @@
-# SeraphimGPT Windows Handoff Setup
+# Seraphim Repository Handoff
 
-This folder contains several local projects. Use these commands from PowerShell.
-
-## 0. Static Preview Fallback
-
-Use this when Node or pnpm are not available yet.
+All commands below are relative to a local clone. In PowerShell, first move to the clone and then enter the platform directory:
 
 ```powershell
-cd "C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT\Seraphim"
-python preview_server.py
+Set-Location <path-to-your-clone>
+Set-Location seraphim-platform
 ```
 
-Then open:
+## Platform
 
-```text
-http://127.0.0.1:4177
-```
-
-This preview mirrors the current navigation and dashboard concepts, but it is not the live React app.
-
-## 1. Seraphim Web App
-
-Path:
+Requirements: Node.js 24, pnpm 10.4.1, and Python 3.12.
 
 ```powershell
-cd "C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT\Seraphim"
+pnpm install --frozen-lockfile
+pnpm verify
+pnpm bridge:test
+pnpm dev:win
 ```
 
-Required tools:
-
-- Node.js with `node` on `PATH`
-- pnpm with `pnpm` on `PATH`
-
-Install and run:
+The local bridge remains read-only and requires an explicitly approved workspace:
 
 ```powershell
-pnpm install
-pnpm dev
+$env:SERAPHIM_BRIDGE_WORKSPACE_ROOT = (Resolve-Path ".").Path
+pnpm bridge:dev
 ```
 
-Validation:
+## EI-RAM engine
+
+From the repository root:
 
 ```powershell
-pnpm check
-pnpm test
-```
-
-Notes:
-
-- The dev/start scripts are Windows-safe and set `NODE_ENV` through `scripts/run-with-node-env.mjs`.
-- If `pnpm` is not recognized, install Node.js and enable pnpm through Corepack, or install pnpm globally.
-
-## 2. Argus Vigil Backend
-
-Path:
-
-```powershell
-cd "C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT\Seraphim\argus-vigil\backend"
-```
-
-Create an environment and run:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8765
-```
-
-Then open Seraphim and go to `/argus-vigil`.
-
-## 3. EI-RAM API
-
-Path:
-
-```powershell
-cd "C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT\AGI Training\EI-RAM\eiram API"
-```
-
-Run:
-
-```powershell
-python -m pip install -r requirements.txt
+Set-Location app-portfolio\03_EIRAM_Analysis_Studio\engine-api
+python -m unittest discover -s tests -p "test_*.py"
 python -m uvicorn app.main:app --reload
 ```
 
-Validate:
+EI-RAM is a deterministic, evidence-bounded text-analysis prototype. Its outputs are not diagnosis, identity inference, or ground truth.
+
+## Desktop Companion
+
+From `seraphim-platform` on Windows with the .NET 9 SDK installed:
 
 ```powershell
-python -m pytest -q
+pnpm desktop:build
+pnpm verify:desktop-publish
 ```
 
-## 4. SystemSentinel
-
-Path:
-
-```powershell
-cd "C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT\SystemSentinel"
-```
-
-Required tools:
-
-- JDK 21+
-- `JAVA_HOME` set to the JDK folder
-
-Build:
-
-```powershell
-.\scripts\build.ps1
-```
-
-Validate:
-
-```powershell
-.\mvnw.cmd test
-```
-
-The app image output is:
-
-```text
-target\exe\SystemSentinel\SystemSentinel.exe
-```
+The desktop build regenerates its bundled `repo-docs` tree from canonical platform sources. Do not edit or commit that generated tree.

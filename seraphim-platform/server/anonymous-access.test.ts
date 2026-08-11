@@ -15,7 +15,7 @@ function createAnonymousContext(): TrpcContext {
     name: "Operator",
     email: null,
     loginMethod: null,
-    role: "admin",
+    role: "user",
     createdAt: new Date(),
     updatedAt: new Date(),
     lastSignedIn: new Date(),
@@ -75,5 +75,12 @@ describe("Anonymous Access", () => {
 
     const plugins = await caller.plugins.list();
     expect(Array.isArray(plugins)).toBe(true);
+  });
+
+  it("does not grant administrator procedures to the anonymous user", async () => {
+    const caller = appRouter.createCaller(createAnonymousContext());
+    await expect(
+      caller.system.notifyOwner({ title: "test", content: "test" }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
