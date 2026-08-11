@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workspace Auditor"
+  short_description: "Audit workspaces safely without changing them"
+  default_prompt: "Use $workspace-auditor to inspect this workspace and report evidence-backed risks without modifying it."

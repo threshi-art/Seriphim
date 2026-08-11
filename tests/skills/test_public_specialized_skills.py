@@ -36,5 +36,11 @@ class RepoSurgeonTests(unittest.TestCase):
         assert_valid_skill(self, package, "repo-surgeon")
 
 
+class WorkspaceAuditorTests(unittest.TestCase):
+    def test_package_is_portable_and_complete(self):
+        package = ROOT / "skills" / "maintenance" / "workspace-auditor"
+        assert_valid_skill(self, package, "workspace-auditor")
+
+
 if __name__ == "__main__":
     unittest.main()
