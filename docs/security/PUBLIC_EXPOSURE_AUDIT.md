@@ -2,7 +2,8 @@
 
 **Review date:** 2026-08-10
 
-**Scope:** current Git working tree plus targeted full-history exposure checks
+**Scope:** current Git working tree plus targeted full-history exposure checks,
+including the public Skill collection through PR #11
 
 **Method:** manual source review, deterministic tests, high-confidence secret
 patterns, path/provenance inventory, and build verification
@@ -10,8 +11,10 @@ patterns, path/provenance inventory, and build verification
 ## Outcome
 
 No high-confidence credential or private-key pattern was found in the current
-tree or reachable commit history. No validated security finding remains open in
-the reviewed current tree.
+tree or reachable commit history. A follow-up review after the Skill publication
+PRs found operator identity, personalized prompt wording, private archive labels,
+and private source fingerprints in the current tree. Those current-tree
+disclosures were removed in the subsequent privacy and catalog cleanup.
 
 The review did identify and remediate four security boundary weaknesses and a
 set of public-curation issues before release:
@@ -44,15 +47,17 @@ is recorded in `docs/provenance/ASSET_REGISTER.md`.
 ## History and privacy limitations
 
 Targeted history scans found no high-confidence token, access-key, or private-key
-signature. Earlier commits do contain obsolete machine-specific paths and the
-removed media. Removing those objects from Git history would require a
-destructive, coordination-heavy history rewrite; this review does not claim that
-such a rewrite occurred. If the repository ever contained a real credential,
-rotation remains mandatory even after history rewriting.
+signature. Earlier commits contain obsolete machine-specific paths, removed
+media, and operator identity or archive labels that were later removed from the
+current tree. Removing those objects from Git history would require a
+destructive, coordination-heavy history rewrite; this review does not claim
+that such a rewrite occurred. If the repository ever contained a real
+credential, rotation remains mandatory even after history rewriting.
 
 Raw project conversations, personal dossiers, clinical instruments, private
-Agent memory, and unaudited Skill archives remain excluded. Conversation history
-was used only to recover architecture and capability status.
+Agent memory, and unaudited Skill archives remain excluded from the current
+tree. Conversation history was used only to recover architecture and capability
+status.
 
 ## Coverage and residual risk
 

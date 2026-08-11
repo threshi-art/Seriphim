@@ -34,18 +34,22 @@ validated predictive accuracy, or completed satellite applications.
 
 - `node_modules`, `.venv`, `dist/`, `build/`, `target/`
 - Landing Pad zip archives and published executables
-- AGI Training research media (large PDFs, encyclopaedia dumps, personal notes)
-- Empty / placeholder folders (`AImind`, `Backmatter`)
+- Private research media, large reference libraries, and personal notes
+- Empty or placeholder archive folders
 - Raw ChatGPT conversations, personal dossiers, clinical instruments, and
   private Agent memory
 - Restricted or copyrighted reference libraries and unaudited Skill archives
 
 ## Cognitive architecture
 
-The public architecture foundation documents the intended capability model
-without claiming that conversation-recovered Skills are already packaged here:
+The public architecture foundation documents the intended capability model.
+The accompanying collection currently contains fourteen reviewed public Skill
+packages: four authoritative exports and ten reconstructed public editions.
+Architecture-only and private capabilities remain clearly marked in the
+manifest:
 
 - [Skill routing architecture](docs/architecture/SKILL_ROUTING_ARCHITECTURE.md)
+- [Seraphim Core](docs/architecture/SERAPHIM_CORE.md)
 - [Handoff contract](docs/architecture/HANDOFF_CONTRACT.md)
 - [Capability registry](docs/architecture/CAPABILITY_REGISTRY.md)
 - [Evidence integrity doctrine](docs/doctrine/EVIDENCE_INTEGRITY.md)
@@ -77,9 +81,10 @@ See [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md) for validation gates.
 
 ## Development entry point
 
-The intended platform entry point is below, but clean-checkout reproduction is
-still tracked in [issue #2](https://github.com/threshi-art/Seriphim/issues/2).
-Do not treat these commands as a verified release procedure yet.
+Linux CI currently verifies the locked dependency install and declared platform
+checks. Clean Windows development and desktop-package reproduction remain
+tracked in [issue #2](https://github.com/threshi-art/Seriphim/issues/2), so do
+not treat these commands as a certified release procedure.
 
 ```powershell
 cd seraphim-platform

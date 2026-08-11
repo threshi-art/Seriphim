@@ -2,7 +2,7 @@
 
 ## Mission
 
-Evolve Seraphim into a controlled multi-surface cognitive agent platform for aerospace systems engineer Chris “Loki,” preserving operator control, auditability, and safety.
+Evolve Seraphim into a controlled multi-surface cognitive agent platform while preserving operator control, auditability, and safety.
 
 ## Product Surfaces
 

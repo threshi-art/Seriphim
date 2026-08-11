@@ -6,20 +6,23 @@ The initial project-history review found architecture descriptions but no
 exportable packages. A later local archive audit recovered authoritative
 exports for Breadcrumb Investigator, Ei R@M Investigative Orchestrator, EiRAM
 Editorial Intelligence, and YouTube Ei R@M Ingest. Their reviewed public
-packages and source digests are now recorded under `skills/`.
+packages and provenance classes are now recorded under `skills/`.
 
 The capability manifest remains authoritative. Four packages are authoritative
 exports; five orchestration packages and five specialized packages are labeled
-reconstructed public editions. All other public candidates remain `specified`
-until their own publication review is complete.
+reconstructed public editions. No additional authoritative export was found in
+the synced project source collection.
 
-## Remaining recovery and reconstruction candidates
+## Remaining public candidate
 
 | Priority | Capability | Recover because | Required before publication |
 |---|---|---|---|
-| 1 | Chief of Staff | Internal architecture role distinct from the public Operator Routing package | Complete standalone contract or retain as architecture-only |
-| 1 | Plato Constraint | Enforces observation/inference/speculation boundaries and blocks clinical overreach | Original package, adversarial safety tests, scope review |
-| 3 | Life Operations | Coordinates personal workflows across connected services | Original package, aggressive personal-data removal, permission tests |
+| 1 | Plato Constraint | Enforces observation/inference/speculation boundaries and blocks clinical overreach | Original package or independently reviewed reconstruction, adversarial safety evidence, and scope review |
+
+Chief of Staff is retained as the internal architecture name for the role
+published through Seraphim Operator Routing, not as a duplicate package. Life
+Operations is private because it depends on personal context and connected
+service permissions.
 
 The published YouTube and Breadcrumb packages remain evidence suppliers and
 must not silently become the owner of an analytical judgment.

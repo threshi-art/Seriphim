@@ -18,8 +18,8 @@ The writing folder contains scripts and story material that deserve a structured
 
 ## Source Material
 
-- `AGI Training/Writing/`
-- Screenplays, synopses, and related documents
+- Operator-owned or licensed screenplays, synopses, and related documents
+- Synthetic examples used for development and demonstrations
 
 ## MVP Scope
 

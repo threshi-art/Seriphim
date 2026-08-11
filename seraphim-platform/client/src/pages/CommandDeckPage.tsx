@@ -260,7 +260,7 @@ export default function CommandDeckPage() {
                   <strong className="text-[#55d9ff] font-bold">Status</strong> All Systems Nominal
                 </span>
                 <span className="inline-flex items-center gap-2 px-3 py-2.5 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[12px]">
-                  <strong className="text-[#55d9ff] font-bold">Operator</strong> loki
+                  <strong className="text-[#55d9ff] font-bold">Operator</strong> local
                 </span>
                 <span className="inline-flex items-center gap-2 px-3 py-2.5 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[12px]">
                   <LiveClock />

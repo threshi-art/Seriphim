@@ -2,6 +2,9 @@
 
 The canonical machine-readable inventory is
 `skills/capability-manifest.json`. This document explains its public meaning.
+Seraphim Core is the governing architecture described in
+`docs/architecture/SERAPHIM_CORE.md`, not an installable Skill and therefore not
+a manifest capability.
 
 ## Status Vocabulary
 
@@ -35,7 +38,8 @@ preserves inference boundaries.
 Legal Intelligence, Decision Laboratory, and the lawful HUMINT planner are
 packaged public editions with narrow triggers and deliverables. They do not
 become active merely because their subject matter appears incidentally. Life
-Operations remains specified and private-context dependent.
+Operations is classified private because it depends on personal context and
+connected-service permissions.
 
 ### Repository Maintenance
 

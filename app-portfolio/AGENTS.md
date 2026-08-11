@@ -1,6 +1,9 @@
 # Codex Instructions for SeraphimGPT App Portfolio
 
-Use `ACADEMIC_AND_DESIGN_STANDARDS.md` as the standing documentation guide for this portfolio.
+Use `ACADEMIC_AND_DESIGN_STANDARDS.md` as the shared documentation guide for
+this portfolio. Also follow the durable architecture, provenance, and safety
+documents under `../docs/`. Do not recreate the removed per-project copies of
+the shared standards file.
 
 For EI-RAM Analysis Studio and all future app documents:
 
@@ -13,4 +16,6 @@ For EI-RAM Analysis Studio and all future app documents:
 - Keep claims evidence-backed and distinguish fact, inference, assumption, and open question.
 - For EI-RAM specifically, preserve evidence-first analysis, limitations, confidence language, and human analyst responsibility.
 
-If a future task asks to create or revise academic, SRS, SDD, architecture, or UML artifacts, consult the standards file before editing.
+If a future task asks to create or revise academic, SRS, SDD, architecture, or
+UML artifacts, inspect the relevant project brief and existing design records
+before editing. Do not infer requirements from private archive names.

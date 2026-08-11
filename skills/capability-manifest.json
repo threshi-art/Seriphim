@@ -45,7 +45,8 @@
       "category": "orchestration",
       "status": "specified",
       "owner_role": "orchestrator",
-      "public_package": false
+      "public_package": false,
+      "public_equivalent": "skills/orchestration/seraphim-operator-routing"
     },
     {
       "id": "seraphim-operator-routing",
@@ -130,7 +131,7 @@
     {
       "id": "skill-ecosystem-governor",
       "name": "Skill Ecosystem Governor",
-      "category": "maintenance",
+      "category": "orchestration",
       "status": "packaged",
       "owner_role": "auditor",
       "public_package": true,
@@ -167,9 +168,10 @@
       "id": "seraphim-life-operations",
       "name": "Seraphim Life Operations",
       "category": "personal-operations",
-      "status": "specified",
+      "status": "private",
       "owner_role": "primary",
-      "public_package": false
+      "public_package": false,
+      "private_reason": "Depends on personal context and connected-service permissions."
     },
     {
       "id": "lawful-humint-planner",

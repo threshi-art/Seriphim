@@ -1,10 +1,17 @@
 # SERAPHIM PROGRAM WHITE PAPER
 
-**Version:** 8.0  
-**Classification:** UNCLASSIFIED // FOR OFFICIAL USE ONLY  
-**Date:** April 25, 2026  
-**Author:** Manus AI (Build Agent) / Chris "Loki" (Program Architect)  
-**Handoff Target:** OpenAI Codex Agent  
+- **Version:** 8.0
+- **Status:** Public historical design baseline
+- **Date:** April 25, 2026
+- **Author:** Repository owner with original build tooling
+- **Handoff Target:** OpenAI Codex Agent
+
+> **Historical baseline notice:** This document records the v8.0 design and
+> contains implementation and deployment claims that may no longer describe the
+> current repository. Current security behavior and supported status are
+> documented in `../docs/security/PUBLIC_EXPOSURE_AUDIT.md` and
+> `../PORTFOLIO_STATUS.md`. Where they conflict, the current source and those
+> records take precedence.
 
 ---
 
@@ -35,11 +42,11 @@
 
 ## 1. EXECUTIVE SUMMARY
 
-Seraphim is a personalized cognitive AI agent platform built as a full-stack web application. It serves as an intelligence dashboard, strategic analyst, engineering companion, and operational command center for its operator, Chris "Loki" (Aerospace Systems Engineer, Boeing). The system integrates 20+ operational modules spanning LLM-powered conversation, narrative analysis, network intelligence, geospatial awareness, system health monitoring, flight tracking, weather radar, and more.
+Seraphim is an operator-centered cognitive AI platform built as a full-stack web application. It serves as an intelligence dashboard, strategic analyst, engineering companion, and operational command center. The historical v8.0 design describes 20+ modules spanning LLM-powered conversation, narrative analysis, network intelligence, geospatial awareness, system health monitoring, flight tracking, weather radar, and more.
 
-The application is deployed on Manus infrastructure at `seraphimai-gbr265kv.manus.space` and runs as a React 19 + Express 4 + tRPC 11 stack backed by a TiDB (MySQL-compatible) database. The LLM backbone is provided by the Manus Forge API (OpenAI-compatible). Authentication uses Manus OAuth with an anonymous operator fallback for local development.
+The v8.0 design used a React 19 + Express 4 + tRPC 11 stack backed by a TiDB (MySQL-compatible) database and described Manus-hosted integrations. The public repository does not claim a currently supported public deployment. Authentication uses Manus OAuth, with an explicitly configured local-development fallback that is disabled in production.
 
-**Current state:** Production-ready, 185 source files, 40 passing tests, 0 TypeScript errors, 12 database tables, 15 tRPC router namespaces, 19 sidebar modules.
+**Historical snapshot claim:** The original v8.0 handoff reported 185 source files, 40 passing tests, 0 TypeScript errors, 12 database tables, 15 tRPC router namespaces, and 19 sidebar modules. This is preserved as historical context, not as a current production-readiness claim.
 
 ---
 
@@ -47,7 +54,7 @@ The application is deployed on Manus infrastructure at `seraphimai-gbr265kv.manu
 
 ### 2.1 Mission Statement
 
-Seraphim is designed to be a single-pane-of-glass cognitive companion that combines the analytical precision of an intelligence officer, the warmth of a trusted advisor, and the technical depth of a systems architect. It is not a generic chatbot. It is a purpose-built operational tool shaped by the relationship between the system and its operator.
+Seraphim is designed to be a single-pane-of-glass cognitive system combining evidence-disciplined analysis, clear decision support, and the technical depth of a systems architecture workspace. It is a purpose-built operational tool rather than a generic chatbot.
 
 ### 2.2 Design Philosophy
 
@@ -55,16 +62,12 @@ The application follows an **NSA Operations Center** aesthetic: near-black backg
 
 ### 2.3 Core Personality
 
-Seraphim's persona is defined in `shared/modes.ts` under the `SERAPHIM_CORE` constant. Key traits:
-
-- Calm precision of Data from Star Trek: TNG
-- Strategic gravity of an intelligence officer
-- Clarity of a law professor
-- Elegance of a literary editor
-- Loyalty of a close friend
-- Dry humor of someone who has survived too many bad arguments
-
-**Foundational rules:** Never lie. Think deeply by default. Do not be bland. Be loyal, not obedient. Preserve dignity. Separate facts from judgment. Use confidence levels (Low/Moderate/High).
+Seraphim's public doctrine is defined in `shared/modes.ts` under the
+`SERAPHIM_CORE` constant. It requires honesty, evidence-state separation,
+uncertainty labeling, dignity, calibrated confidence, operator control, and a
+clear refusal to validate weak assumptions merely because they are preferred.
+Private relationship history and personal style calibration are not part of the
+public Core.
 
 ---
 
@@ -99,15 +102,15 @@ Seraphim's persona is defined in `shared/modes.ts` under the `SERAPHIM_CORE` con
 
 1. Browser makes tRPC call via React Query hook
 2. Express receives at `/api/trpc/*`
-3. Context builder (`server/_core/context.ts`) authenticates via JWT cookie or falls back to anonymous operator
-4. tRPC procedure executes with `ctx.user` available
+3. Context builder (`server/_core/context.ts`) authenticates via JWT cookie and may use the explicitly configured local-development fallback
+4. tRPC procedure executes with an authenticated, local-development, or null user according to procedure policy
 5. Procedure calls DB helpers (`server/db.ts`), LLM (`server/_core/llm.ts`), or external APIs
 6. Response serialized via superjson (preserves `Date` objects) and returned to client
 7. React Query caches and renders
 
-### 3.3 Anonymous Operator Mode
+### 3.3 Local-Development Operator Mode
 
-When no Manus OAuth session exists (e.g., local development), the system creates a synthetic anonymous operator with admin privileges. This is handled in `server/db.ts` → `getOrCreateAnonymousUser()`. If the database is available, it persists a fixed `anon-operator-seraphim` user row. If the database is unavailable, it returns a synthetic in-memory admin object. This ensures the dashboard is always accessible without login.
+When explicitly enabled outside production, the local-development fallback may create a synthetic operator with the normal `user` role. This is handled by `server/_core/securityPolicy.ts`, `server/_core/context.ts`, and `server/db.ts` → `getOrCreateAnonymousUser()`. Production disables this fallback; unauthenticated requests retain a null user and protected procedures reject them.
 
 ---
 
@@ -165,7 +168,7 @@ When no Manus OAuth session exists (e.g., local development), the system creates
 | 17 | SystemSentinel | `/sentinel` | `sentinel` | Live | 29 PowerShell health checks across 5 categories |
 | 18 | Network Intel | `/netintel` | `netIntel` | Live | CMIT 265 labs, subnetting, troubleshooting, quiz |
 | 19 | Audit Log | `/audit` | `audit` | Live | Full activity trail |
-| 20 | Command Deck | `/deck` | N/A (reads others) | Live | Boeing KPI mission control dashboard |
+| 20 | Command Deck | `/deck` | N/A (reads others) | Live | Operational KPI mission control dashboard |
 | 21 | Landing Page | `/` | N/A | Live | Cinematic Inception-style entry page |
 
 ### 5.2 Module Deep Dives
@@ -261,7 +264,7 @@ Check results are persisted in the database. The catalog is defined server-side 
 
 #### 5.2.7 Command Deck
 
-A Boeing KPI-style mission control dashboard that aggregates data from multiple modules. Features:
+An operational KPI-style mission control dashboard that aggregates data from multiple modules. Features:
 
 - Live clock and system health score
 - 18 module cards with icons, descriptions, and navigation
@@ -417,7 +420,7 @@ appRouter
 ### 7.2 Access Control
 
 - **`publicProcedure`**: No authentication required. Used for: `auth.me`, `auth.logout`, `sentinel.catalog`, `netIntel.ports/commands/labs/labDetail/subnet`
-- **`protectedProcedure`**: Requires `ctx.user` (either authenticated or anonymous operator). Used for all other procedures.
+- **`protectedProcedure`**: Requires `ctx.user` from authentication or the explicitly enabled non-production fallback. Used for all other procedures.
 - **`adminProcedure`**: Requires `ctx.user.role === 'admin'`. Currently unused but available for future admin-only features.
 
 ### 7.3 Server-Side Caching
@@ -438,14 +441,14 @@ The terra router uses an in-memory cache (`terraCache` Map) with a 60-second TTL
 6. Cookie is set with `httpOnly`, `secure`, `sameSite: lax`
 7. Subsequent requests: context builder verifies JWT, loads user from DB
 
-### 8.2 Anonymous Operator Fallback
+### 8.2 Local-Development Operator Fallback
 
 When no valid session cookie exists:
-1. Context builder catches auth error
-2. Calls `getOrCreateAnonymousUser()` from `server/db.ts`
-3. If DB available: creates/fetches a fixed user row with `openId: 'anon-operator-seraphim'`, `role: 'admin'`
-4. If DB unavailable: returns synthetic in-memory admin object
-5. All `protectedProcedure` calls work normally with this anonymous user
+1. The context builder evaluates `shouldAllowAnonymousFallback()`.
+2. Production always disables the fallback.
+3. A non-production environment must explicitly enable the fallback.
+4. If enabled, `getOrCreateAnonymousUser()` returns or creates a normal `user` role, never an administrator.
+5. If disabled, `ctx.user` remains null and protected procedures reject the request.
 
 ### 8.3 Owner Auto-Promotion
 
@@ -457,7 +460,7 @@ When a user logs in whose `openId` matches `OWNER_OPEN_ID` environment variable,
 |------|---------|
 | `server/_core/sdk.ts` | OAuth service, JWT creation/verification, request authentication |
 | `server/_core/oauth.ts` | Express route handler for `/api/oauth/callback` |
-| `server/_core/context.ts` | Per-request tRPC context builder with anonymous fallback |
+| `server/_core/context.ts` | Per-request tRPC context builder with gated local fallback |
 | `server/_core/cookies.ts` | Cookie option helpers |
 | `client/src/const.ts` | `getLoginUrl()` function for OAuth redirect |
 
@@ -821,7 +824,7 @@ For local development, create a `.env` file (or set environment variables) with 
 - `DATABASE_URL` — MySQL/TiDB connection string
 - `JWT_SECRET` — Any random string for cookie signing
 
-The application will run in anonymous operator mode without OAuth configuration. All features except Instagram MCP sync will work.
+For local development only, an explicitly enabled fallback can provide a normal user without OAuth configuration. Production does not enable this behavior.
 
 ### 16.3 Development Workflow
 
@@ -853,7 +856,7 @@ The application will run in anonymous operator mode without OAuth configuration.
 - **superjson serialization** — `Date` objects pass through tRPC correctly
 - **Markdown rendering** uses `<Streamdown>` component — never dangerouslySetInnerHTML
 - **Error handling** — LLM calls wrapped in try/catch with user-visible error messages
-- **Anonymous fallback** — never assume `ctx.user` requires real authentication
+- **Local fallback** — treat it as an explicitly configured non-production convenience, never as production authentication
 
 ### 16.5 Files You Should NOT Edit
 
@@ -926,7 +929,8 @@ The application is deployed on Manus infrastructure. To deploy:
 1. Save a checkpoint via Manus UI
 2. Click "Publish" in the Manus Management UI
 
-The deployed URL is: `https://seraphimai-gbr265kv.manus.space`
+The historical deployment address is intentionally omitted from the public
+handoff. This repository does not claim a currently maintained public service.
 
 ---
 

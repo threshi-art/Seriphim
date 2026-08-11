@@ -82,7 +82,7 @@
 - [x] Safety boundaries built into LLM system prompts for all netIntel procedures
 - [x] Rebuild NetworkPage as Network Intelligence dashboard with 8 sub-tabs
 - [x] Network Intelligence mode available via Technical Architecture mode in chat
-- [x] Build Command Deck page with Boeing KPI aesthetic (dark navy, status buckets, workstream progress, attention queue)
+- [x] Build Command Deck page with an operational KPI aesthetic (dark navy, status buckets, workstream progress, attention queue)
 - [x] Add live module preview windows to Command Deck (chat, weather, flights, network, news, sentinel, etc.)
 - [x] Add persistent top navigation bar across Landing, Command Deck, and Dashboard views
 - [x] Update LandingPage CTA to navigate to Command Deck instead of Chat

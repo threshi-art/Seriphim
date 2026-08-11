@@ -2,7 +2,7 @@
 
 ## 1. Project Mission
 
-Seraphim is a personalized cognitive AI agent platform for Chris “Loki,” an aerospace systems engineer and program architect. It is **not** a generic chatbot.
+Seraphim is an operator-centered cognitive AI platform. It is **not** a generic chatbot.
 
 Seraphim Platform v9 evolves the existing Web Command Center into a controlled multi-surface system:
 
@@ -15,7 +15,7 @@ Seraphim Platform v9 evolves the existing Web Command Center into a controlled m
 
 ## 2. Current Baseline Reference
 
-- Authoritative product baseline: **Seraphim Program White Paper v8.0** (`SERAPHIM_WHITE_PAPER.md` / `.pdf`)
+- Historical product baseline: **Seraphim Program White Paper v8.0** (`SERAPHIM_WHITE_PAPER.md`)
 - Platform assurance package: `docs/`
 - Baseline assessment: `docs/00_program/baseline_assessment.md`
 - Gap analysis: `docs/00_program/gap_analysis.md`

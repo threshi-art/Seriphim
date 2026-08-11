@@ -2,6 +2,11 @@
 
 ## EI-RAM Analysis Studio
 
+> **Frozen baseline notice:** This document describes the July 2026 planning
+> baseline. The later curated Phase-1 prototype under `../engine-api/` includes
+> a FastAPI engine, desktop shell, and tests. Current repository status takes
+> precedence over the pre-implementation statements retained below.
+
 ### Revision History
 
 | Version | Date | Author | Description |
@@ -21,11 +26,17 @@ This document combines two related configuration-management artifacts:
 
 ### 1.2 Scope
 
-This SCI/VDD applies to EI-RAM Analysis Studio planning baseline `EIRAM-STUDIO-0.1`.
+This SCI/VDD applies to the frozen EI-RAM Analysis Studio planning baseline
+`EIRAM-STUDIO-0.1`.
 
-The baseline is documentation-first and pre-implementation. It includes project folders, planning documents, design documents, data design, standards, and placeholders for future frontend, backend, shared, data, research, and test work.
+At that baseline, the project was documentation-first and pre-implementation.
+It included project folders, planning documents, design documents, data design,
+standards, and placeholders for future frontend, backend, shared, data,
+research, and test work.
 
-The baseline does not yet include a working standalone EI-RAM Studio executable, frontend, backend, SQLite database, or automated test suite.
+The frozen baseline did not include a working standalone EI-RAM Studio
+executable, frontend, backend, SQLite database, or automated test suite. The
+later Phase-1 engine import is tracked separately under `../engine-api/`.
 
 ### 1.3 Reference Material
 
@@ -77,8 +88,8 @@ The baseline does not yet include a working standalone EI-RAM Studio executable,
 |---|---|---|---|---|
 | CI-001 | Project Brief | `PROJECT_BRIEF.md` | Created | `EIRAM-STUDIO-0.1` |
 | CI-002 | Project README | `README.md` | Created | `EIRAM-STUDIO-0.1` |
-| CI-003 | Academic and Design Standards | `ACADEMIC_AND_DESIGN_STANDARDS.md` | Created | `EIRAM-STUDIO-0.1` |
-| CI-004 | Codex Instructions | `AGENTS.md` | Created | `EIRAM-STUDIO-0.1` |
+| CI-003 | Academic and Design Standards | `../ACADEMIC_AND_DESIGN_STANDARDS.md` | Shared current location; project copy removed | `EIRAM-STUDIO-0.1` |
+| CI-004 | Codex Instructions | `../AGENTS.md` | Shared current location; project copy removed | `EIRAM-STUDIO-0.1` |
 
 ### 3.2 Design and Planning Configuration Items
 
@@ -107,16 +118,17 @@ The baseline does not yet include a working standalone EI-RAM Studio executable,
 | CI-205 | Research Placeholder | `research/README.md` | Placeholder | `EIRAM-STUDIO-0.1` |
 | CI-206 | Tests Placeholder | `tests/README.md` | Placeholder | `EIRAM-STUDIO-0.1` |
 
-### 3.4 External Source References
+### 3.4 Post-Baseline Cross-References
 
-These items are referenced as source material but are not copied into the EI-RAM Studio baseline yet.
+These current repository locations supersede or extend the frozen 0.1 baseline.
+Paths are relative to the repository root.
 
 | CI ID | External Source | Path | Status |
 |---|---|---|---|
-| EXT-001 | Existing EI-RAM FastAPI project | `AGI Training/EI-RAM/eiram API/` | Referenced |
-| EXT-002 | EI-RAM source documents | `AGI Training/EI-RAM/` | Referenced |
-| EXT-003 | Seraphim EI-RAM integration | `Seraphim/server/eiram.ts` | Referenced |
-| EXT-004 | Seraphim Analysis UI | `Seraphim/client/src/pages/dashboard/AnalysisPage.tsx` | Referenced |
+| EXT-001 | Curated EI-RAM FastAPI project | `app-portfolio/03_EIRAM_Analysis_Studio/engine-api/` | Tracked |
+| EXT-002 | Public EI-RAM project documents | `app-portfolio/03_EIRAM_Analysis_Studio/docs/` | Tracked |
+| EXT-003 | Seraphim EI-RAM integration | `seraphim-platform/server/eiram.ts` | Referenced |
+| EXT-004 | Seraphim Analysis UI | `seraphim-platform/client/src/pages/dashboard/AnalysisPage.tsx` | Referenced |
 
 ## 4. Version Description
 
@@ -242,8 +254,8 @@ Future verification shall include:
 
 | ID | Problem or Limitation | Impact | Disposition |
 |---|---|---|---|
-| KP-001 | No executable EI-RAM Studio implementation exists yet | Cannot run standalone app | Planned for next phase |
-| KP-002 | Existing EI-RAM engine has not yet been copied or wrapped | Backend integration not established | Decide in implementation phase |
+| KP-001 | The 0.1 baseline had no executable EI-RAM Studio implementation | Could not run standalone app at that baseline | Partially superseded by the Phase-1 prototype |
+| KP-002 | The 0.1 baseline had not copied or wrapped the EI-RAM engine | Backend integration was not established at that baseline | Superseded by the curated `engine-api/` import |
 | KP-003 | Input length limit is not finalized | Validation rule remains draft | Open |
 | KP-004 | Export directory is not finalized | Report storage path remains draft | Open |
 | KP-005 | Audit events are recommended but not confirmed as MVP | Audit persistence may shift phase | Open |
@@ -262,7 +274,7 @@ Changes to this baseline should be handled by updating:
 
 | Role | Name | Status | Date |
 |---|---|---|---|
-| Project Owner | Chris | Pending Review | TBD |
+| Project Owner | Repository owner | Pending Review | TBD |
 | Technical Author | Codex | Draft Complete | 2026-07-09 |
 
 ## 10. Appendix A: Baseline Folder Summary
