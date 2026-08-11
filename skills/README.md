@@ -21,6 +21,11 @@ tested is design evidence—not a substitute for reviewing the package body.
 | Seraphim Operator Routing | Role orchestrator | `orchestration/seraphim-operator-routing/` |
 | Seraphim Action Controller | External-effect controller | `orchestration/seraphim-action-controller/` |
 | Skill Ecosystem Governor | Routing auditor | `orchestration/skill-ecosystem-governor/` |
+| Lawful HUMINT Collection Planner | Lawful collection planner | `investigation/lawful-humint-planner/` |
+| Seraphim Decision Laboratory | Decision-support owner | `decision-support/seraphim-decision-laboratory/` |
+| Seraphim Legal Intelligence | Legal research owner | `legal/seraphim-legal-intelligence/` |
+| Repo Surgeon | Repository repair owner | `maintenance/repo-surgeon/` |
+| Workspace Auditor | Read-only workspace auditor | `maintenance/workspace-auditor/` |
 
 Each directory is the installable package root. Copy only the selected package
 directory into a compatible Skills location; do not copy the category wrapper.
@@ -51,13 +56,15 @@ skills/
   editorial/
   media-ingest/
   orchestration/
+  decision-support/
+  legal/
+  maintenance/
   provenance/
 ```
 
 Personal writing style, memory, relationships, and private Agent configuration
-remain outside the public repository. Published orchestration packages are
-explicitly labeled reconstructed public editions. Specialized public editions
-remain subject to a separate review.
+remain outside the public repository. Published orchestration and specialized
+packages are explicitly labeled reconstructed public editions.
 
 See `recovery/RECOVERY_MANIFEST.md` for the ranked recovery queue and its
 publication requirements.

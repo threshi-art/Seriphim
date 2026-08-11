@@ -143,17 +143,25 @@
       "id": "seraphim-legal-intelligence",
       "name": "Seraphim Legal Intelligence",
       "category": "legal",
-      "status": "specified",
+      "status": "packaged",
       "owner_role": "primary",
-      "public_package": false
+      "public_package": true,
+      "package_path": "skills/legal/seraphim-legal-intelligence",
+      "provenance": "reconstructed-public-edition",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_specialized_skills.py"
     },
     {
       "id": "seraphim-decision-laboratory",
       "name": "Seraphim Decision Laboratory",
       "category": "decision-support",
-      "status": "specified",
+      "status": "packaged",
       "owner_role": "primary",
-      "public_package": false
+      "public_package": true,
+      "package_path": "skills/decision-support/seraphim-decision-laboratory",
+      "provenance": "reconstructed-public-edition",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_specialized_skills.py"
     },
     {
       "id": "seraphim-life-operations",
@@ -167,9 +175,37 @@
       "id": "lawful-humint-planner",
       "name": "Lawful HUMINT Collection Planner",
       "category": "investigation",
-      "status": "specified",
+      "status": "packaged",
       "owner_role": "evidence_supplier",
-      "public_package": false
+      "public_package": true,
+      "package_path": "skills/investigation/lawful-humint-planner",
+      "provenance": "reconstructed-public-edition",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_specialized_skills.py"
+    },
+    {
+      "id": "repo-surgeon",
+      "name": "Repo Surgeon",
+      "category": "maintenance",
+      "status": "packaged",
+      "owner_role": "primary",
+      "public_package": true,
+      "package_path": "skills/maintenance/repo-surgeon",
+      "provenance": "reconstructed-public-edition",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_specialized_skills.py"
+    },
+    {
+      "id": "workspace-auditor",
+      "name": "Workspace Auditor",
+      "category": "maintenance",
+      "status": "packaged",
+      "owner_role": "auditor",
+      "public_package": true,
+      "package_path": "skills/maintenance/workspace-auditor",
+      "provenance": "reconstructed-public-edition",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_specialized_skills.py"
     },
     {
       "id": "personal-writing-style",

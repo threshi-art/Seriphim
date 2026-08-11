@@ -32,9 +32,16 @@ preserves inference boundaries.
 
 ### Specialized Judgment
 
-Legal Intelligence, Decision Laboratory, Life Operations, and the lawful HUMINT
-planner have narrower triggers and deliverables. They do not become active
-merely because their subject matter appears incidentally.
+Legal Intelligence, Decision Laboratory, and the lawful HUMINT planner are
+packaged public editions with narrow triggers and deliverables. They do not
+become active merely because their subject matter appears incidentally. Life
+Operations remains specified and private-context dependent.
+
+### Repository Maintenance
+
+Repo Surgeon owns bounded, authorized repository repair. Workspace Auditor owns
+read-only inventory and evidence-backed hygiene findings. Audit authority does
+not imply mutation authority, and both packages preserve unrelated user work.
 
 ### Editorial Quality
 
