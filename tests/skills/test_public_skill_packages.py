@@ -11,7 +11,9 @@ ROOT = Path(__file__).resolve().parents[2]
 FORBIDDEN_PATTERNS = {
     "Windows user path": re.compile(r"[A-Za-z]:\\Users\\", re.IGNORECASE),
     "private Skill ID": re.compile(r"chatgpt\.com/skills\?skill_id=", re.IGNORECASE),
-    "identity-linked personalization": re.compile(r"Chris Richardson", re.IGNORECASE),
+    "identity-linked personalization": re.compile(
+        r"Chris\s+Richardson", re.IGNORECASE
+    ),
     "email address": re.compile(
         r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE
     ),
