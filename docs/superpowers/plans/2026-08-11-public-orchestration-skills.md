@@ -286,4 +286,3 @@ limitations.
 Watch all checks to a terminal result. Repair branch-caused failures without
 force-push or protection bypass. Leave the PR open for exact-head landing
 authorization required by the completion workflow.
-
