@@ -43,33 +43,49 @@
       "id": "eiram-investigative-orchestrator",
       "name": "Ei R@M Investigative Orchestrator",
       "category": "analysis",
-      "status": "specified",
+      "status": "packaged",
       "owner_role": "primary",
-      "public_package": false
+      "public_package": true,
+      "package_path": "skills/analysis/eiram-investigative-orchestrator",
+      "provenance": "authoritative-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_skill_packages.py"
     },
     {
       "id": "breadcrumb-investigator",
       "name": "Breadcrumb Investigator",
       "category": "investigation",
-      "status": "specified",
+      "status": "packaged",
       "owner_role": "evidence_supplier",
-      "public_package": false
+      "public_package": true,
+      "package_path": "skills/investigation/breadcrumb-investigator",
+      "provenance": "authoritative-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_skill_packages.py"
     },
     {
       "id": "youtube-eiram-ingest",
       "name": "YouTube Ei R@M Ingest",
       "category": "media-ingest",
-      "status": "specified",
+      "status": "packaged",
       "owner_role": "evidence_supplier",
-      "public_package": false
+      "public_package": true,
+      "package_path": "skills/media-ingest/youtube-eiram-ingest",
+      "provenance": "authoritative-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_skill_packages.py"
     },
     {
       "id": "eiram-editorial-intelligence",
       "name": "EiRAM Editorial Intelligence",
       "category": "editorial",
-      "status": "specified",
+      "status": "packaged",
       "owner_role": "editor",
-      "public_package": false
+      "public_package": true,
+      "package_path": "skills/editorial/eiram-editorial-intelligence",
+      "provenance": "authoritative-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_skill_packages.py"
     },
     {
       "id": "plato-constraint",

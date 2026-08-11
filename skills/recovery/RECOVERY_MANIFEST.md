@@ -2,15 +2,17 @@
 
 ## Audit result
 
-The project-history review found architectural descriptions and reports that
-Skills were installed in a ChatGPT Agent, but it did not find exportable source
-packages that can be audited and redistributed. No conversation-derived Skill
-has therefore been published as executable code.
+The initial project-history review found architecture descriptions but no
+exportable packages. A later local archive audit recovered authoritative
+exports for Breadcrumb Investigator, Ei R@M Investigative Orchestrator, EiRAM
+Editorial Intelligence, and YouTube Ei R@M Ingest. Their reviewed public
+packages and source digests are now recorded under `skills/`.
 
-The public capability manifest remains authoritative: these capabilities are
-`specified`, not `packaged`.
+The capability manifest remains authoritative. Only those four recovered and
+validated exports are `packaged`; all other public candidates remain
+`specified` until their own publication review is complete.
 
-## Highest-value recovery candidates
+## Remaining recovery and reconstruction candidates
 
 | Priority | Capability | Recover because | Required before publication |
 |---|---|---|---|
@@ -19,16 +21,13 @@ The public capability manifest remains authoritative: these capabilities are
 | 1 | Chief of Staff | Assigns primary, supporting, constraint, and editorial roles | Original package, handoff-contract tests, unavailable-tool checks |
 | 1 | Plato Constraint | Enforces observation/inference/speculation boundaries and blocks clinical overreach | Original package, adversarial safety tests, scope review |
 | 1 | Skill Ecosystem Governor | Replays routing decisions and detects regressions or collisions | Original package, immutable fixtures, audit-output schema |
-| 2 | Ei R@M Investigative Orchestrator | Owns evidence-led synthesis and competing-hypothesis analysis | Original package, source/provenance review, non-diagnostic regression suite |
-| 2 | EiRAM Editorial Intelligence | Reviews scope, evidence, alternatives, and unsupported conclusions | Original package, editorial fixtures, false-confidence tests |
 | 2 | Action Controller | Separates proposed, approved, attempted, verified, and blocked actions | Original package, tool-state simulation, approval tests |
 | 3 | Decision Laboratory | Provides structured, reversible decision support | Original package, assumption and uncertainty fixtures |
 | 3 | Legal Intelligence | Provides governed legal research and analysis structure | Original package, jurisdiction/source tests, legal disclaimer review |
 | 3 | Life Operations | Coordinates personal workflows across connected services | Original package, aggressive personal-data removal, permission tests |
 
-Acquisition helpers such as YouTube Ei R@M and Breadcrumb Investigator are
-secondary recovery candidates. They should remain evidence suppliers and must
-not silently become the owner of an analytical judgment.
+The published YouTube and Breadcrumb packages remain evidence suppliers and
+must not silently become the owner of an analytical judgment.
 
 ## Do not publish
 

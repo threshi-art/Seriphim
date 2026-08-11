@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "validation_scope": "Deterministic expected-routing fixtures; not live-agent evaluation.",
+  "cases": [
+    {
+      "id": "breadcrumb-positive-fragmentary-incident",
+      "synthetic": true,
+      "kind": "positive",
+      "target_skill": "breadcrumb-investigator",
+      "prompt": "I remember only a store name, a county, and that an arrest may have followed. Reconstruct what happened from public records.",
+      "expected": {"primary": "breadcrumb-investigator"}
+    },
+    {
+      "id": "breadcrumb-negative-simple-lookup",
+      "synthetic": true,
+      "kind": "negative",
+      "target_skill": "breadcrumb-investigator",
+      "prompt": "What does the word breadcrumb mean in web navigation?",
+      "expected": {"primary": "direct-response", "excluded": ["breadcrumb-investigator"]}
+    },
+    {
+      "id": "breadcrumb-overlap-eiram",
+      "synthetic": true,
+      "kind": "overlap",
+      "target_skill": "breadcrumb-investigator",
+      "prompt": "Reconstruct the disputed arrest from scattered public clues, then run EiRAM on the verified evidence.",
+      "expected": {"primary": "eiram-investigative-orchestrator", "supporting": ["breadcrumb-investigator"]}
+    },
+    {
+      "id": "orchestrator-positive-competing-hypotheses",
+      "synthetic": true,
+      "kind": "positive",
+      "target_skill": "eiram-investigative-orchestrator",
+      "prompt": "Run EiRAM on this disputed council incident, compare competing explanations, and calibrate confidence.",
+      "expected": {"primary": "eiram-investigative-orchestrator"}
+    },
+    {
+      "id": "orchestrator-negative-factual-answer",
+      "synthetic": true,
+      "kind": "negative",
+      "target_skill": "eiram-investigative-orchestrator",
+      "prompt": "Convert 42 degrees Fahrenheit to Celsius.",
+      "expected": {"primary": "direct-response", "excluded": ["eiram-investigative-orchestrator"]}
+    },
+    {
+      "id": "orchestrator-overlap-editorial",
+      "synthetic": true,
+      "kind": "overlap",
+      "target_skill": "eiram-investigative-orchestrator",
+      "prompt": "Investigate the competing claims and turn the result into a publication-ready intelligence assessment.",
+      "expected": {"primary": "eiram-investigative-orchestrator", "supporting": ["eiram-editorial-intelligence"]}
+    },
+    {
+      "id": "editorial-positive-policy-memo",
+      "synthetic": true,
+      "kind": "positive",
+      "target_skill": "eiram-editorial-intelligence",
+      "prompt": "Turn these source notes into an evidence-disciplined policy memorandum with confidence labels.",
+      "expected": {"primary": "eiram-editorial-intelligence"}
+    },
+    {
+      "id": "editorial-negative-copyedit",
+      "synthetic": true,
+      "kind": "negative",
+      "target_skill": "eiram-editorial-intelligence",
+      "prompt": "Correct the spelling of one word in this sentence.",
+      "expected": {"primary": "direct-response", "excluded": ["eiram-editorial-intelligence"]}
+    },
+    {
+      "id": "editorial-overlap-investigation",
+      "synthetic": true,
+      "kind": "overlap",
+      "target_skill": "eiram-editorial-intelligence",
+      "prompt": "First test these disputed allegations against competing hypotheses, then draft a sourced public report.",
+      "expected": {"primary": "eiram-investigative-orchestrator", "supporting": ["eiram-editorial-intelligence"]}
+    },
+    {
+      "id": "youtube-positive-transcript",
+      "synthetic": true,
+      "kind": "positive",
+      "target_skill": "youtube-eiram-ingest",
+      "prompt": "Acquire the transcript and summarize the public YouTube video with ID AbCdEf12345.",
+      "expected": {"primary": "youtube-eiram-ingest"}
+    },
+    {
+      "id": "youtube-negative-recommendation",
+      "synthetic": true,
+      "kind": "negative",
+      "target_skill": "youtube-eiram-ingest",
+      "prompt": "Recommend a documentary that might be available on YouTube.",
+      "expected": {"primary": "direct-response", "excluded": ["youtube-eiram-ingest"]}
+    },
+    {
+      "id": "youtube-overlap-investigation",
+      "synthetic": true,
+      "kind": "overlap",
+      "target_skill": "youtube-eiram-ingest",
+      "prompt": "Use the public video ID AbCdEf12345 as evidence while investigating the disputed event with EiRAM.",
+      "expected": {"primary": "eiram-investigative-orchestrator", "supporting": ["youtube-eiram-ingest"]}
+    }
+  ]
+}

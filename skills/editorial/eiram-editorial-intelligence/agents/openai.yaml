@@ -1,0 +1,6 @@
+interface:
+  display_name: "EiRAM Editorial Intelligence"
+  short_description: "Evidence-led analysis and editorial control"
+  default_prompt: "Use $eiram-editorial-intelligence to turn these materials into an evidence-disciplined publication draft."
+policy:
+  allow_implicit_invocation: true
