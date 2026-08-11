@@ -80,5 +80,11 @@ class BreadcrumbInvestigatorTests(unittest.TestCase):
         assert_valid_skill(self, package, "breadcrumb-investigator")
 
 
+class InvestigativeOrchestratorTests(unittest.TestCase):
+    def test_package_is_portable_and_complete(self):
+        package = ROOT / "skills" / "analysis" / "eiram-investigative-orchestrator"
+        assert_valid_skill(self, package, "eiram-investigative-orchestrator")
+
+
 if __name__ == "__main__":
     unittest.main()
