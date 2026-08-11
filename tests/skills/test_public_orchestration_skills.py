@@ -31,5 +31,11 @@ class ActionControllerTests(unittest.TestCase):
         assert_valid_skill(self, package, "seraphim-action-controller")
 
 
+class SkillEcosystemGovernorTests(unittest.TestCase):
+    def test_package_is_portable_and_complete(self):
+        package = ROOT / "skills" / "orchestration" / "skill-ecosystem-governor"
+        assert_valid_skill(self, package, "skill-ecosystem-governor")
+
+
 if __name__ == "__main__":
     unittest.main()
