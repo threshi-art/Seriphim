@@ -1,0 +1,4 @@
+interface:
+  display_name: "Seraphim Action Controller"
+  short_description: "Govern external effects and completion claims"
+  default_prompt: "Use $seraphim-action-controller to preflight and govern this external action safely."
