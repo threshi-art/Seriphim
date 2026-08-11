@@ -9,14 +9,16 @@ from project history is:
 ```text
 Context Sentinel
   -> Semantic Priority Router
-  -> Chief of Staff
+  -> Chief of Staff / public Seraphim Operator Routing
   -> primary capability + bounded support
   -> editorial/action control as required
   -> Skill Ecosystem Governor audit
 ```
 
-This document specifies the intended behavior. It does not claim that an
-audited public Skill package or production router is present.
+Chief of Staff names the internal architecture role. Seraphim Operator Routing
+is the audited portable public package for its role-assignment and handoff
+function. This documentation and package collection do not claim that a
+production runtime router is present.
 
 ## Routing Packet
 
@@ -60,7 +62,8 @@ intentional routing result.
    conflicting.
 2. Semantic Priority Router separates the user's operation and emphasis from
    the input modality.
-3. Chief of Staff selects one primary owner and the minimum useful support.
+3. Chief of Staff, exposed publicly through Seraphim Operator Routing, selects
+   one primary owner and the minimum useful support.
 4. Evidence suppliers return provenance, coverage, and collection gaps without
    deciding whether a material claim is true.
 5. Constraint capabilities preserve evidence-state and inference boundaries.

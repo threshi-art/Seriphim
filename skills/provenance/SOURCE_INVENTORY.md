@@ -36,3 +36,21 @@ Those materials remain excluded regardless of archive location.
 The packages are checked by `tests/skills/test_public_skill_packages.py` and the
 platform Skill validator. Synthetic routing fixtures record reviewed expected
 outcomes, but do not claim live independent-agent evaluation.
+
+## Reconstructed public editions
+
+The following packages were reconstructed from the public routing architecture,
+handoff contract, capability registry, synthetic regression cases, and approved
+collection design. They are not represented as historical exports:
+
+- Context Sentinel;
+- Semantic Priority Router;
+- Seraphim Operator Routing;
+- Seraphim Action Controller;
+- Skill Ecosystem Governor.
+
+The reconstruction preserves functional boundaries, routing states, handoff
+fields, correction precedence, external-effect states, and audit categories.
+It contains no private Agent prompt, personal memory, credential, installed
+Skill ID, or claim of unavailable runtime integration. Deterministic fixtures
+record reviewed expected outcomes but are not live independent-agent testing.
