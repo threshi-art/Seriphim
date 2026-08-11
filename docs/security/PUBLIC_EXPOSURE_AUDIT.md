@@ -1,7 +1,9 @@
 # Public Exposure and Security Audit
 
-**Review date:** 2026-08-10  
-**Scope:** current Git working tree plus targeted full-history exposure checks  
+**Review date:** 2026-08-10
+
+**Scope:** current Git working tree plus targeted full-history exposure checks
+
 **Method:** manual source review, deterministic tests, high-confidence secret
 patterns, path/provenance inventory, and build verification
 
