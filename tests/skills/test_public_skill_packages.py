@@ -160,5 +160,70 @@ class YouTubeEiramIngestTests(unittest.TestCase):
         self.assertRegex(policy, r"(?:do not|never) bypass")
 
 
+class CollectionRegistryTests(unittest.TestCase):
+    EXPECTED_PACKAGES = {
+        "breadcrumb-investigator": "skills/investigation/breadcrumb-investigator",
+        "eiram-investigative-orchestrator": "skills/analysis/eiram-investigative-orchestrator",
+        "eiram-editorial-intelligence": "skills/editorial/eiram-editorial-intelligence",
+        "youtube-eiram-ingest": "skills/media-ingest/youtube-eiram-ingest",
+    }
+
+    def setUp(self):
+        manifest_path = ROOT / "skills" / "capability-manifest.json"
+        self.manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.capabilities = {
+            item["id"]: item for item in self.manifest["capabilities"]
+        }
+
+    def test_verified_packages_are_registered_with_validation_evidence(self):
+        for skill_id, relative_path in self.EXPECTED_PACKAGES.items():
+            with self.subTest(skill_id=skill_id):
+                item = self.capabilities[skill_id]
+                self.assertEqual("packaged", item["status"])
+                self.assertTrue(item["public_package"])
+                self.assertEqual(relative_path, item["package_path"])
+                self.assertEqual("authoritative-export", item["provenance"])
+                self.assertEqual("1.0.0", item["version"])
+                self.assertEqual(
+                    "tests/skills/test_public_skill_packages.py", item["validation"]
+                )
+                package = ROOT / relative_path
+                self.assertTrue(package.is_dir(), relative_path)
+                assert_valid_skill(self, package, skill_id)
+
+    def test_pr1_routing_fixture_is_complete_and_references_known_skills(self):
+        fixture_path = ROOT / "tests" / "skills" / "fixtures" / "pr1-routing-cases.json"
+        fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+        cases = fixture["cases"]
+        case_ids = [case["id"] for case in cases]
+        self.assertEqual(len(case_ids), len(set(case_ids)))
+
+        known = set(self.capabilities)
+        coverage = {
+            skill_id: {"positive": False, "negative": False, "overlap": False}
+            for skill_id in self.EXPECTED_PACKAGES
+        }
+        for case in cases:
+            self.assertTrue(case["synthetic"])
+            self.assertNotIn("http://", case["prompt"])
+            self.assertNotIn("https://", case["prompt"])
+            self.assertIn(case["target_skill"], coverage)
+            self.assertIn(case["kind"], coverage[case["target_skill"]])
+            coverage[case["target_skill"]][case["kind"]] = True
+            referenced = {
+                case["expected"]["primary"],
+                *case["expected"].get("supporting", []),
+                *case["expected"].get("excluded", []),
+            }
+            self.assertLessEqual(referenced, known, case["id"])
+
+        for skill_id, kinds in coverage.items():
+            self.assertTrue(all(kinds.values()), f"incomplete routing coverage: {skill_id}")
+
+    def test_source_inventory_exists(self):
+        inventory = ROOT / "skills" / "provenance" / "SOURCE_INVENTORY.md"
+        self.assertTrue(inventory.is_file())
+
+
 if __name__ == "__main__":
     unittest.main()
