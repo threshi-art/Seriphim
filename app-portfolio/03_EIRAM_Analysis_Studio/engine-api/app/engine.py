@@ -47,4 +47,5 @@ def run_eiram(payload: AnalyzeRequest) -> AnalyzeResponse:
         risk_vector=result["risk_vector"],
         evidence=result["evidence"],
         forecast=result["forecast"],
+        limitations=result["limitations"],
     )

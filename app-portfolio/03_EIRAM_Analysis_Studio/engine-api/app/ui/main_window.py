@@ -194,8 +194,8 @@ class MainWindow(QMainWindow):
         hero_layout.addWidget(self.summary_title)
         hero_layout.addWidget(self.summary_subtitle)
         chip_row = QHBoxLayout()
-        self.overall_chip = self._label("OVERALL RISK --", "statusChip")
-        self.subject_chip = self._label("SUBJECT UNSPECIFIED", "secondaryChip")
+        self.overall_chip = self._label("TEXT SIGNAL --", "statusChip")
+        self.subject_chip = self._label("INPUT UNSPECIFIED", "secondaryChip")
         chip_row.addWidget(self.overall_chip)
         chip_row.addWidget(self.subject_chip)
         chip_row.addStretch()
@@ -204,7 +204,7 @@ class MainWindow(QMainWindow):
 
         stats = QGridLayout()
         stats.setSpacing(14)
-        self.overall_card = StatCard("Overall Risk")
+        self.overall_card = StatCard("Overall Text Signal")
         self.ideology_card = StatCard("Ideological Lock")
         self.escalation_card = StatCard("Escalation Risk")
         self.destabilization_card = StatCard("Emotional Destabilization")
@@ -238,7 +238,7 @@ class MainWindow(QMainWindow):
         self.forecast_text = QTextEdit()
         self.forecast_text.setReadOnly(True)
         lower.addWidget(self._wrap_output("Evidence tray", "Strongest phrase-level cues from the current run.", self.evidence_list), 4)
-        lower.addWidget(self._wrap_output("Forecast", "High-level narrative output from the aggregation layer.", self.forecast_text), 5)
+        lower.addWidget(self._wrap_output("Interpretation", "Descriptive output and mandatory limitations from the current text only.", self.forecast_text), 5)
         layout.addLayout(lower, 1)
         return wrapper
 
@@ -353,9 +353,9 @@ class MainWindow(QMainWindow):
         self.summary_title.setText("Command deck idle")
         self.summary_subtitle.setText("Run a narrative sample to populate the module lattice, evidence tray, and audit panes.")
         self.state_chip.setText("NO ANALYSIS YET")
-        self.overall_chip.setText("OVERALL RISK --")
-        self.subject_chip.setText("SUBJECT UNSPECIFIED")
-        self.forecast_text.setPlainText("No forecast yet.")
+        self.overall_chip.setText("TEXT SIGNAL --")
+        self.subject_chip.setText("INPUT UNSPECIFIED")
+        self.forecast_text.setPlainText("No interpretation yet.")
         self.features_text.setHtml(self._simple_html("Signal field", "No extracted features yet."))
         self.rationales_text.setHtml(self._simple_html("Module rationales", "Run EiRAM to inspect module-level reasoning."))
         self.request_text.setPlainText("{}")
@@ -477,13 +477,14 @@ class MainWindow(QMainWindow):
         self.summary_title.setText(result.summary)
         self.summary_subtitle.setText("Transparent phase-1 readout built from symbolic features, module scoring, and auditable evidence extraction.")
         self.state_chip.setText(self._risk_label(overall).upper())
-        self.overall_chip.setText(f"OVERALL RISK {self._score_text(overall)}")
-        self.subject_chip.setText(f"SUBJECT {(payload.subject_id or 'unspecified').upper()}")
+        self.overall_chip.setText(f"TEXT SIGNAL {self._score_text(overall)}")
+        self.subject_chip.setText(f"INPUT {(payload.subject_id or 'unspecified').upper()}")
         self.overall_card.set_data(self._score_text(overall), self._risk_caption(overall))
         self.ideology_card.set_data(self._score_text(ideology), "Current ideological lock proxy")
         self.escalation_card.set_data(self._score_text(escalation), "Escalation phase-1 module output")
         self.destabilization_card.set_data(self._score_text(destabilization), "Emotional destabilization proxy")
-        self.forecast_text.setPlainText(result.forecast)
+        limitations = "\n".join(f"• {item}" for item in result.limitations)
+        self.forecast_text.setPlainText(f"{result.forecast}\n\nLimitations\n{limitations}")
         self.evidence_list.clear()
         for item in (result.evidence or ["No explicit evidence candidates captured on this run."]):
             self.evidence_list.addItem(QListWidgetItem(item))
@@ -507,7 +508,7 @@ class MainWindow(QMainWindow):
             f"<div style='margin-top:6px;color:#9ec9e8;'>{escape(key.replace('_', ' '))}: <b>{self._score_text(float(value))}</b></div>"
             for key, value in result.risk_vector.items()
         )
-        return self._simple_html("Risk vector", vector + "<div style='margin-top:14px;color:#7fd8ff;'>Features</div>" + "".join(rows), raw=True)
+        return self._simple_html("Legacy signal vector", vector + "<div style='margin-top:14px;color:#7fd8ff;'>Features</div>" + "".join(rows), raw=True)
 
     def _rationales_html(self, result: AnalyzeResponse) -> str:
         rows = []
@@ -543,10 +544,10 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _risk_label(score: float) -> str:
         if score >= 0.7:
-            return "High risk"
+            return "High signal"
         if score >= 0.4:
-            return "Moderate risk"
-        return "Low risk"
+            return "Moderate signal"
+        return "Low signal"
 
     @staticmethod
     def _risk_caption(score: float) -> str:

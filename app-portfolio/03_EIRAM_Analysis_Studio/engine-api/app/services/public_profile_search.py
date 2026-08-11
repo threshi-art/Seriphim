@@ -144,8 +144,8 @@ def research_public_handle(
     for query in queries:
         try:
             query_results = _search_duckduckgo(query, payload.max_results)
-        except Exception as exc:
-            notes.append(f'Live search failed for query "{query}": {exc}')
+        except Exception:
+            notes.append(f'Live public search is temporarily unavailable for query "{query}".')
             continue
         for row in query_results:
             url = row["url"].strip()
