@@ -34,12 +34,33 @@ RUNTIME_STATES = {
     "not_implemented",
 }
 LICENSE_STATUSES = {"project_original", "not_packaged"}
-STEWARDSHIP_FIELDS = {
-    "publisher",
-    "maintainer",
-    "technical_owner",
-    "governance_owner",
+ROOT_FIELDS = {"schema_version", "status_definitions", "capabilities"}
+CAPABILITY_FIELDS = {
+    "id",
+    "name",
+    "category",
+    "status",
+    "owner_role",
+    "public_package",
+    "package_path",
+    "provenance",
+    "version",
+    "validation",
+    "runtime_contract",
+    "lifecycle_state",
+    "license",
+    "stewardship",
+    "public_equivalent",
+    "private_reason",
 }
+LICENSE_FIELDS = {"status", "spdx_id"}
+CANONICAL_STEWARDSHIP = {
+    "publisher": "Seraphim project",
+    "maintainer": "Seraphim project",
+    "technical_owner": "Seraphim engineering",
+    "governance_owner": "Seraphim governance",
+}
+STEWARDSHIP_FIELDS = set(CANONICAL_STEWARDSHIP)
 RUNTIME_CONTRACT_FIELDS = {
     "capability_id",
     "version",
@@ -69,12 +90,15 @@ def content_digest(value: object) -> str:
 def validate_manifest(payload: object) -> dict[str, dict]:
     """Validate a v2 declaration manifest and return isolated capability records."""
     root = _require_dict(payload, "manifest")
+    _reject_unknown_fields(root, "manifest", ROOT_FIELDS)
     if type(root.get("schema_version")) is not int or root["schema_version"] != 2:
         raise RegistryValidationError("manifest schema_version must be 2")
+    _validate_status_definitions(root.get("status_definitions"))
     capabilities = _require_list(root.get("capabilities"), "capabilities")
     records: dict[str, dict] = {}
     for index, raw in enumerate(capabilities):
         record = _require_dict(raw, f"capabilities[{index}]")
+        _reject_unknown_fields(record, f"capabilities[{index}]", CAPABILITY_FIELDS)
         capability_id = _require_nonempty_string(record.get("id"), "capability id")
         if capability_id in records:
             raise RegistryValidationError(f"duplicate capability: {capability_id}")
@@ -149,6 +173,7 @@ def _validate_package_evidence(
 
 def _validate_license(license_record: object, capability_id: str, status: str) -> None:
     license_data = _require_dict(license_record, f"{capability_id} license")
+    _reject_unknown_fields(license_data, f"{capability_id} license", LICENSE_FIELDS)
     license_status = _require_nonempty_string(
         license_data.get("status"), f"{capability_id} license status"
     )
@@ -168,8 +193,15 @@ def _validate_license(license_record: object, capability_id: str, status: str) -
 
 def _validate_stewardship(stewardship: object, capability_id: str) -> None:
     record = _require_dict(stewardship, f"{capability_id} stewardship")
+    _reject_unknown_fields(record, f"{capability_id} stewardship", STEWARDSHIP_FIELDS)
     for field in STEWARDSHIP_FIELDS:
-        _require_nonempty_string(record.get(field), f"{capability_id} stewardship {field}")
+        value = _require_nonempty_string(
+            record.get(field), f"{capability_id} stewardship {field}"
+        )
+        if value != CANONICAL_STEWARDSHIP[field]:
+            raise RegistryValidationError(
+                f"{capability_id} stewardship {field} must match the canonical owner"
+            )
 
 
 def _validate_runtime_contract(
@@ -179,6 +211,9 @@ def _validate_runtime_contract(
     status: str,
 ) -> None:
     runtime = _require_dict(runtime_contract, f"{capability_id} runtime_contract")
+    _reject_unknown_fields(
+        runtime, f"{capability_id} runtime_contract", RUNTIME_CONTRACT_FIELDS
+    )
     missing = RUNTIME_CONTRACT_FIELDS - runtime.keys()
     if missing:
         raise RegistryValidationError(
@@ -221,6 +256,21 @@ def _require_dict(value: object, label: str) -> dict:
     if not isinstance(value, dict):
         raise RegistryValidationError(f"{label} must be an object")
     return value
+
+
+def _reject_unknown_fields(record: dict, label: str, allowed_fields: set[str]) -> None:
+    unknown_fields = record.keys() - allowed_fields
+    if unknown_fields:
+        raise RegistryValidationError(
+            f"{label} has unknown fields: {sorted(unknown_fields)}"
+        )
+
+
+def _validate_status_definitions(status_definitions: object) -> None:
+    definitions = _require_dict(status_definitions, "status_definitions")
+    _reject_unknown_fields(definitions, "status_definitions", PACKAGE_STATES)
+    for status in PACKAGE_STATES:
+        _require_nonempty_string(definitions.get(status), f"status_definitions {status}")
 
 
 def _require_list(value: object, label: str) -> list:

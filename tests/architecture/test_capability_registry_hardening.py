@@ -79,3 +79,32 @@ class CapabilityDeclarationTests(unittest.TestCase):
         payload["capabilities"][0]["runtime_contract"]["authorization_scope"] = True
         with self.assertRaises(RegistryValidationError):
             validate_manifest(payload)
+
+    def test_unknown_keys_at_every_declaration_boundary_fail_closed(self) -> None:
+        for index in range(6):
+            payload = deepcopy(self.payload)
+            targets = (
+                payload,
+                payload["status_definitions"],
+                payload["capabilities"][0],
+                payload["capabilities"][0]["license"],
+                payload["capabilities"][0]["stewardship"],
+                payload["capabilities"][0]["runtime_contract"],
+            )
+            targets[index]["unexpected"] = "must be rejected"
+            with self.subTest(boundary=index), self.assertRaisesRegex(
+                RegistryValidationError, "unknown"
+            ):
+                validate_manifest(payload)
+
+    def test_stewardship_values_must_match_the_canonical_owners(self) -> None:
+        for field in (
+            "publisher",
+            "maintainer",
+            "technical_owner",
+            "governance_owner",
+        ):
+            payload = deepcopy(self.payload)
+            payload["capabilities"][0]["stewardship"][field] = "incorrect owner"
+            with self.subTest(field=field), self.assertRaises(RegistryValidationError):
+                validate_manifest(payload)
