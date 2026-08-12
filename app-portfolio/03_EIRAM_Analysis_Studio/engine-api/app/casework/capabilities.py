@@ -32,6 +32,11 @@ class CapabilityRegistry:
     @classmethod
     def load(cls, path: Path) -> "CapabilityRegistry":
         payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        if (
+            type(payload.get("schema_version")) is not int
+            or payload["schema_version"] != 2
+        ):
+            raise ValueError("manifest schema_version must be 2")
         records: Dict[str, dict] = {}
         for capability in payload.get("capabilities", []):
             runtime = capability.get("runtime_contract", {})

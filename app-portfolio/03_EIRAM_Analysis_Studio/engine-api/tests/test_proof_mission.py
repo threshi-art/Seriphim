@@ -78,3 +78,17 @@ def test_closure_records_lesson_without_mutating_doctrine(tmp_path: Path) -> Non
     assert lessons[0].institutional_change_required is False
     assert lessons[0].proposed_change is None
     assert service.ledger.list_architecture_changes(result.case_id) == []
+
+
+def test_proof_mission_still_uses_immutable_authorized_snapshot(
+    tmp_path: Path,
+) -> None:
+    service = build_proof_service(
+        tmp_path / "proof.sqlite3", fixture_path(), manifest_path()
+    )
+    result = service.run(
+        ProofMissionRequest(original_request="Evaluate the synthetic claim.")
+    )
+
+    assert result.external_action_state is ActionState.NONE
+    assert service.ledger.list_architecture_changes(result.case_id) == []

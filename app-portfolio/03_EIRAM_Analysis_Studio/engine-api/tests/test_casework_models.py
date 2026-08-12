@@ -1,8 +1,11 @@
+import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
 
+from app.casework.capabilities import CapabilityRegistry
 from app.casework.models import (
     ActionState,
     AuthorityScope,
@@ -15,6 +18,9 @@ from app.casework.models import (
     MissionDepth,
 )
 from app.casework.state_machine import InvalidCaseTransition, validate_transition
+
+
+MANIFEST = Path(__file__).parents[4] / "skills" / "capability-manifest.json"
 
 
 def mission_data() -> dict:
@@ -133,3 +139,16 @@ def test_closed_case_cannot_collect_without_reopen() -> None:
 def test_archived_case_has_no_outbound_transition() -> None:
     with pytest.raises(InvalidCaseTransition, match="archived -> reopened"):
         validate_transition(CaseState.ARCHIVED, CaseState.REOPENED)
+
+
+@pytest.mark.parametrize("schema_version", [1, 999])
+def test_capability_registry_rejects_old_or_unknown_manifest_schema(
+    tmp_path: Path, schema_version: int
+) -> None:
+    payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    payload["schema_version"] = schema_version
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="schema_version"):
+        CapabilityRegistry.load(path)
