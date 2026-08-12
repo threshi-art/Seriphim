@@ -16,6 +16,33 @@ ALLOWED_ROLES = {
     "action_controller",
     "auditor",
 }
+REQUIRED_RUNTIME_CONTRACT_FIELDS = {
+    "capability_id",
+    "version",
+    "architectural_type",
+    "available_runtime",
+    "current_status",
+    "read_or_write",
+    "authorization_scope",
+    "approval_requirement",
+    "data_boundary",
+    "last_verified",
+}
+ALLOWED_ARCHITECTURAL_TYPES = {
+    "domain_primary",
+    "portable_skill",
+    "governance_control",
+    "institutional_artifact",
+    "specified_capability",
+}
+ALLOWED_RUNTIMES = {
+    "chatgpt",
+    "codex",
+    "repository_only",
+    "private",
+    "not_implemented",
+}
+ALLOWED_ACCESS_MODES = {"read", "write", "read_write", "none"}
 REQUIRED_DOCUMENTS = [
     "LICENSE",
     "NOTICE.md",
@@ -68,6 +95,23 @@ class PublicArchitectureTests(unittest.TestCase):
             self.assertIsInstance(item["public_package"], bool)
             if item["status"] == "specified":
                 self.assertFalse(item["public_package"])
+
+    def test_capability_manifest_defines_authoritative_runtime_contracts(self):
+        manifest = load_json(ROOT / "skills" / "capability-manifest.json")
+
+        for capability in manifest["capabilities"]:
+            runtime = capability.get("runtime_contract", {})
+            missing = REQUIRED_RUNTIME_CONTRACT_FIELDS - runtime.keys()
+
+            self.assertEqual(runtime.get("capability_id"), capability["id"])
+            self.assertFalse(missing, f"{capability['id']}: {sorted(missing)}")
+            self.assertIn(
+                runtime["architectural_type"], ALLOWED_ARCHITECTURAL_TYPES
+            )
+            self.assertIn(runtime["available_runtime"], ALLOWED_RUNTIMES)
+            self.assertIn(runtime["read_or_write"], ALLOWED_ACCESS_MODES)
+            self.assertIsInstance(runtime["authorization_scope"], list)
+            self.assertIsInstance(runtime["data_boundary"], list)
 
     def test_routing_cases_reference_declared_capabilities(self):
         manifest = load_json(ROOT / "skills" / "capability-manifest.json")

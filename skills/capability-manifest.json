@@ -13,7 +13,19 @@
       "category": "orchestration",
       "status": "specified",
       "owner_role": "primary",
-      "public_package": false
+      "public_package": false,
+      "runtime_contract": {
+        "capability_id": "direct-response",
+        "version": "0.1.0",
+        "architectural_type": "specified_capability",
+        "available_runtime": "not_implemented",
+        "current_status": "specified",
+        "read_or_write": "none",
+        "authorization_scope": [],
+        "approval_requirement": "not_available",
+        "data_boundary": [],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "context-sentinel",
@@ -25,7 +37,25 @@
       "package_path": "skills/orchestration/context-sentinel",
       "provenance": "reconstructed-public-edition",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_orchestration_skills.py"
+      "validation": "tests/skills/test_public_orchestration_skills.py",
+      "runtime_contract": {
+        "capability_id": "context-sentinel",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "context_resolution",
+          "reference_classification"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "semantic-priority-router",
@@ -37,7 +67,25 @@
       "package_path": "skills/orchestration/semantic-priority-router",
       "provenance": "reconstructed-public-edition",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_orchestration_skills.py"
+      "validation": "tests/skills/test_public_orchestration_skills.py",
+      "runtime_contract": {
+        "capability_id": "semantic-priority-router",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "intent_classification",
+          "role_recommendation"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "seraphim-mission-intake",
@@ -49,7 +97,26 @@
       "package_path": "skills/orchestration/seraphim-mission-intake",
       "provenance": "authoritative-live-export",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_operational_skills.py"
+      "validation": "tests/skills/test_public_operational_skills.py",
+      "runtime_contract": {
+        "capability_id": "seraphim-mission-intake",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "mission_classification",
+          "depth_selection",
+          "owner_recommendation"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "chief-of-staff",
@@ -58,7 +125,19 @@
       "status": "specified",
       "owner_role": "orchestrator",
       "public_package": false,
-      "public_equivalent": "skills/orchestration/seraphim-operator-routing"
+      "public_equivalent": "skills/orchestration/seraphim-operator-routing",
+      "runtime_contract": {
+        "capability_id": "chief-of-staff",
+        "version": "0.1.0",
+        "architectural_type": "specified_capability",
+        "available_runtime": "not_implemented",
+        "current_status": "specified",
+        "read_or_write": "none",
+        "authorization_scope": [],
+        "approval_requirement": "not_available",
+        "data_boundary": [],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "seraphim-operator-routing",
@@ -70,7 +149,25 @@
       "package_path": "skills/orchestration/seraphim-operator-routing",
       "provenance": "reconstructed-public-edition",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_orchestration_skills.py"
+      "validation": "tests/skills/test_public_orchestration_skills.py",
+      "runtime_contract": {
+        "capability_id": "seraphim-operator-routing",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "product_surface_routing",
+          "handoff_packaging"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "eiram-investigative-orchestrator",
@@ -82,7 +179,26 @@
       "package_path": "skills/analysis/eiram-investigative-orchestrator",
       "provenance": "authoritative-export",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_skill_packages.py"
+      "validation": "tests/skills/test_public_skill_packages.py",
+      "runtime_contract": {
+        "capability_id": "eiram-investigative-orchestrator",
+        "version": "1.0.0",
+        "architectural_type": "domain_primary",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "evidence_synthesis",
+          "competing_hypotheses",
+          "analytical_judgment"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "breadcrumb-investigator",
@@ -94,7 +210,25 @@
       "package_path": "skills/investigation/breadcrumb-investigator",
       "provenance": "authoritative-export",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_skill_packages.py"
+      "validation": "tests/skills/test_public_skill_packages.py",
+      "runtime_contract": {
+        "capability_id": "breadcrumb-investigator",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "lawful_public_source_research",
+          "evidence_packaging"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "youtube-eiram-ingest",
@@ -106,7 +240,25 @@
       "package_path": "skills/media-ingest/youtube-eiram-ingest",
       "provenance": "authoritative-export",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_skill_packages.py"
+      "validation": "tests/skills/test_public_skill_packages.py",
+      "runtime_contract": {
+        "capability_id": "youtube-eiram-ingest",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "public_media_ingest",
+          "transcript_evidence_packaging"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "eiram-editorial-intelligence",
@@ -118,7 +270,26 @@
       "package_path": "skills/editorial/eiram-editorial-intelligence",
       "provenance": "authoritative-export",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_skill_packages.py"
+      "validation": "tests/skills/test_public_skill_packages.py",
+      "runtime_contract": {
+        "capability_id": "eiram-editorial-intelligence",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "evidence_audit",
+          "red_team_review",
+          "editorial_revision"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "plato-constraint",
@@ -126,7 +297,19 @@
       "category": "safety",
       "status": "specified",
       "owner_role": "constraint",
-      "public_package": false
+      "public_package": false,
+      "runtime_contract": {
+        "capability_id": "plato-constraint",
+        "version": "0.1.0",
+        "architectural_type": "governance_control",
+        "available_runtime": "not_implemented",
+        "current_status": "specified",
+        "read_or_write": "none",
+        "authorization_scope": [],
+        "approval_requirement": "not_available",
+        "data_boundary": [],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "seraphim-action-controller",
@@ -138,7 +321,26 @@
       "package_path": "skills/orchestration/seraphim-action-controller",
       "provenance": "reconstructed-public-edition",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_orchestration_skills.py"
+      "validation": "tests/skills/test_public_orchestration_skills.py",
+      "runtime_contract": {
+        "capability_id": "seraphim-action-controller",
+        "version": "1.0.0",
+        "architectural_type": "governance_control",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read_write",
+        "authorization_scope": [
+          "action_classification",
+          "authorization_validation",
+          "completion_verification"
+        ],
+        "approval_requirement": "target_specific_authorization_required",
+        "data_boundary": [
+          "authorized_target_state",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "skill-ecosystem-governor",
@@ -150,7 +352,25 @@
       "package_path": "skills/orchestration/skill-ecosystem-governor",
       "provenance": "reconstructed-public-edition",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_orchestration_skills.py"
+      "validation": "tests/skills/test_public_orchestration_skills.py",
+      "runtime_contract": {
+        "capability_id": "skill-ecosystem-governor",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "skill_library_audit",
+          "trigger_regression_review"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "seraphim-legal-intelligence",
@@ -162,7 +382,26 @@
       "package_path": "skills/legal/seraphim-legal-intelligence",
       "provenance": "reconstructed-public-edition",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_specialized_skills.py"
+      "validation": "tests/skills/test_public_specialized_skills.py",
+      "runtime_contract": {
+        "capability_id": "seraphim-legal-intelligence",
+        "version": "1.0.0",
+        "architectural_type": "domain_primary",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "legal_research",
+          "legal_analysis",
+          "citation_review"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "seraphim-decision-laboratory",
@@ -174,7 +413,26 @@
       "package_path": "skills/decision-support/seraphim-decision-laboratory",
       "provenance": "reconstructed-public-edition",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_specialized_skills.py"
+      "validation": "tests/skills/test_public_specialized_skills.py",
+      "runtime_contract": {
+        "capability_id": "seraphim-decision-laboratory",
+        "version": "1.0.0",
+        "architectural_type": "domain_primary",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "decision_analysis",
+          "option_comparison",
+          "red_team_review"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "seraphim-life-operations",
@@ -183,7 +441,23 @@
       "status": "private",
       "owner_role": "primary",
       "public_package": false,
-      "private_reason": "Depends on personal context and connected-service permissions."
+      "private_reason": "Depends on personal context and connected-service permissions.",
+      "runtime_contract": {
+        "capability_id": "seraphim-life-operations",
+        "version": "0.1.0",
+        "architectural_type": "domain_primary",
+        "available_runtime": "private",
+        "current_status": "private",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "private_personal_operations"
+        ],
+        "approval_requirement": "private_runtime_required",
+        "data_boundary": [
+          "private_operator_context"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "lawful-humint-planner",
@@ -195,7 +469,25 @@
       "package_path": "skills/investigation/lawful-humint-planner",
       "provenance": "reconstructed-public-edition",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_specialized_skills.py"
+      "validation": "tests/skills/test_public_specialized_skills.py",
+      "runtime_contract": {
+        "capability_id": "lawful-humint-planner",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "lawful_collection_planning",
+          "source_assessment"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "repo-surgeon",
@@ -207,7 +499,25 @@
       "package_path": "skills/maintenance/repo-surgeon",
       "provenance": "reconstructed-public-edition",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_specialized_skills.py"
+      "validation": "tests/skills/test_public_specialized_skills.py",
+      "runtime_contract": {
+        "capability_id": "repo-surgeon",
+        "version": "1.0.0",
+        "architectural_type": "domain_primary",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "authorized_repository_analysis",
+          "patch_planning"
+        ],
+        "approval_requirement": "authorized_repository_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "workspace-auditor",
@@ -219,7 +529,25 @@
       "package_path": "skills/maintenance/workspace-auditor",
       "provenance": "reconstructed-public-edition",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_specialized_skills.py"
+      "validation": "tests/skills/test_public_specialized_skills.py",
+      "runtime_contract": {
+        "capability_id": "workspace-auditor",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "workspace_inventory",
+          "repository_health_review"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "seraphim-publication-curator",
@@ -231,7 +559,25 @@
       "package_path": "skills/maintenance/seraphim-publication-curator",
       "provenance": "reconstructed-public-edition",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_specialized_skills.py"
+      "validation": "tests/skills/test_public_specialized_skills.py",
+      "runtime_contract": {
+        "capability_id": "seraphim-publication-curator",
+        "version": "1.0.0",
+        "architectural_type": "governance_control",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "publication_classification",
+          "privacy_provenance_licensing_review"
+        ],
+        "approval_requirement": "public_release_policy_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "seraphim-evaluation-harness",
@@ -243,7 +589,26 @@
       "package_path": "skills/maintenance/seraphim-evaluation-harness",
       "provenance": "authoritative-live-export",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_operational_skills.py"
+      "validation": "tests/skills/test_public_operational_skills.py",
+      "runtime_contract": {
+        "capability_id": "seraphim-evaluation-harness",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "evaluation_design",
+          "regression_scoring",
+          "release_readiness"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "software-architect",
@@ -255,7 +620,25 @@
       "package_path": "skills/engineering/software-architect",
       "provenance": "authoritative-live-export",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_operational_skills.py"
+      "validation": "tests/skills/test_public_operational_skills.py",
+      "runtime_contract": {
+        "capability_id": "software-architect",
+        "version": "1.0.0",
+        "architectural_type": "domain_primary",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "software_architecture",
+          "system_design"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "technical-project-manager",
@@ -267,7 +650,25 @@
       "package_path": "skills/engineering/technical-project-manager",
       "provenance": "authoritative-live-export",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_operational_skills.py"
+      "validation": "tests/skills/test_public_operational_skills.py",
+      "runtime_contract": {
+        "capability_id": "technical-project-manager",
+        "version": "1.0.0",
+        "architectural_type": "domain_primary",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "delivery_planning",
+          "risk_dependency_management"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "ai-solutions-engineer",
@@ -279,7 +680,26 @@
       "package_path": "skills/engineering/ai-solutions-engineer",
       "provenance": "authoritative-live-export",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_operational_skills.py"
+      "validation": "tests/skills/test_public_operational_skills.py",
+      "runtime_contract": {
+        "capability_id": "ai-solutions-engineer",
+        "version": "1.0.0",
+        "architectural_type": "domain_primary",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "ai_system_design",
+          "evaluation_planning",
+          "production_readiness"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "technical-lead",
@@ -291,7 +711,25 @@
       "package_path": "skills/engineering/technical-lead",
       "provenance": "authoritative-live-export",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_operational_skills.py"
+      "validation": "tests/skills/test_public_operational_skills.py",
+      "runtime_contract": {
+        "capability_id": "technical-lead",
+        "version": "1.0.0",
+        "architectural_type": "domain_primary",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "engineering_execution",
+          "technical_quality_review"
+        ],
+        "approval_requirement": "mission_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "cybersecurity-specialist",
@@ -303,7 +741,25 @@
       "package_path": "skills/security/cybersecurity-specialist",
       "provenance": "authoritative-live-export",
       "version": "1.0.0",
-      "validation": "tests/skills/test_public_operational_skills.py"
+      "validation": "tests/skills/test_public_operational_skills.py",
+      "runtime_contract": {
+        "capability_id": "cybersecurity-specialist",
+        "version": "1.0.0",
+        "architectural_type": "domain_primary",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "authorized_defensive_security",
+          "privacy_control_review"
+        ],
+        "approval_requirement": "authorized_security_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-11"
+      }
     },
     {
       "id": "personal-writing-style",
@@ -311,7 +767,23 @@
       "category": "private-personalization",
       "status": "private",
       "owner_role": "editor",
-      "public_package": false
+      "public_package": false,
+      "runtime_contract": {
+        "capability_id": "personal-writing-style",
+        "version": "0.1.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "private",
+        "current_status": "private",
+        "read_or_write": "read",
+        "authorization_scope": [
+          "private_style_calibration"
+        ],
+        "approval_requirement": "private_runtime_required",
+        "data_boundary": [
+          "private_operator_context"
+        ],
+        "last_verified": "2026-08-11"
+      }
     }
   ]
 }
