@@ -43,6 +43,28 @@ class WorkspaceAuditorTests(unittest.TestCase):
         assert_valid_skill(self, package, "workspace-auditor")
 
 
+class SeraphimPublicationCuratorTests(unittest.TestCase):
+    def test_package_is_portable_and_complete(self):
+        package = (
+            ROOT
+            / "skills"
+            / "maintenance"
+            / "seraphim-publication-curator"
+        )
+        assert_valid_skill(self, package, "seraphim-publication-curator")
+
+    def test_publication_contract_is_present(self):
+        contract = (
+            ROOT
+            / "skills"
+            / "maintenance"
+            / "seraphim-publication-curator"
+            / "references"
+            / "publication-contract.md"
+        )
+        self.assertTrue(contract.is_file())
+
+
 class SpecializedCohortTests(unittest.TestCase):
     EXPECTED_PACKAGES = {
         "lawful-humint-planner": "skills/investigation/lawful-humint-planner",
@@ -54,6 +76,9 @@ class SpecializedCohortTests(unittest.TestCase):
         ),
         "repo-surgeon": "skills/maintenance/repo-surgeon",
         "workspace-auditor": "skills/maintenance/workspace-auditor",
+        "seraphim-publication-curator": (
+            "skills/maintenance/seraphim-publication-curator"
+        ),
     }
     REQUIRED_FEATURES = {
         "consent",
@@ -67,6 +92,9 @@ class SpecializedCohortTests(unittest.TestCase):
         "read-only-default",
         "redaction",
         "action-gating",
+        "publication-classification",
+        "exact-head-approval",
+        "license-review",
     }
 
     def setUp(self):

@@ -9,7 +9,7 @@ Editorial Intelligence, and YouTube Ei R@M Ingest. Their reviewed public
 packages and provenance classes are now recorded under `skills/`.
 
 The capability manifest remains authoritative. Four packages are authoritative
-exports; five orchestration packages and five specialized packages are labeled
+exports; five orchestration packages and six specialized packages are labeled
 reconstructed public editions. No additional authoritative export was found in
 the synced project source collection.
 

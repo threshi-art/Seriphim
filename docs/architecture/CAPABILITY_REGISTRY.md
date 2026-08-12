@@ -46,6 +46,8 @@ connected-service permissions.
 Repo Surgeon owns bounded, authorized repository repair. Workspace Auditor owns
 read-only inventory and evidence-backed hygiene findings. Audit authority does
 not imply mutation authority, and both packages preserve unrelated user work.
+Seraphim Publication Curator owns public-release classification, reconciliation,
+and exact-head approval discipline; it does not inherit general repair authority.
 
 ### Editorial Quality
 

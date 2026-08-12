@@ -56,7 +56,8 @@ The same reconstruction standard applies to the specialized public editions:
 - Seraphim Decision Laboratory;
 - Seraphim Legal Intelligence;
 - Repo Surgeon;
-- Workspace Auditor.
+- Workspace Auditor;
+- Seraphim Publication Curator.
 
 The reconstruction preserves functional boundaries, routing states, handoff
 fields, correction precedence, external-effect states, and audit categories.
@@ -67,3 +68,5 @@ record reviewed expected outcomes but are not live independent-agent testing.
 The specialized editions add consent, non-deception, jurisdiction, authority
 hierarchy, decision ownership, exact-target, user-work preservation, and
 read-only audit boundaries without reproducing private case material.
+The Publication Curator additionally preserves the six-disposition publication
+taxonomy, canonical-record reconciliation, and exact-head landing boundary.

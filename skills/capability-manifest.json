@@ -210,6 +210,18 @@
       "validation": "tests/skills/test_public_specialized_skills.py"
     },
     {
+      "id": "seraphim-publication-curator",
+      "name": "Seraphim Publication Curator",
+      "category": "maintenance",
+      "status": "packaged",
+      "owner_role": "primary",
+      "public_package": true,
+      "package_path": "skills/maintenance/seraphim-publication-curator",
+      "provenance": "reconstructed-public-edition",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_specialized_skills.py"
+    },
+    {
       "id": "personal-writing-style",
       "name": "Personal Writing Style",
       "category": "private-personalization",
