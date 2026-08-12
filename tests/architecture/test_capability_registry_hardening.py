@@ -1,4 +1,5 @@
 from copy import deepcopy
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import unittest
@@ -333,6 +334,7 @@ class DiscoveryAndGovernanceTests(unittest.TestCase):
             "2026-08-12 00:00:00Z",
             "2026-08-12T00:00:00+0000",
             "2026-08-12T00:00Z",
+            "2026-08-12T00:00:00.1234567890Z",
             "2026-08-12T00:00:00Zjunk",
         ):
             observation = valid_observation()
@@ -351,3 +353,39 @@ class DiscoveryAndGovernanceTests(unittest.TestCase):
             validate_governance_decisions(
                 {"schema_version": 1, "decisions": [cyclic]}, {"cap-a"}
             )
+
+    def test_long_valid_supersession_history_is_iterative(self) -> None:
+        start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        decisions = []
+        for index in range(1051):
+            timestamp = (start + timedelta(seconds=index)).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+            decision = valid_decision(
+                f"decision-{index}", "exclude_projection", effective_at=timestamp
+            )
+            decision["created_at"] = timestamp
+            if index:
+                decision["supersedes_decision_id"] = f"decision-{index - 1}"
+            decisions.append(decision)
+        validated = validate_governance_decisions(
+            {"schema_version": 1, "decisions": decisions}, {"cap-a"}
+        )
+        self.assertEqual(1051, len(validated))
+
+    def test_nine_digit_rfc3339_fraction_is_orderable(self) -> None:
+        decision = valid_decision(
+            "precise", "exclude_projection", "2026-08-12T00:00:00.123456789Z"
+        )
+        self.assertEqual(
+            [], active_decisions([decision], "2026-08-12T00:00:00.123456788Z")
+        )
+        self.assertEqual(
+            ["precise"],
+            [
+                row["decision_id"]
+                for row in active_decisions(
+                    [decision], "2026-08-12T00:00:00.123456789Z"
+                )
+            ],
+        )

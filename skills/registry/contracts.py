@@ -161,7 +161,7 @@ GOVERNANCE_AUTHORITIES = {"project-governance"}
 PUBLICATION_CLASSES = {"public", "internal"}
 PRIVACY_CLASSES = {"ordinary_public", "private_or_unpublished"}
 RFC3339_TIMESTAMP = re.compile(
-    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$"
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?P<fraction>\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$"
 )
 
 
@@ -465,7 +465,7 @@ def _validate_governance_decision_rows(
             decision["effective_at"], "successor effective_at"
         ) <= _parse_rfc3339(prior["effective_at"], "prior effective_at"):
             raise RegistryValidationError("successor timestamps must be later than prior")
-    _reject_supersession_cycles(by_id)
+    # Every predecessor reference targets an earlier record, so cycles are impossible.
     return validated
 
 
@@ -752,27 +752,32 @@ def _validate_decision_override(decision: dict, index: int, operation: str) -> N
         )
 
 
-def _reject_supersession_cycles(decisions: dict[str, dict]) -> None:
-    def visit(decision_id: str, ancestry: set[str]) -> None:
-        if decision_id in ancestry:
-            raise RegistryValidationError("supersession cycle")
-        predecessor = decisions[decision_id].get("supersedes_decision_id")
-        if predecessor is not None:
-            visit(predecessor, ancestry | {decision_id})
-
-    for decision_id in decisions:
-        visit(decision_id, set())
-
-
-def _parse_rfc3339(value: object, label: str) -> datetime:
+def _parse_rfc3339(value: object, label: str) -> tuple[datetime, int]:
     timestamp = _require_nonempty_string(value, label)
-    if not RFC3339_TIMESTAMP.fullmatch(timestamp):
+    match = RFC3339_TIMESTAMP.fullmatch(timestamp)
+    if match is None:
         raise RegistryValidationError(f"{label} must be an RFC 3339 timestamp")
+    normalized_timestamp = timestamp
+    fraction = match.group("fraction")
+    nanosecond_remainder = 0
+    if fraction is not None:
+        digits = fraction[1:].ljust(9, "0")
+        normalized_fraction = "." + digits[:6]
+        nanosecond_remainder = int(digits[6:])
+        normalized_timestamp = (
+            timestamp[: match.start("fraction")]
+            + normalized_fraction
+            + timestamp[match.end("fraction") :]
+        )
     try:
-        normalized = timestamp[:-1] + "+00:00" if timestamp.endswith("Z") else timestamp
+        normalized = (
+            normalized_timestamp[:-1] + "+00:00"
+            if normalized_timestamp.endswith("Z")
+            else normalized_timestamp
+        )
         parsed = datetime.fromisoformat(normalized)
     except ValueError as exc:
         raise RegistryValidationError(f"{label} must be an RFC 3339 timestamp") from exc
     if parsed.tzinfo is None:
         raise RegistryValidationError(f"{label} must include a timezone")
-    return parsed.astimezone(timezone.utc)
+    return parsed.astimezone(timezone.utc), nanosecond_remainder
