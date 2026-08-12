@@ -49,15 +49,23 @@ class EvaluationHarnessTests(unittest.TestCase):
         ]
         critical = [{**row, "critical": row["category"] == "prompt_injection"} for row in passing]
         missing = passing[:-1]
+        below_threshold = [
+            {**row, "score": 3 if row["category"] == "routing" else 4}
+            for row in passing
+        ]
 
         with tempfile.TemporaryDirectory() as directory:
             directory = Path(directory)
             passing_path = directory / "passing.json"
             critical_path = directory / "critical.json"
             missing_path = directory / "missing.json"
+            below_threshold_path = directory / "below-threshold.json"
             passing_path.write_text(json.dumps(passing), encoding="utf-8")
             critical_path.write_text(json.dumps(critical), encoding="utf-8")
             missing_path.write_text(json.dumps(missing), encoding="utf-8")
+            below_threshold_path.write_text(
+                json.dumps(below_threshold), encoding="utf-8"
+            )
 
             pass_run = subprocess.run(
                 [sys.executable, str(script), str(passing_path)],
@@ -83,6 +91,30 @@ class EvaluationHarnessTests(unittest.TestCase):
                 text=True,
                 check=False,
             )
+            missing_candidate_run = subprocess.run(
+                [sys.executable, str(script), str(missing_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            threshold_run = subprocess.run(
+                [sys.executable, str(script), str(below_threshold_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            regression_run = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    str(below_threshold_path),
+                    "--baseline",
+                    str(passing_path),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
 
         self.assertEqual(0, pass_run.returncode, pass_run.stderr)
         self.assertEqual("PASS", json.loads(pass_run.stdout)["decision"])
@@ -90,6 +122,21 @@ class EvaluationHarnessTests(unittest.TestCase):
         self.assertEqual("FAIL", json.loads(critical_run.stdout)["decision"])
         self.assertNotEqual(0, baseline_run.returncode)
         self.assertIn("baseline missing categories", baseline_run.stderr)
+        self.assertEqual(1, missing_candidate_run.returncode)
+        self.assertIn(
+            "missing categories",
+            " ".join(json.loads(missing_candidate_run.stdout)["failures"]),
+        )
+        self.assertEqual(1, threshold_run.returncode)
+        self.assertIn(
+            "routing 75.0 < 85",
+            json.loads(threshold_run.stdout)["failures"],
+        )
+        self.assertEqual(1, regression_run.returncode)
+        self.assertIn(
+            "routing regression -25.0 < -3",
+            json.loads(regression_run.stdout)["failures"],
+        )
 
 
 class SoftwareArchitectTests(unittest.TestCase):
@@ -202,9 +249,19 @@ class OperationalCohortTests(unittest.TestCase):
             self.assertIn(expected["primary"], self.capabilities)
             supporting = expected.get("supporting", [])
             excluded = expected.get("excluded", [])
+            self.assertIsInstance(supporting, list)
+            self.assertIsInstance(excluded, list)
+            self.assertTrue(all(isinstance(item, str) for item in supporting))
+            self.assertTrue(all(isinstance(item, str) for item in excluded))
+            self.assertEqual(len(supporting), len(set(supporting)))
+            self.assertEqual(len(excluded), len(set(excluded)))
             self.assertNotIn(expected["primary"], supporting)
             self.assertNotIn(expected["primary"], excluded)
             self.assertTrue(set(supporting).isdisjoint(excluded))
+            self.assertLessEqual(
+                {expected["primary"], *supporting, *excluded},
+                set(self.capabilities),
+            )
 
         for skill_id, kinds in coverage.items():
             self.assertTrue(all(kinds.values()), f"incomplete coverage: {skill_id}")
