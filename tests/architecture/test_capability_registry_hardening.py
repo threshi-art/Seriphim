@@ -2443,7 +2443,25 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 json.dumps(rewritten, indent=2) + "\n", encoding="utf-8"
             )
             self._commit_registry_fixture(root, "rewrite ledger in branch")
+            (root / "later-change.txt").write_text(
+                "pull request tip does not touch the ledger\n",
+                encoding="utf-8",
+            )
+            self._commit_registry_fixture(root, "later unrelated change")
             stderr = io.StringIO()
+
+            self.assertEqual(
+                0,
+                projection_main(
+                    [
+                        "check-ledger",
+                        "--root",
+                        str(root),
+                        "--baseline",
+                        "HEAD^",
+                    ]
+                ),
+            )
 
             with redirect_stderr(stderr):
                 result = self._event_ledger_check(
