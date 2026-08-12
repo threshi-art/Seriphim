@@ -1,4 +1,10 @@
-# Proposed Architecture
+# EI-RAM Architecture
+
+The normative authority for mission lifecycle, ownership, evidence, approvals,
+and the six-plane model is
+[`SERAPHIM_ARCHITECTURE_CONTRACT_V0_1.md`](../../../docs/architecture/SERAPHIM_ARCHITECTURE_CONTRACT_V0_1.md).
+This document maps the current EI-RAM implementation to that contract; it does
+not redefine it.
 
 ## Architecture Choice
 
@@ -51,9 +57,27 @@ flowchart LR
 - Export records
 - App settings
 
-## Integration Strategy
+## Governed proof implementation
 
-Phase 1 should copy or import from the existing EI-RAM API only after the target structure is chosen. Until then, this folder remains a planning scaffold.
+| Contract plane | Implemented proof component | Current boundary |
+| --- | --- | --- |
+| Interface | `POST /proof-missions` and `ProofMissionRequest` | Local synchronous API only |
+| Command | `CaseController` and `CollectionManager` | Exactly one primary owner; three-task budget |
+| Specialist | Two injected fixture workers | Synthetic, read-only, no network |
+| Evidence | SQLite `CaseLedger`, evidence relationships, independence groups | Local proof database, not a production knowledge graph |
+| Deliberation | `FusionEngine`, `RedTeam`, `CitationAuditor` | Three fixed hypotheses and one recollection loop |
+| Governance | Capability snapshot, governing ruling, transition audit, citation gate | Repository manifest snapshot; no autonomous doctrine changes |
+
+The completed proof preserves observations, source claims, analytical
+judgments, unknowns, competing hypotheses, dissent, and citations as distinct
+records. Closure stores lessons but cannot change skills, policy, architecture,
+authorization, or the capability manifest.
+
+Not implemented: live connected-source collection, remote multi-agent workers,
+production evidence-graph infrastructure, persistent authority synchronization,
+semantic APA/Bluebook validation, Watch Officer scheduling, ChatGPT delegation,
+autonomous publication, production case interfaces, or private-case identity,
+retention, deletion, and access-control policy.
 
 ## Design Constraint
 

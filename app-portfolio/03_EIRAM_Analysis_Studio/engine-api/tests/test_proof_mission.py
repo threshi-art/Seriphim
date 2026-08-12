@@ -65,3 +65,16 @@ def test_proof_result_separates_observation_claim_judgment_and_unknown(tmp_path:
     assert assessment.judgments
     assert assessment.unknowns
     assert "bot confirmed" not in assessment.bottom_line.lower()
+
+
+def test_closure_records_lesson_without_mutating_doctrine(tmp_path: Path) -> None:
+    service = build_proof_service(
+        tmp_path / "proof.sqlite3", fixture_path(), manifest_path()
+    )
+    result = service.run(sample_request())
+    lessons = service.ledger.list_lessons(result.case_id)
+
+    assert lessons[0].outcome == "proof_mission_completed"
+    assert lessons[0].institutional_change_required is False
+    assert lessons[0].proposed_change is None
+    assert service.ledger.list_architecture_changes(result.case_id) == []

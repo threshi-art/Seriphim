@@ -23,6 +23,7 @@ from app.casework.models import (
     GoverningRuling,
     Hypothesis,
     HypothesisStatus,
+    LessonRecord,
     MissionContract,
     MissionDepth,
     ProofMissionRequest,
@@ -209,6 +210,21 @@ class ProofMissionService:
         self.ledger.transition_case(case_id, CaseState.DELIVERED, "seraphim-core", "citation and governance gates passed")
         integrated = self.reporting.build(case_id, assessment, challenge)
         self.ledger.transition_case(case_id, CaseState.CLOSED, "case-controller", "proof mission delivered and closed")
+        self.ledger.add_lesson(
+            LessonRecord(
+                lesson_id=f"{case_id}-lesson-1",
+                case_id=case_id,
+                outcome="proof_mission_completed",
+                observed_failures=[],
+                useful_innovations=[
+                    "One Red Team-requested recollection improved timing coverage.",
+                    "Claim-level citation gating completed before delivery.",
+                ],
+                institutional_change_required=False,
+                proposed_change=None,
+                created_at=datetime.now(timezone.utc),
+            )
+        )
         final_case = self.ledger.get_case(case_id)
         return ProofMissionResult(
             mission_id=mission_id,

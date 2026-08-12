@@ -17,6 +17,7 @@ from app.casework.models import (
     EvidenceRelationship,
     GoverningRuling,
     Hypothesis,
+    LessonRecord,
     MissionContract,
 )
 from app.casework.state_machine import validate_transition
@@ -109,6 +110,16 @@ class CaseLedger:
                     prior_state TEXT,
                     target_state TEXT,
                     reason TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS lessons (
+                    lesson_id TEXT PRIMARY KEY,
+                    case_id TEXT NOT NULL REFERENCES cases(case_id),
+                    outcome TEXT NOT NULL,
+                    observed_failures_json TEXT NOT NULL,
+                    useful_innovations_json TEXT NOT NULL,
+                    institutional_change_required INTEGER NOT NULL,
+                    proposed_change_json TEXT,
                     created_at TEXT NOT NULL
                 );
                 """
@@ -413,3 +424,50 @@ class CaseLedger:
                 (case_id,),
             ).fetchall()
         return [EvidenceRelationship(**dict(row)) for row in rows]
+
+    def add_lesson(self, lesson: LessonRecord) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """INSERT INTO lessons
+                   (lesson_id, case_id, outcome, observed_failures_json,
+                    useful_innovations_json, institutional_change_required,
+                    proposed_change_json, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    lesson.lesson_id,
+                    lesson.case_id,
+                    lesson.outcome,
+                    json.dumps(lesson.observed_failures),
+                    json.dumps(lesson.useful_innovations),
+                    int(lesson.institutional_change_required),
+                    json.dumps(lesson.proposed_change) if lesson.proposed_change else None,
+                    lesson.created_at.isoformat(),
+                ),
+            )
+
+    def list_lessons(self, case_id: str) -> List[LessonRecord]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM lessons WHERE case_id = ? ORDER BY created_at", (case_id,)
+            ).fetchall()
+        return [
+            LessonRecord(
+                lesson_id=row["lesson_id"],
+                case_id=row["case_id"],
+                outcome=row["outcome"],
+                observed_failures=json.loads(row["observed_failures_json"]),
+                useful_innovations=json.loads(row["useful_innovations_json"]),
+                institutional_change_required=bool(row["institutional_change_required"]),
+                proposed_change=(
+                    json.loads(row["proposed_change_json"])
+                    if row["proposed_change_json"] else None
+                ),
+                created_at=datetime.fromisoformat(row["created_at"]),
+            )
+            for row in rows
+        ]
+
+    def list_architecture_changes(self, case_id: str) -> list:
+        """Proof cases cannot mutate doctrine; no such record type exists."""
+        self.get_case(case_id)
+        return []

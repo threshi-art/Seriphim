@@ -275,3 +275,13 @@ class ProofMissionResult(BaseModel):
     assessment: IntegratedAssessment
     external_action_state: ActionState
 
+
+class LessonRecord(BaseModel):
+    lesson_id: str = Field(min_length=1)
+    case_id: str = Field(min_length=1)
+    outcome: str = Field(min_length=1)
+    observed_failures: List[str] = Field(default_factory=list)
+    useful_innovations: List[str] = Field(default_factory=list)
+    institutional_change_required: bool = False
+    proposed_change: Optional[Dict[str, str]] = None
+    created_at: datetime
