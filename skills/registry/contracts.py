@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import math
+import re
+from typing import Optional
 
 
 class RegistryValidationError(ValueError):
@@ -151,6 +153,16 @@ AUTHORIZATION_FIELDS = {
     "approval_requirement",
     "data_boundary",
 }
+OBSERVATION_RUNTIMES = RUNTIME_STATES
+AVAILABILITY_STATES = {"declared", "installed", "available", "unavailable"}
+VERIFICATION_STATES = {"unverified", "verified", "stale", "failed"}
+OPERATIONAL_STATES = {"unknown", "healthy", "degraded", "failed"}
+GOVERNANCE_AUTHORITIES = {"project-governance"}
+PUBLICATION_CLASSES = {"public", "internal"}
+PRIVACY_CLASSES = {"ordinary_public", "private_or_unpublished"}
+RFC3339_TIMESTAMP = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$"
+)
 
 
 def canonical_json(value: object) -> str:
@@ -258,16 +270,30 @@ def validate_observations(
         )
         if capability_id not in known_capability_ids:
             raise RegistryValidationError(f"unknown capability: {capability_id}")
-        for field in (
-            "runtime",
-            "availability_state",
-            "verification_state",
-            "operational_state",
-            "verification_evidence",
-        ):
-            _require_nonempty_string(
-                observation.get(field), f"observations[{index}] {field}"
-            )
+        _require_allowed_string(
+            observation.get("runtime"),
+            f"observations[{index}] runtime",
+            OBSERVATION_RUNTIMES,
+        )
+        _require_allowed_string(
+            observation.get("availability_state"),
+            f"observations[{index}] availability_state",
+            AVAILABILITY_STATES,
+        )
+        _require_allowed_string(
+            observation.get("verification_state"),
+            f"observations[{index}] verification_state",
+            VERIFICATION_STATES,
+        )
+        _require_allowed_string(
+            observation.get("operational_state"),
+            f"observations[{index}] operational_state",
+            OPERATIONAL_STATES,
+        )
+        _require_nonempty_string(
+            observation.get("verification_evidence"),
+            f"observations[{index}] verification_evidence",
+        )
         _parse_rfc3339(observation.get("observed_at"), f"observations[{index}] observed_at")
         _validate_observation_metadata(
             observation.get("metadata"), f"observations[{index}] metadata"
@@ -280,14 +306,62 @@ def validate_governance_decisions(
     payload: object, capability_ids: object
 ) -> list[dict]:
     """Validate append-only, capability-scoped projection decisions."""
-    root = _require_dict(payload, "governance decisions")
-    _reject_unknown_fields(
-        root, "governance decisions", GOVERNANCE_DECISION_ROOT_FIELDS
+    decisions = _governance_decision_rows(payload)
+    return _validate_governance_decision_rows(
+        decisions, _identifier_set(capability_ids, "capability ids")
     )
+
+
+def validate_governance_ledger(
+    previous_payload: object, current_payload: object, capability_ids: object
+) -> list[dict]:
+    """Validate a revision while requiring every prior decision to remain identical."""
+    previous = validate_governance_decisions(previous_payload, capability_ids)
+    current = validate_governance_decisions(current_payload, capability_ids)
+    current_by_id = {decision["decision_id"]: decision for decision in current}
+    for index, decision in enumerate(previous):
+        decision_id = decision["decision_id"]
+        if decision_id not in current_by_id:
+            raise RegistryValidationError(f"missing prior decision: {decision_id}")
+        if canonical_json(decision) != canonical_json(current_by_id[decision_id]):
+            raise RegistryValidationError(f"rewritten prior decision: {decision_id}")
+        if current[index]["decision_id"] != decision_id:
+            raise RegistryValidationError(f"prior decision order changed: {decision_id}")
+    return current
+
+
+def active_decisions(decisions: object, as_of: object) -> list[dict]:
+    """Return fully validated decisions effective at an RFC 3339 instant."""
+    validated = _validate_governance_decision_rows(
+        _require_list(decisions, "decisions"), None
+    )
+    instant = _parse_rfc3339(as_of, "as_of")
+    active: list[dict] = []
+    for decision in validated:
+        effective_at = _parse_rfc3339(
+            decision["effective_at"], "decision effective_at"
+        )
+        expiry = (
+            _parse_rfc3339(decision["expires_at"], "decision expires_at")
+            if decision.get("expires_at") is not None
+            else None
+        )
+        if effective_at <= instant and (expiry is None or instant < expiry):
+            active.append(deepcopy(decision))
+    return active
+
+
+def _governance_decision_rows(payload: object) -> list:
+    root = _require_dict(payload, "governance decisions")
+    _reject_unknown_fields(root, "governance decisions", GOVERNANCE_DECISION_ROOT_FIELDS)
     if type(root.get("schema_version")) is not int or root["schema_version"] != 1:
         raise RegistryValidationError("governance decisions schema_version must be 1")
-    decisions = _require_list(root.get("decisions"), "governance decisions decisions")
-    known_capability_ids = _identifier_set(capability_ids, "capability ids")
+    return _require_list(root.get("decisions"), "governance decisions decisions")
+
+
+def _validate_governance_decision_rows(
+    decisions: list, known_capability_ids: Optional[set[str]]
+) -> list[dict]:
     validated: list[dict] = []
     positions: dict[str, int] = {}
     for index, raw in enumerate(decisions):
@@ -316,17 +390,22 @@ def validate_governance_decisions(
             decision.get("target_capability_id"),
             f"governance decisions[{index}] target_capability_id",
         )
-        if target_capability_id not in known_capability_ids:
+        if known_capability_ids is not None and target_capability_id not in known_capability_ids:
             raise RegistryValidationError(f"unknown capability: {target_capability_id}")
         operation = _require_allowed_string(
             decision.get("operation"),
             f"governance decisions[{index}] operation",
             DECISION_OPERATIONS,
         )
-        for field in ("scope", "reason", "authority", "provenance"):
+        for field in ("scope", "reason", "provenance"):
             _require_nonempty_string(
                 decision.get(field), f"governance decisions[{index}] {field}"
             )
+        _require_allowed_string(
+            decision.get("authority"),
+            f"governance decisions[{index}] authority",
+            GOVERNANCE_AUTHORITIES,
+        )
         created_at = _parse_rfc3339(
             decision.get("created_at"), f"governance decisions[{index}] created_at"
         )
@@ -356,6 +435,7 @@ def validate_governance_decisions(
         validated.append(deepcopy(decision))
 
     by_id = {record["decision_id"]: record for record in validated}
+    successors: set[str] = set()
     for index, decision in enumerate(validated):
         supersedes = decision.get("supersedes_decision_id")
         if supersedes is None:
@@ -364,33 +444,29 @@ def validate_governance_decisions(
             raise RegistryValidationError(f"unknown superseded decision: {supersedes}")
         if positions[supersedes] >= index:
             raise RegistryValidationError("superseded decision must precede its replacement")
-        if by_id[supersedes]["target_capability_id"] != decision["target_capability_id"]:
+        prior = by_id[supersedes]
+        if prior["target_capability_id"] != decision["target_capability_id"]:
             raise RegistryValidationError("superseded decision must target the same capability")
+        if prior["scope"] != decision["scope"]:
+            raise RegistryValidationError("superseded decision must use the same scope")
+        if "override_field" in {prior["operation"], decision["operation"]}:
+            if (
+                prior["operation"] != "override_field"
+                or decision["operation"] != "override_field"
+                or prior["field"] != decision["field"]
+            ):
+                raise RegistryValidationError("superseded overrides must use the same field")
+        if supersedes in successors:
+            raise RegistryValidationError("a decision may have only one successor")
+        successors.add(supersedes)
+        if _parse_rfc3339(
+            decision["created_at"], "successor created_at"
+        ) <= _parse_rfc3339(prior["created_at"], "prior created_at") or _parse_rfc3339(
+            decision["effective_at"], "successor effective_at"
+        ) <= _parse_rfc3339(prior["effective_at"], "prior effective_at"):
+            raise RegistryValidationError("successor timestamps must be later than prior")
+    _reject_supersession_cycles(by_id)
     return validated
-
-
-def active_decisions(decisions: object, as_of: object) -> list[dict]:
-    """Return decisions effective at an RFC 3339 instant without mutating history."""
-    decision_rows = _require_list(decisions, "decisions")
-    instant = _parse_rfc3339(as_of, "as_of")
-    active: list[dict] = []
-    for index, raw in enumerate(decision_rows):
-        decision = _require_dict(raw, f"decisions[{index}]")
-        effective_at = _parse_rfc3339(
-            decision.get("effective_at"), f"decisions[{index}] effective_at"
-        )
-        expires_at = decision.get("expires_at")
-        if expires_at is not None:
-            expiry = _parse_rfc3339(expires_at, f"decisions[{index}] expires_at")
-            if expiry <= effective_at:
-                raise RegistryValidationError(
-                    f"decisions[{index}] expires_at must follow effective_at"
-                )
-        else:
-            expiry = None
-        if effective_at <= instant and (expiry is None or instant < expiry):
-            active.append(deepcopy(decision))
-    return active
 
 
 def _validate_declaration(record: dict, capability_id: str) -> None:
@@ -666,11 +742,31 @@ def _validate_decision_override(decision: dict, index: int, operation: str) -> N
         raise RegistryValidationError(
             f"governance decisions[{index}] lifecycle_state has an invalid value"
         )
+    if field == "publication_class" and new_value not in PUBLICATION_CLASSES:
+        raise RegistryValidationError(
+            f"governance decisions[{index}] publication_class has an invalid value"
+        )
+    if field == "privacy_class" and new_value not in PRIVACY_CLASSES:
+        raise RegistryValidationError(
+            f"governance decisions[{index}] privacy_class has an invalid value"
+        )
+
+
+def _reject_supersession_cycles(decisions: dict[str, dict]) -> None:
+    def visit(decision_id: str, ancestry: set[str]) -> None:
+        if decision_id in ancestry:
+            raise RegistryValidationError("supersession cycle")
+        predecessor = decisions[decision_id].get("supersedes_decision_id")
+        if predecessor is not None:
+            visit(predecessor, ancestry | {decision_id})
+
+    for decision_id in decisions:
+        visit(decision_id, set())
 
 
 def _parse_rfc3339(value: object, label: str) -> datetime:
     timestamp = _require_nonempty_string(value, label)
-    if "T" not in timestamp or not (timestamp.endswith("Z") or "+" in timestamp[10:] or "-" in timestamp[10:]):
+    if not RFC3339_TIMESTAMP.fullmatch(timestamp):
         raise RegistryValidationError(f"{label} must be an RFC 3339 timestamp")
     try:
         normalized = timestamp[:-1] + "+00:00" if timestamp.endswith("Z") else timestamp

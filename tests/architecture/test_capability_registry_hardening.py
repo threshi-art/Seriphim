@@ -9,6 +9,7 @@ from skills.registry.contracts import (
     canonical_json,
     content_digest,
     validate_discovery_sources,
+    validate_governance_ledger,
     validate_governance_decisions,
     validate_manifest,
     validate_observations,
@@ -208,4 +209,145 @@ class DiscoveryAndGovernanceTests(unittest.TestCase):
         with self.assertRaisesRegex(RegistryValidationError, "authorization field"):
             validate_governance_decisions(
                 {"schema_version": 1, "decisions": [decision]}, {"cap-a"}
+            )
+
+    def test_governance_decisions_require_recognized_authority(self) -> None:
+        decision = valid_decision("forged", "exclude_projection")
+        decision["authority"] = "untrusted-operator"
+        with self.assertRaisesRegex(RegistryValidationError, "authority"):
+            validate_governance_decisions(
+                {"schema_version": 1, "decisions": [decision]}, {"cap-a"}
+            )
+
+    def test_active_decisions_revalidates_raw_records_before_filtering(self) -> None:
+        duplicate = valid_decision("duplicate", "exclude_projection")
+        malformed = valid_decision("duplicate", "include_projection")
+        with self.assertRaisesRegex(RegistryValidationError, "duplicate decision"):
+            active_decisions([duplicate, malformed], "2026-08-12T12:00:00Z")
+
+        malformed = valid_decision("missing-reason", "exclude_projection")
+        del malformed["reason"]
+        with self.assertRaisesRegex(RegistryValidationError, "missing fields"):
+            active_decisions([malformed], "2026-08-12T12:00:00Z")
+
+    def test_observation_runtime_and_states_use_closed_vocabularies(self) -> None:
+        for field, value in (
+            ("runtime", "remote_worker"),
+            ("availability_state", "probably_available"),
+            ("verification_state", "possibly_verified"),
+            ("operational_state", "maybe_healthy"),
+        ):
+            observation = valid_observation()
+            observation[field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(
+                RegistryValidationError, "invalid value"
+            ):
+                validate_observations(
+                    [observation], {"repository-manifest": {}}, {"cap-a"}
+                )
+
+    def test_override_publication_and_privacy_values_use_closed_vocabularies(self) -> None:
+        for field, value in (
+            ("publication_class", "internet"),
+            ("privacy_class", "confidential"),
+        ):
+            decision = valid_decision("invalid-" + field, "override_field")
+            decision.update({"field": field, "new_value": value})
+            with self.subTest(field=field), self.assertRaisesRegex(
+                RegistryValidationError, "invalid value"
+            ):
+                validate_governance_decisions(
+                    {"schema_version": 1, "decisions": [decision]}, {"cap-a"}
+                )
+
+    def test_supersession_is_scope_field_time_and_successor_safe(self) -> None:
+        prior = valid_decision("prior", "override_field")
+        prior.update(
+            {
+                "field": "display_name",
+                "new_value": "Earlier",
+                "created_at": "2026-08-11T00:00:00Z",
+            }
+        )
+        successor = valid_decision(
+            "successor", "override_field", effective_at="2026-08-13T00:00:00Z"
+        )
+        successor.update(
+            {
+                "field": "display_name",
+                "new_value": "Later",
+                "created_at": "2026-08-13T00:00:00Z",
+                "supersedes_decision_id": "prior",
+            }
+        )
+        for changed_field, changed_value, expected in (
+            ("scope", "internal-capabilities", "same scope"),
+            ("field", "description", "same field"),
+            ("effective_at", "2026-08-12T00:00:00Z", "later"),
+        ):
+            invalid = deepcopy(successor)
+            invalid[changed_field] = changed_value
+            if changed_field == "effective_at":
+                invalid["created_at"] = "2026-08-12T00:00:00Z"
+            with self.subTest(field=changed_field), self.assertRaisesRegex(
+                RegistryValidationError, expected
+            ):
+                validate_governance_decisions(
+                    {"schema_version": 1, "decisions": [prior, invalid]}, {"cap-a"}
+                )
+
+        second_successor = deepcopy(successor)
+        second_successor["decision_id"] = "second-successor"
+        second_successor["created_at"] = "2026-08-14T00:00:00Z"
+        second_successor["effective_at"] = "2026-08-14T00:00:00Z"
+        with self.assertRaisesRegex(RegistryValidationError, "successor"):
+            validate_governance_decisions(
+                {"schema_version": 1, "decisions": [prior, successor, second_successor]},
+                {"cap-a"},
+            )
+
+    def test_governance_ledger_requires_prior_records_to_remain_identical(self) -> None:
+        previous = {"schema_version": 1, "decisions": [valid_decision("prior", "exclude_projection")]}
+        with self.assertRaisesRegex(RegistryValidationError, "missing prior decision"):
+            validate_governance_ledger(previous, {"schema_version": 1, "decisions": []}, {"cap-a"})
+
+        rewritten = deepcopy(previous)
+        rewritten["decisions"][0]["reason"] = "rewritten history"
+        with self.assertRaisesRegex(RegistryValidationError, "rewritten prior decision"):
+            validate_governance_ledger(previous, rewritten, {"cap-a"})
+
+        ordered = {
+            "schema_version": 1,
+            "decisions": [
+                valid_decision("first", "exclude_projection"),
+                valid_decision("second", "include_projection"),
+            ],
+        }
+        reordered = deepcopy(ordered)
+        reordered["decisions"].reverse()
+        with self.assertRaisesRegex(RegistryValidationError, "prior decision order changed"):
+            validate_governance_ledger(ordered, reordered, {"cap-a"})
+
+    def test_rfc3339_timestamps_require_explicit_grammar(self) -> None:
+        for value in (
+            "2026-08-12 00:00:00Z",
+            "2026-08-12T00:00:00+0000",
+            "2026-08-12T00:00Z",
+            "2026-08-12T00:00:00Zjunk",
+        ):
+            observation = valid_observation()
+            observation["observed_at"] = value
+            with self.subTest(value=value), self.assertRaisesRegex(
+                RegistryValidationError, "RFC 3339"
+            ):
+                validate_observations(
+                    [observation], {"repository-manifest": {}}, {"cap-a"}
+                )
+
+    def test_supersession_cycles_fail_closed(self) -> None:
+        cyclic = valid_decision("cyclic", "exclude_projection")
+        cyclic["supersedes_decision_id"] = "cyclic"
+        with self.assertRaisesRegex(RegistryValidationError, "superseded decision"):
+            validate_governance_decisions(
+                {"schema_version": 1, "decisions": [cyclic]}, {"cap-a"}
             )
