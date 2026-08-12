@@ -889,7 +889,9 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
         self.assertNotIn(
             "account_id-alice-private", item["public_source_ids"]
         )
-        self.assertEqual(item["public_source_ids"], projected["source_ids"])
+        self.assertEqual(
+            list(item["public_source_ids"]), projected["source_ids"]
+        )
 
     def test_resolution_revalidates_observations_and_decision_targets(self) -> None:
         unknown_observation = valid_observation(
@@ -2762,6 +2764,7 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 cwd=root,
                 check=True,
                 stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
             )
             ledger_path = registry / "governance-decisions.json"
             original = json.loads(ledger_path.read_text(encoding="utf-8"))

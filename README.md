@@ -43,8 +43,9 @@ validated predictive accuracy, or completed satellite applications.
 ## Cognitive architecture
 
 The public architecture foundation documents the intended capability model.
-The accompanying collection currently contains fourteen reviewed public Skill
-packages: four authoritative exports and ten reconstructed public editions.
+The accompanying collection currently contains twenty-two reviewed public Skill
+packages: four normalized archive exports, seven reviewed live-agent exports,
+and eleven explicitly labeled reconstructed public editions.
 Architecture-only and private capabilities remain clearly marked in the
 manifest:
 

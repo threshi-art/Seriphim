@@ -32,10 +32,18 @@ Generated projection files are not hand-edited. From the repository root, use
 publish an explicitly timed projection and
 `python -m skills.registry.projection check --root .` to detect drift without
 remediation. CI additionally runs
-`python -m skills.registry.projection check-ledger --root . --baseline <git-ref>`
-to require baseline governance decisions to remain an identical ordered prefix.
+`python -m skills.registry.projection check-ledger --root . --baseline <git-ref> --event-head HEAD`
+locally, while GitHub CI supplies the push `github.event.before` or pull-request
+base SHA plus the explicit event-head SHA. The checker validates every commit
+in that range oldest-first and then the working tree, so a temporary append,
+rewrite, removal, restoration, or reorder cannot be hidden by a later commit.
+Initial pushes validate all reachable commits; pre-ledger commits are treated
+as empty history. Push checks cover every branch and pull-request checks remain
+enabled.
 Matching include/exclude decisions resolve to explicit scope eligibility;
 projection still requires declaration-public, publication, and privacy gates.
+Only source IDs explicitly declared `public_projection: true` and validated as
+public-safe slugs may appear in that projection.
 
 Seraphim Core is the governing architecture described in
 `docs/architecture/SERAPHIM_CORE.md`, not an installable Skill and therefore not

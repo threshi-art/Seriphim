@@ -7,7 +7,8 @@
       "authority": "institutional_declaration",
       "trust_class": "governed_internal",
       "discovery_method": "static_json",
-      "enabled": true
+      "enabled": true,
+      "public_projection": true
     },
     {
       "source_id": "synthetic-registry-fixtures",
@@ -15,7 +16,8 @@
       "authority": "test_only",
       "trust_class": "untrusted_test_data",
       "discovery_method": "in_process_fixture",
-      "enabled": false
+      "enabled": false,
+      "public_projection": false
     }
   ]
 }

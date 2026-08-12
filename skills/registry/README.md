@@ -31,7 +31,10 @@ and neither observation nor projection can grant authority.
   `institutional_declaration` authority, `governed_internal` trust class, and
   static-JSON discovery. A missing, disabled, ambiguous, or semantically altered
   canonical source fails closed, so resolved records never cite a dangling
-  declaration source ID.
+  declaration source ID. Source IDs enter the public projection only when the
+  source definition explicitly sets `public_projection: true`; those IDs must
+  use a public-safe slug and cannot contain sensitive identity tokens. Private
+  or unmarked source IDs remain only in the resolved internal attribution.
 - **Attributed observation** — a source-identified, time-stamped report about a
   capability's availability, verification, and operational state in one
   runtime. Observation metadata is inert. Observations cannot set trust,
@@ -48,9 +51,13 @@ and neither observation nor projection can grant authority.
   Scoped overrides may change only a small allowlist of descriptive/publication
   fields. No decision can override authorization.
 - **Resolved snapshot** — `resolve_registry(...)` deterministically combines the
-  validated inputs for one `as_of` instant and scope. It sorts records, records
-  input digests, adds a content digest, and recursively freezes the result.
-  Authorization is copied only from the manifest declaration.
+  validated inputs for one `as_of` instant and scope. It sorts resolved output
+  where the contract calls for deterministic application order, preserves
+  append-only governance-ledger order in the governance input digest, adds a
+  content digest, and recursively freezes the result. Differing active
+  unsuperseded overrides for the same target, scope, and field fail closed and
+  require explicit supersession. Authorization is copied only from the manifest
+  declaration.
 - **Informational projection** — `public-capabilities.json` is the generated,
   sanitized catalog for public discovery. It is not the resolved snapshot and
   is explicitly not authoritative for runtime state or authorization. It cannot
@@ -112,7 +119,7 @@ Run commands from the repository root:
 ```powershell
 python -m skills.registry.projection generate --root . --as-of 2026-08-12T00:00:00Z
 python -m skills.registry.projection check --root .
-python -m skills.registry.projection check-ledger --root . --baseline <git-ref>
+python -m skills.registry.projection check-ledger --root . --baseline <git-ref> --event-head HEAD
 ```
 
 `generate` validates the fixed repository inputs, resolves the explicit
@@ -126,15 +133,24 @@ Do not hand-edit `public-capabilities.json`. Change a reviewed source declaratio
 or append a valid governance decision, then run `generate` and review the diff.
 Resolved snapshots are produced in memory; they are not this generated file.
 
-`check-ledger` is the append-only history gate. It reads the fixed
-`skills/registry/governance-decisions.json` path from a validated Git revision
-with a non-shell `git show`, canonicalizes each decision to UTF-8 JSON bytes,
-and requires every baseline decision to remain an identical ordered prefix of
-the current ledger. Removal, rewriting, insertion before prior history, and
-reordering fail. CI supplies the baseline through
-`SERAPHIM_GOVERNANCE_LEDGER_BASELINE`: pull requests use the fetched base SHA;
-main pushes use `HEAD^` when it exists. The ordinary projection `check` remains
-usable locally without a Git baseline.
+`check-ledger` is the append-only history gate. It reads only the fixed
+`skills/registry/governance-decisions.json` path with non-shell Git argument
+vectors. For a local `--baseline`, the event head is the validated literal
+`HEAD` unless `--event-head` supplies a 40-character SHA. In CI, pushes use
+`github.event.before`, pull requests use `github.event.pull_request.base.sha`,
+and both use the explicit `github.sha` event head. The checker enumerates every
+commit in `baseline..event-head` in reverse topological (oldest-first) order,
+loads the ledger at each commit, and requires each successive ledger to retain
+the prior canonical decisions as an identical ordered prefix. It then compares
+the event-head ledger with the working tree. For an all-zero initial-push
+baseline it enumerates all commits reachable from the event head oldest-first.
+Commits from before ledger introduction represent an empty ledger. Removal,
+rewriting, temporary append-then-remove, rewrite-then-restore, insertion before
+prior history, and reordering all fail even when the final ledger matches the
+baseline. Missing nonzero revisions, uninspectable commits, or a baseline that
+is not an ancestor of the event head fail closed. Push checks run on every
+branch; pull-request checks remain enabled. The ordinary projection `check`
+remains usable locally without a Git baseline.
 
 ## Privacy and publication boundary
 
@@ -144,6 +160,8 @@ classes of data:
 - authorization scopes, approval requirements, and data boundaries;
 - runtime availability, verification, and operational observations;
 - governance reasons and free-form observation/discovery metadata;
+- source IDs not explicitly approved through a public-safe
+  `public_projection: true` source declaration;
 - private reasons, local/package/validation paths, credentials, account or agent
   identifiers, conversations, personal memory/context, and browser profiles.
 

@@ -24,6 +24,7 @@ REPOSITORY_SOURCE_CONTRACT = {
     "trust_class": "governed_internal",
     "discovery_method": "static_json",
     "enabled": True,
+    "public_projection": True,
 }
 SNAPSHOT_SCHEMA_VERSION = 1
 
@@ -49,6 +50,11 @@ def resolve_registry(
         for source_id, source in discovery_sources.items()
         if source["enabled"]
     }
+    public_projection_source_ids = {
+        source_id
+        for source_id, source in discovery_sources.items()
+        if source.get("public_projection") is True
+    }
     observation_records = validate_observations(
         observations, enabled_source_ids, declarations
     )
@@ -57,20 +63,24 @@ def resolve_registry(
 
     _reject_contradictory_observations(observation_records)
     superseded_ids = _active_superseded_ids(current_decisions)
-    applicable_decisions = sorted(
-        (
-            decision
-            for decision in current_decisions
-            if decision["decision_id"] not in superseded_ids
-        ),
-        key=lambda decision: decision["decision_id"],
-    )
+    applicable_decisions = [
+        decision
+        for decision in current_decisions
+        if decision["decision_id"] not in superseded_ids
+    ]
+    _reject_conflicting_active_overrides(applicable_decisions)
+    applicable_decisions.sort(key=lambda decision: decision["decision_id"])
 
     resolved_by_id = {
         capability_id: _resolved_declaration(capability_id, declaration)
         for capability_id, declaration in declarations.items()
     }
-    _apply_observations(resolved_by_id, observation_records, as_of_key)
+    _apply_observations(
+        resolved_by_id,
+        observation_records,
+        as_of_key,
+        public_projection_source_ids,
+    )
     _apply_decisions(resolved_by_id, applicable_decisions, scope)
 
     snapshot = {
@@ -217,6 +227,7 @@ def _resolved_declaration(capability_id: str, declaration: dict) -> dict:
             runtime_name: {"operational_state": "unknown"}
         },
         "source_ids": [REPOSITORY_SOURCE_ID],
+        "public_source_ids": [REPOSITORY_SOURCE_ID],
         "governance_decision_ids": [],
         "license": deepcopy(declaration["license"]),
         "stewardship": deepcopy(declaration["stewardship"]),
@@ -250,6 +261,7 @@ def _apply_observations(
     resolved_by_id: dict[str, dict],
     observations: list[dict],
     as_of_key: tuple[datetime, int],
+    public_projection_source_ids: set[str],
 ) -> None:
     ordered = sorted(
         observations,
@@ -284,6 +296,13 @@ def _apply_observations(
         resolved["source_ids"] = sorted(
             {*resolved["source_ids"], observation["source_id"]}
         )
+        if observation["source_id"] in public_projection_source_ids:
+            resolved["public_source_ids"] = sorted(
+                {
+                    *resolved["public_source_ids"],
+                    observation["source_id"],
+                }
+            )
 
 
 def _active_superseded_ids(decisions: list[dict]) -> set[str]:
@@ -292,6 +311,28 @@ def _active_superseded_ids(decisions: list[dict]) -> set[str]:
         for decision in decisions
         if decision.get("supersedes_decision_id") is not None
     }
+
+
+def _reject_conflicting_active_overrides(decisions: list[dict]) -> None:
+    values_by_target: dict[tuple[str, str, str], tuple[str, str]] = {}
+    for decision in decisions:
+        if decision["operation"] != "override_field":
+            continue
+        key = (
+            decision["target_capability_id"],
+            decision["scope"],
+            decision["field"],
+        )
+        prior = values_by_target.get(key)
+        if prior is not None and prior[1] != decision["new_value"]:
+            raise RegistryValidationError(
+                "conflicting active override decisions require explicit "
+                f"supersession: {prior[0]} and {decision['decision_id']}"
+            )
+        values_by_target[key] = (
+            decision["decision_id"],
+            decision["new_value"],
+        )
 
 
 def _apply_decisions(
@@ -362,9 +403,7 @@ def _normalized_sources_input(
 
 
 def _normalized_decisions_input(decisions: object, records: list[dict]) -> object:
-    normalized = sorted(
-        deepcopy(records), key=lambda decision: decision["decision_id"]
-    )
+    normalized = deepcopy(records)
     if isinstance(decisions, dict):
         return {
             "schema_version": decisions["schema_version"],

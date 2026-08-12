@@ -81,6 +81,7 @@ PROJECTION_TEMP_SUFFIX = ".tmp"
 POSIX_DEFAULT_PUBLIC_MODE = 0o644
 GOVERNANCE_LEDGER_GIT_PATH = "skills/registry/governance-decisions.json"
 GOVERNANCE_LEDGER_BASELINE_ENV = "SERAPHIM_GOVERNANCE_LEDGER_BASELINE"
+GOVERNANCE_LEDGER_EVENT_HEAD_ENV = "GITHUB_SHA"
 SAFE_GIT_BASELINE_REF = re.compile(
     r"^[A-Za-z0-9][A-Za-z0-9._/-]*(?:\^[0-9]*)?$"
 )
@@ -116,7 +117,7 @@ def build_public_projection(snapshot: Mapping[str, object]) -> dict[str, object]
                 "license_status": item["license"]["status"],
                 "publisher": item["stewardship"]["publisher"],
                 "maintainer": item["stewardship"]["maintainer"],
-                "source_ids": list(item["source_ids"]),
+                "source_ids": list(item["public_source_ids"]),
             }
         )
 
@@ -210,6 +211,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     check_ledger.add_argument("--event-name")
     check_ledger.add_argument("--push-before")
     check_ledger.add_argument("--pull-request-base")
+    check_ledger.add_argument("--event-head")
 
     compare = commands.add_parser("compare")
     compare.add_argument("--approved", type=Path, required=True)
@@ -238,6 +240,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.command == "check-ledger":
         root = _resolved_root(args.root)
         baseline = args.baseline
+        event_head = args.event_head
         empty_history = False
         if args.event_name:
             if baseline:
@@ -260,6 +263,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 )
                 return 2
             empty_history = baseline is None
+            if not event_head:
+                event_head = os.environ.get(GOVERNANCE_LEDGER_EVENT_HEAD_ENV)
+            if not event_head:
+                print(
+                    "governance ledger event head is required via "
+                    "--event-head or GITHUB_SHA",
+                    file=sys.stderr,
+                )
+                return 2
         elif not baseline:
             baseline = os.environ.get(GOVERNANCE_LEDGER_BASELINE_ENV)
         if not baseline and not empty_history:
@@ -271,8 +283,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return 2
         if baseline is not None:
             _validate_git_baseline_ref(baseline)
+        if not event_head:
+            event_head = "HEAD"
+        _validate_git_event_head(event_head)
         try:
-            _check_governance_ledger_against_git(root, baseline)
+            _check_governance_ledger_against_git(
+                root, baseline, event_head
+            )
         except (RegistryValidationError, ValueError) as error:
             print(f"governance ledger check failed: {error}", file=sys.stderr)
             return 1
@@ -375,7 +392,11 @@ def _validate_resolved_capability(item: dict[str, Any], label: str) -> None:
     ):
         if field not in item or not isinstance(item[field], dict):
             raise TypeError(f"{label} {field} must be a mapping")
-    for field in ("source_ids", "governance_decision_ids"):
+    for field in (
+        "source_ids",
+        "public_source_ids",
+        "governance_decision_ids",
+    ):
         _validate_string_list_field(item, field, label)
 
 
@@ -501,15 +522,35 @@ def _governance_decisions_path(root: Path) -> Path:
 
 
 def _check_governance_ledger_against_git(
-    root: Path, baseline_ref: Optional[str]
+    root: Path,
+    baseline_ref: Optional[str],
+    event_head_ref: str,
 ) -> None:
+    _require_git_commit(root, event_head_ref, "event head")
+    if baseline_ref is not None:
+        _require_git_commit(root, baseline_ref, "baseline")
+        _require_git_ancestor(root, baseline_ref, event_head_ref)
     previous_payload = (
         _governance_ledger_from_git(root, baseline_ref)
         if baseline_ref is not None
         else {"schema_version": 1, "decisions": []}
     )
-    current_payload = _read_json(_governance_decisions_path(root))
     capability_ids = validate_manifest(_read_json(_manifest_path(root)))
+    for commit in _governance_ledger_commit_range(
+        root, baseline_ref, event_head_ref
+    ):
+        commit_payload = _governance_ledger_from_git(root, commit)
+        try:
+            validate_governance_ledger(
+                previous_payload, commit_payload, capability_ids
+            )
+        except RegistryValidationError as error:
+            raise RegistryValidationError(
+                f"{error} at commit {commit}"
+            ) from error
+        previous_payload = commit_payload
+
+    current_payload = _read_json(_governance_decisions_path(root))
     validate_governance_ledger(
         previous_payload, current_payload, capability_ids
     )
@@ -555,7 +596,7 @@ def _governance_ledger_from_git(root: Path, baseline_ref: str) -> object:
     )
     if listed.returncode != 0:
         raise ValueError(
-            "Git baseline could not be inspected: "
+            "Git revision could not be inspected: "
             + _git_error_text(listed)
         )
     entries = {
@@ -577,13 +618,66 @@ def _governance_ledger_from_git(root: Path, baseline_ref: str) -> object:
     )
     if shown.returncode != 0:
         raise ValueError(
-            "Git baseline ledger could not be read: "
+            "Git revision ledger could not be read: "
             + _git_error_text(shown)
         )
     try:
         return json.loads(shown.stdout.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise ValueError("Git baseline ledger is not valid UTF-8 JSON") from error
+        raise ValueError("Git revision ledger is not valid UTF-8 JSON") from error
+
+
+def _governance_ledger_commit_range(
+    root: Path,
+    baseline_ref: Optional[str],
+    event_head_ref: str,
+) -> list[str]:
+    revision_range = (
+        f"{baseline_ref}..{event_head_ref}"
+        if baseline_ref is not None
+        else event_head_ref
+    )
+    listed = _run_git(
+        root,
+        ["rev-list", "--reverse", "--topo-order", revision_range],
+    )
+    if listed.returncode != 0:
+        raise ValueError(
+            "governance ledger commit range could not be inspected: "
+            + _git_error_text(listed)
+        )
+    commits = listed.stdout.decode("ascii", errors="strict").splitlines()
+    if any(GITHUB_EVENT_SHA.fullmatch(commit) is None for commit in commits):
+        raise ValueError("governance ledger commit range returned an invalid SHA")
+    return commits
+
+
+def _require_git_commit(root: Path, revision: str, label: str) -> None:
+    inspected = _run_git(
+        root,
+        ["rev-parse", "--verify", "--quiet", f"{revision}^{{commit}}"],
+    )
+    if inspected.returncode != 0:
+        raise ValueError(
+            f"{label} could not be inspected: " + _git_error_text(inspected)
+        )
+
+
+def _require_git_ancestor(
+    root: Path, baseline_ref: str, event_head_ref: str
+) -> None:
+    inspected = _run_git(
+        root,
+        ["merge-base", "--is-ancestor", baseline_ref, event_head_ref],
+    )
+    if inspected.returncode == 0:
+        return
+    if inspected.returncode == 1:
+        raise ValueError("baseline is not an ancestor of event head")
+    raise ValueError(
+        "baseline ancestry could not be inspected: "
+        + _git_error_text(inspected)
+    )
 
 
 def _run_git(
@@ -612,6 +706,18 @@ def _validate_git_baseline_ref(baseline_ref: object) -> str:
     ):
         raise ValueError("baseline Git revision has unsafe syntax")
     return baseline_ref
+
+
+def _validate_git_event_head(event_head: object) -> str:
+    if event_head == "HEAD":
+        return event_head
+    if not isinstance(event_head, str) or not GITHUB_EVENT_SHA.fullmatch(
+        event_head
+    ):
+        raise ValueError(
+            "event head must be HEAD or a 40-character hexadecimal SHA"
+        )
+    return event_head
 
 
 def _resolved_root(root: Path) -> Path:

@@ -86,6 +86,10 @@ DISCOVERY_SOURCE_FIELDS = {
     "trust_class",
     "discovery_method",
     "enabled",
+    "public_projection",
+}
+REQUIRED_DISCOVERY_SOURCE_FIELDS = DISCOVERY_SOURCE_FIELDS - {
+    "public_projection"
 }
 DISCOVERY_SOURCE_TYPES = {
     "repository_manifest",
@@ -163,6 +167,23 @@ PRIVACY_CLASSES = {"ordinary_public", "private_or_unpublished"}
 RFC3339_TIMESTAMP = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?P<fraction>\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$"
 )
+PUBLIC_SOURCE_ID = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+SENSITIVE_PUBLIC_SOURCE_ID_TOKENS = {
+    "account",
+    "agent",
+    "browser",
+    "conversation",
+    "credential",
+    "email",
+    "identity",
+    "personal",
+    "private",
+    "profile",
+    "secret",
+    "session",
+    "token",
+    "user",
+}
 
 
 def canonical_json(value: object) -> str:
@@ -212,7 +233,7 @@ def validate_discovery_sources(payload: object) -> dict[str, dict]:
         _reject_unknown_fields(
             source, f"discovery sources[{index}]", DISCOVERY_SOURCE_FIELDS
         )
-        missing = DISCOVERY_SOURCE_FIELDS - source.keys()
+        missing = REQUIRED_DISCOVERY_SOURCE_FIELDS - source.keys()
         if missing:
             raise RegistryValidationError(
                 f"discovery sources[{index}] missing fields: {sorted(missing)}"
@@ -232,6 +253,13 @@ def validate_discovery_sources(payload: object) -> dict[str, dict]:
                 source.get(field), f"discovery sources[{index}] {field}"
             )
         _require_bool(source.get("enabled"), f"discovery sources[{index}] enabled")
+        if "public_projection" in source:
+            public_projection = _require_bool(
+                source.get("public_projection"),
+                f"discovery sources[{index}] public_projection",
+            )
+            if public_projection:
+                _validate_public_source_id(source_id, index)
         records[source_id] = deepcopy(source)
     return records
 
@@ -712,6 +740,18 @@ def _validate_observation_metadata(value: object, label: str) -> None:
             raise RegistryValidationError(f"{label} value is too long")
     if len(canonical_json(metadata)) > MAX_METADATA_LENGTH:
         raise RegistryValidationError(f"{label} is too long")
+
+
+def _validate_public_source_id(source_id: str, index: int) -> None:
+    tokens = set(source_id.replace("_", "-").split("-"))
+    if (
+        PUBLIC_SOURCE_ID.fullmatch(source_id) is None
+        or tokens & SENSITIVE_PUBLIC_SOURCE_ID_TOKENS
+    ):
+        raise RegistryValidationError(
+            f"discovery sources[{index}] public projection source_id "
+            "must be a public-safe slug"
+        )
 
 
 def _is_scalar_json(value: object) -> bool:
