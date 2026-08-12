@@ -1157,7 +1157,7 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 )
             self.assertEqual(b"external sentinel", external.read_bytes())
 
-    def test_generate_rejects_final_symlink_swap_after_validation(self) -> None:
+    def test_generate_atomically_replaces_final_symlink_swap(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             base = Path(temporary)
             root = base / "root"
@@ -1176,12 +1176,57 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 projection_module,
                 "_projection_path",
                 side_effect=swap_after_validation,
-            ), self.assertRaisesRegex(ValueError, "safe|reparse|redirect"):
-                projection_main(
-                    ["generate", "--root", str(root), "--as-of", AS_OF]
+            ):
+                self.assertEqual(
+                    0,
+                    projection_main(
+                        ["generate", "--root", str(root), "--as-of", AS_OF]
+                    ),
                 )
             self.assertEqual(b"external sentinel", external.read_bytes())
-            self.assertTrue((registry / "public-capabilities.json").is_symlink())
+            output = registry / "public-capabilities.json"
+            self.assertFalse(output.is_symlink())
+            self.assertEqual(
+                "informational_projection",
+                json.loads(output.read_bytes())["authority"],
+            )
+
+    def test_generate_atomically_replaces_final_hardlink_swap(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            root = base / "root"
+            registry = self.copy_registry_fixture(root)
+            external = base / "external-projection.json"
+            external.write_bytes(b"external sentinel")
+            real_projection_path = projection_module._projection_path
+
+            def swap_after_validation(resolved_root: Path) -> Path:
+                output = real_projection_path(resolved_root)
+                output.unlink()
+                try:
+                    os.link(external, output)
+                except OSError as error:
+                    self.skipTest(f"hard-link creation unavailable: {error}")
+                return output
+
+            with patch.object(
+                projection_module,
+                "_projection_path",
+                side_effect=swap_after_validation,
+            ):
+                self.assertEqual(
+                    0,
+                    projection_main(
+                        ["generate", "--root", str(root), "--as-of", AS_OF]
+                    ),
+                )
+            self.assertEqual(b"external sentinel", external.read_bytes())
+            output = registry / "public-capabilities.json"
+            self.assertFalse(os.path.samefile(external, output))
+            self.assertEqual(
+                "informational_projection",
+                json.loads(output.read_bytes())["authority"],
+            )
 
     def test_generate_rejects_intermediate_directory_swap_after_validation(
         self,
@@ -1219,15 +1264,52 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 b"external directory sentinel", external_output.read_bytes()
             )
 
-    @unittest.skipUnless(os.name == "nt", "Windows-specific fail-closed rule")
-    def test_windows_generate_requires_existing_projection(self) -> None:
+    @unittest.skipUnless(os.name == "nt", "Windows-specific creation rule")
+    def test_windows_generate_safely_creates_missing_projection(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             registry = self.copy_registry_fixture(root)
-            (registry / "public-capabilities.json").unlink()
-            with self.assertRaisesRegex(ValueError, "must already exist"):
+            output = registry / "public-capabilities.json"
+            output.unlink()
+            self.assertEqual(
+                0,
                 projection_main(
                     ["generate", "--root", str(root), "--as-of", AS_OF]
+                ),
+            )
+            self.assertTrue(output.is_file())
+            self.assertEqual(
+                "informational_projection",
+                json.loads(output.read_bytes())["authority"],
+            )
+
+    def test_atomic_publication_failures_preserve_prior_projection(self) -> None:
+        for helper_name in (
+            "_write_all_bytes",
+            "_flush_temp_descriptor",
+            "_atomic_replace_temp",
+        ):
+            with self.subTest(
+                stage=helper_name
+            ), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                registry = self.copy_registry_fixture(root)
+                output = registry / "public-capabilities.json"
+                prior_bytes = output.read_bytes()
+
+                with patch.object(
+                    projection_module,
+                    helper_name,
+                    side_effect=OSError(f"synthetic {helper_name} failure"),
+                    create=True,
+                ), self.assertRaisesRegex(ValueError, "safe"):
+                    projection_main(
+                        ["generate", "--root", str(root), "--as-of", AS_OF]
+                    )
+
+                self.assertEqual(prior_bytes, output.read_bytes())
+                self.assertEqual(
+                    [], list(registry.glob(".public-capabilities.*.tmp"))
                 )
 
     def test_windows_reparse_tag_classifier_distinguishes_cloud_placeholders(

@@ -7,9 +7,10 @@ import json
 import math
 import os
 from pathlib import Path, PureWindowsPath
+import secrets
 import stat
 import sys
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from .contracts import canonical_json, content_digest
 from .resolver import resolve_registry
@@ -65,6 +66,8 @@ WINDOWS_NONREDIRECTING_CLOUD_TAGS = {
     0x8000001E,  # IO_REPARSE_TAG_STORAGE_SYNC
     0x80000021,  # IO_REPARSE_TAG_ONEDRIVE
 }
+PROJECTION_TEMP_PREFIX = ".public-capabilities."
+PROJECTION_TEMP_SUFFIX = ".tmp"
 
 
 def build_public_projection(snapshot: Mapping[str, object]) -> dict[str, object]:
@@ -517,39 +520,60 @@ def _write_projection_posix(root: Path, path: Path, data: bytes) -> None:
     close_on_exec = getattr(os, "O_CLOEXEC", 0)
     directory_flags = os.O_RDONLY | directory_flag | no_follow | close_on_exec
     descriptors = []
-    output_descriptor = None
+    temp_descriptor = None
+    temp_name = None
+    published = False
     try:
         descriptors.append(os.open(root, directory_flags))
         for part in relative_parts[:-1]:
             descriptors.append(
                 os.open(part, directory_flags, dir_fd=descriptors[-1])
             )
-        output_descriptor = os.open(
-            relative_parts[-1],
-            os.O_WRONLY | os.O_CREAT | no_follow | close_on_exec,
-            0o666,
+        temp_name = _new_projection_temp_name()
+        temp_descriptor = os.open(
+            temp_name,
+            os.O_WRONLY
+            | os.O_CREAT
+            | os.O_EXCL
+            | no_follow
+            | close_on_exec,
+            0o600,
             dir_fd=descriptors[-1],
         )
-        if not stat.S_ISREG(os.fstat(output_descriptor).st_mode):
-            raise ValueError("safe projection output must be a regular file")
-        _truncate_write_and_flush(output_descriptor, data)
+        _validate_fresh_temp_descriptor(temp_descriptor)
+        _write_all_bytes(temp_descriptor, data)
+        _flush_temp_descriptor(temp_descriptor)
+        _validate_fresh_temp_descriptor(temp_descriptor)
+        os.close(temp_descriptor)
+        temp_descriptor = None
+        _atomic_replace_temp(
+            temp_name,
+            relative_parts[-1],
+            parent_descriptor=descriptors[-1],
+        )
+        published = True
+        os.fsync(descriptors[-1])
     except OSError as error:
         raise ValueError("safe descriptor-anchored projection write failed") from error
     finally:
-        if output_descriptor is not None:
-            os.close(output_descriptor)
+        if temp_descriptor is not None:
+            os.close(temp_descriptor)
+        if temp_name is not None and not published and descriptors:
+            try:
+                os.unlink(temp_name, dir_fd=descriptors[-1])
+            except FileNotFoundError:
+                pass
         for descriptor in reversed(descriptors):
             os.close(descriptor)
 
 
 def _write_projection_windows(root: Path, path: Path, data: bytes) -> None:
-    if not path.exists():
-        raise ValueError("Windows projection output must already exist")
-
     api = _windows_api()
     parent_handles = []
-    output_handle = None
-    output_descriptor = None
+    temp_handle = None
+    temp_descriptor = None
+    temp_path = None
+    published = False
     try:
         root_handle = _windows_open_path_handle(
             api,
@@ -581,9 +605,10 @@ def _write_projection_windows(root: Path, path: Path, data: bytes) -> None:
                 contained_root=root_final,
             )
 
-        output_handle = _windows_open_path_handle(
+        temp_path = path.parent / _new_projection_temp_name()
+        temp_handle = _windows_open_path_handle(
             api,
-            path,
+            temp_path,
             desired_access=(
                 api["GENERIC_READ"]
                 | api["GENERIC_WRITE"]
@@ -591,44 +616,107 @@ def _write_projection_windows(root: Path, path: Path, data: bytes) -> None:
             ),
             share_mode=0,
             directory=False,
+            creation_disposition=api["CREATE_NEW"],
         )
         _windows_validate_handle(
             api,
-            output_handle,
-            label="projection output",
+            temp_handle,
+            label="projection temporary output",
             contained_root=root_final,
         )
+        _windows_validate_single_link(api, temp_handle)
 
         import msvcrt
 
-        output_descriptor = msvcrt.open_osfhandle(
-            int(output_handle), os.O_WRONLY | getattr(os, "O_BINARY", 0)
+        temp_descriptor = msvcrt.open_osfhandle(
+            int(temp_handle), os.O_WRONLY | getattr(os, "O_BINARY", 0)
         )
-        output_handle = None
-        _truncate_write_and_flush(output_descriptor, data)
-        if not api["FlushFileBuffers"](msvcrt.get_osfhandle(output_descriptor)):
-            raise ctypes.WinError(ctypes.get_last_error())
+        temp_handle = None
+        _write_all_bytes(temp_descriptor, data)
+        _flush_temp_descriptor(temp_descriptor, windows_api=api)
+        _windows_validate_single_link(
+            api, msvcrt.get_osfhandle(temp_descriptor)
+        )
+        os.close(temp_descriptor)
+        temp_descriptor = None
+        _atomic_replace_temp(temp_path, path, windows_api=api)
+        published = True
     except OSError as error:
         raise ValueError("safe Windows projection write failed") from error
     finally:
-        if output_descriptor is not None:
-            os.close(output_descriptor)
-        if output_handle is not None:
-            api["CloseHandle"](output_handle)
+        if temp_descriptor is not None:
+            os.close(temp_descriptor)
+        if temp_handle is not None:
+            api["CloseHandle"](temp_handle)
+        if temp_path is not None and not published:
+            api["DeleteFileW"](str(temp_path))
         for handle in reversed(parent_handles):
             api["CloseHandle"](handle)
 
 
-def _truncate_write_and_flush(descriptor: int, data: bytes) -> None:
-    os.lseek(descriptor, 0, os.SEEK_SET)
-    os.ftruncate(descriptor, 0)
+def _new_projection_temp_name() -> str:
+    return (
+        PROJECTION_TEMP_PREFIX
+        + secrets.token_hex(16)
+        + PROJECTION_TEMP_SUFFIX
+    )
+
+
+def _validate_fresh_temp_descriptor(descriptor: int) -> None:
+    metadata = os.fstat(descriptor)
+    if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
+        raise ValueError(
+            "safe projection temporary output must be a singly linked regular file"
+        )
+
+
+def _write_all_bytes(descriptor: int, data: bytes) -> None:
     remaining = memoryview(data)
     while remaining:
         written = os.write(descriptor, remaining)
         if written <= 0:
             raise OSError("projection write made no progress")
         remaining = remaining[written:]
-    os.fsync(descriptor)
+
+
+def _flush_temp_descriptor(
+    descriptor: int, windows_api: Optional[Mapping[str, Any]] = None
+) -> None:
+    if windows_api is None:
+        os.fsync(descriptor)
+        return
+
+    import msvcrt
+
+    if not windows_api["FlushFileBuffers"](msvcrt.get_osfhandle(descriptor)):
+        raise ctypes.WinError(ctypes.get_last_error())
+
+
+def _atomic_replace_temp(
+    temp: Union[str, Path],
+    output: Union[str, Path],
+    *,
+    parent_descriptor: Optional[int] = None,
+    windows_api: Optional[Mapping[str, Any]] = None,
+) -> None:
+    if windows_api is not None:
+        if not windows_api["MoveFileExW"](
+            str(temp),
+            str(output),
+            windows_api["MOVEFILE_REPLACE_EXISTING"]
+            | windows_api["MOVEFILE_WRITE_THROUGH"],
+        ):
+            raise ctypes.WinError(ctypes.get_last_error())
+        return
+
+    if parent_descriptor is None:
+        raise ValueError("safe atomic replace requires a parent descriptor")
+    os.replace(
+        temp,
+        output,
+        src_dir_fd=parent_descriptor,
+        dst_dir_fd=parent_descriptor,
+    )
 
 
 def _windows_api() -> dict[str, Any]:
@@ -661,6 +749,19 @@ def _windows_api() -> dict[str, Any]:
     kernel32.GetFinalPathNameByHandleW.restype = wintypes.DWORD
     kernel32.FlushFileBuffers.argtypes = (wintypes.HANDLE,)
     kernel32.FlushFileBuffers.restype = wintypes.BOOL
+    kernel32.GetFileInformationByHandle.argtypes = (
+        wintypes.HANDLE,
+        wintypes.LPVOID,
+    )
+    kernel32.GetFileInformationByHandle.restype = wintypes.BOOL
+    kernel32.MoveFileExW.argtypes = (
+        wintypes.LPCWSTR,
+        wintypes.LPCWSTR,
+        wintypes.DWORD,
+    )
+    kernel32.MoveFileExW.restype = wintypes.BOOL
+    kernel32.DeleteFileW.argtypes = (wintypes.LPCWSTR,)
+    kernel32.DeleteFileW.restype = wintypes.BOOL
     kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
     kernel32.CloseHandle.restype = wintypes.BOOL
     return {
@@ -668,18 +769,24 @@ def _windows_api() -> dict[str, Any]:
         "GetFileInformationByHandleEx": kernel32.GetFileInformationByHandleEx,
         "GetFinalPathNameByHandleW": kernel32.GetFinalPathNameByHandleW,
         "FlushFileBuffers": kernel32.FlushFileBuffers,
+        "GetFileInformationByHandle": kernel32.GetFileInformationByHandle,
+        "MoveFileExW": kernel32.MoveFileExW,
+        "DeleteFileW": kernel32.DeleteFileW,
         "CloseHandle": kernel32.CloseHandle,
         "GENERIC_READ": 0x80000000,
         "GENERIC_WRITE": 0x40000000,
         "FILE_READ_ATTRIBUTES": 0x00000080,
         "FILE_SHARE_READ": 0x00000001,
         "FILE_SHARE_WRITE": 0x00000002,
+        "CREATE_NEW": 1,
         "OPEN_EXISTING": 3,
         "FILE_FLAG_BACKUP_SEMANTICS": 0x02000000,
         "FILE_FLAG_OPEN_REPARSE_POINT": 0x00200000,
         "INVALID_HANDLE_VALUE": ctypes.c_void_p(-1).value,
         "FILE_ATTRIBUTE_REPARSE_POINT": 0x00000400,
         "FILE_ATTRIBUTE_TAG_INFO_CLASS": 9,
+        "MOVEFILE_REPLACE_EXISTING": 0x00000001,
+        "MOVEFILE_WRITE_THROUGH": 0x00000008,
     }
 
 
@@ -689,6 +796,7 @@ def _windows_open_path_handle(
     desired_access: int,
     share_mode: int,
     directory: bool,
+    creation_disposition: Optional[int] = None,
 ) -> int:
     flags = api["FILE_FLAG_OPEN_REPARSE_POINT"]
     if directory:
@@ -698,15 +806,16 @@ def _windows_open_path_handle(
         desired_access,
         share_mode,
         None,
-        api["OPEN_EXISTING"],
+        (
+            api["OPEN_EXISTING"]
+            if creation_disposition is None
+            else creation_disposition
+        ),
         flags,
         None,
     )
     if handle == api["INVALID_HANDLE_VALUE"]:
-        error = ctypes.get_last_error()
-        if error in {2, 3} and not directory:
-            raise ValueError("Windows projection output must already exist")
-        raise ctypes.WinError(error)
+        raise ctypes.WinError(ctypes.get_last_error())
     return handle
 
 
@@ -753,6 +862,36 @@ def _windows_handle_reparse_tag(api: Mapping[str, Any], handle: int) -> int:
     if not information.FileAttributes & api["FILE_ATTRIBUTE_REPARSE_POINT"]:
         return 0
     return int(information.ReparseTag)
+
+
+def _windows_validate_single_link(
+    api: Mapping[str, Any], handle: int
+) -> None:
+    from ctypes import wintypes
+
+    class ByHandleFileInformation(ctypes.Structure):
+        _fields_ = (
+            ("FileAttributes", wintypes.DWORD),
+            ("CreationTime", wintypes.FILETIME),
+            ("LastAccessTime", wintypes.FILETIME),
+            ("LastWriteTime", wintypes.FILETIME),
+            ("VolumeSerialNumber", wintypes.DWORD),
+            ("FileSizeHigh", wintypes.DWORD),
+            ("FileSizeLow", wintypes.DWORD),
+            ("NumberOfLinks", wintypes.DWORD),
+            ("FileIndexHigh", wintypes.DWORD),
+            ("FileIndexLow", wintypes.DWORD),
+        )
+
+    information = ByHandleFileInformation()
+    if not api["GetFileInformationByHandle"](
+        handle, ctypes.byref(information)
+    ):
+        raise ctypes.WinError(ctypes.get_last_error())
+    if information.NumberOfLinks != 1:
+        raise ValueError(
+            "safe projection temporary output must be singly linked"
+        )
 
 
 def _windows_final_handle_path(
