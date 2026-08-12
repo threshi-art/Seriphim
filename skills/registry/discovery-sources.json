@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "source_id": "repository-capability-manifest",
+      "source_type": "repository_manifest",
+      "authority": "institutional_declaration",
+      "trust_class": "governed_internal",
+      "discovery_method": "static_json",
+      "enabled": true
+    },
+    {
+      "source_id": "synthetic-registry-fixtures",
+      "source_type": "synthetic_fixture",
+      "authority": "test_only",
+      "trust_class": "untrusted_test_data",
+      "discovery_method": "in_process_fixture",
+      "enabled": false
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "decisions": [
+    {
+      "decision_id": "exclude-seraphim-life-operations-from-public-capabilities",
+      "target_capability_id": "seraphim-life-operations",
+      "operation": "exclude_projection",
+      "scope": "public-capabilities",
+      "reason": "The capability is excluded from the public informational projection.",
+      "authority": "project-governance",
+      "created_at": "2026-08-12T00:00:00Z",
+      "effective_at": "2026-08-12T00:00:00Z",
+      "provenance": "capability-manifest privacy classification"
+    },
+    {
+      "decision_id": "exclude-personal-writing-style-from-public-capabilities",
+      "target_capability_id": "personal-writing-style",
+      "operation": "exclude_projection",
+      "scope": "public-capabilities",
+      "reason": "The capability is excluded from the public informational projection.",
+      "authority": "project-governance",
+      "created_at": "2026-08-12T00:00:00Z",
+      "effective_at": "2026-08-12T00:00:00Z",
+      "provenance": "capability-manifest privacy classification"
+    }
+  ]
+}

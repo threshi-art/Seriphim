@@ -1,8 +1,10 @@
 """Strict contracts for canonical capability declarations."""
 
 from copy import deepcopy
+from datetime import datetime, timezone
 import hashlib
 import json
+import math
 
 
 class RegistryValidationError(ValueError):
@@ -74,6 +76,82 @@ RUNTIME_CONTRACT_FIELDS = {
     "last_verified",
 }
 
+DISCOVERY_SOURCE_ROOT_FIELDS = {"schema_version", "sources"}
+DISCOVERY_SOURCE_FIELDS = {
+    "source_id",
+    "source_type",
+    "authority",
+    "trust_class",
+    "discovery_method",
+    "enabled",
+}
+DISCOVERY_SOURCE_TYPES = {
+    "repository_manifest",
+    "codex_export",
+    "chatgpt_operator_export",
+    "local_service_declaration",
+    "synthetic_fixture",
+}
+OBSERVATION_FIELDS = {
+    "observation_id",
+    "source_id",
+    "capability_id",
+    "runtime",
+    "availability_state",
+    "verification_state",
+    "operational_state",
+    "observed_at",
+    "verification_evidence",
+    "metadata",
+}
+FORBIDDEN_OBSERVATION_FIELDS = {
+    "prompt",
+    "instructions",
+    "tool",
+    "authorization_scope",
+    "approval_requirement",
+    "data_boundary",
+    "trusted",
+    "recommended",
+}
+MAX_METADATA_ENTRIES = 32
+MAX_METADATA_LENGTH = 4096
+MAX_METADATA_STRING_LENGTH = 512
+GOVERNANCE_DECISION_ROOT_FIELDS = {"schema_version", "decisions"}
+GOVERNANCE_DECISION_FIELDS = {
+    "decision_id",
+    "target_capability_id",
+    "operation",
+    "scope",
+    "reason",
+    "authority",
+    "created_at",
+    "effective_at",
+    "expires_at",
+    "supersedes_decision_id",
+    "provenance",
+    "field",
+    "new_value",
+}
+DECISION_OPERATIONS = {
+    "include_projection",
+    "exclude_projection",
+    "override_field",
+}
+OVERRIDABLE_FIELDS = {
+    "display_name",
+    "description",
+    "lifecycle_state",
+    "publication_class",
+    "privacy_class",
+}
+AUTHORIZATION_FIELDS = {
+    "read_or_write",
+    "authorization_scope",
+    "approval_requirement",
+    "data_boundary",
+}
+
 
 def canonical_json(value: object) -> str:
     """Return the deterministic JSON representation used for registry digests."""
@@ -105,6 +183,214 @@ def validate_manifest(payload: object) -> dict[str, dict]:
         _validate_declaration(record, capability_id)
         records[capability_id] = deepcopy(record)
     return records
+
+
+def validate_discovery_sources(payload: object) -> dict[str, dict]:
+    """Validate approved, repository-local discovery source declarations."""
+    root = _require_dict(payload, "discovery sources")
+    _reject_unknown_fields(
+        root, "discovery sources", DISCOVERY_SOURCE_ROOT_FIELDS
+    )
+    if type(root.get("schema_version")) is not int or root["schema_version"] != 1:
+        raise RegistryValidationError("discovery sources schema_version must be 1")
+    sources = _require_list(root.get("sources"), "discovery sources sources")
+    records: dict[str, dict] = {}
+    for index, raw in enumerate(sources):
+        source = _require_dict(raw, f"discovery sources[{index}]")
+        _reject_unknown_fields(
+            source, f"discovery sources[{index}]", DISCOVERY_SOURCE_FIELDS
+        )
+        missing = DISCOVERY_SOURCE_FIELDS - source.keys()
+        if missing:
+            raise RegistryValidationError(
+                f"discovery sources[{index}] missing fields: {sorted(missing)}"
+            )
+        source_id = _require_nonempty_string(
+            source.get("source_id"), f"discovery sources[{index}] source_id"
+        )
+        if source_id in records:
+            raise RegistryValidationError(f"duplicate discovery source: {source_id}")
+        _require_allowed_string(
+            source.get("source_type"),
+            f"discovery sources[{index}] source_type",
+            DISCOVERY_SOURCE_TYPES,
+        )
+        for field in ("authority", "trust_class", "discovery_method"):
+            _require_nonempty_string(
+                source.get(field), f"discovery sources[{index}] {field}"
+            )
+        _require_bool(source.get("enabled"), f"discovery sources[{index}] enabled")
+        records[source_id] = deepcopy(source)
+    return records
+
+
+def validate_observations(
+    rows: object, source_ids: object, capability_ids: object
+) -> list[dict]:
+    """Validate attributed observations without granting them decision authority."""
+    observations = _require_list(rows, "observations")
+    approved_source_ids = _identifier_set(source_ids, "source ids")
+    known_capability_ids = _identifier_set(capability_ids, "capability ids")
+    validated: list[dict] = []
+    observation_ids: set[str] = set()
+    for index, raw in enumerate(observations):
+        observation = _require_dict(raw, f"observations[{index}]")
+        _reject_forbidden_observation_fields(observation)
+        _reject_unknown_fields(observation, f"observations[{index}]", OBSERVATION_FIELDS)
+        missing = OBSERVATION_FIELDS - observation.keys()
+        if missing:
+            raise RegistryValidationError(
+                f"observations[{index}] missing fields: {sorted(missing)}"
+            )
+        observation_id = _require_nonempty_string(
+            observation.get("observation_id"), f"observations[{index}] observation_id"
+        )
+        if observation_id in observation_ids:
+            raise RegistryValidationError(f"duplicate observation: {observation_id}")
+        observation_ids.add(observation_id)
+        source_id = _require_nonempty_string(
+            observation.get("source_id"), f"observations[{index}] source_id"
+        )
+        if source_id not in approved_source_ids:
+            raise RegistryValidationError(f"unknown source: {source_id}")
+        capability_id = _require_nonempty_string(
+            observation.get("capability_id"), f"observations[{index}] capability_id"
+        )
+        if capability_id not in known_capability_ids:
+            raise RegistryValidationError(f"unknown capability: {capability_id}")
+        for field in (
+            "runtime",
+            "availability_state",
+            "verification_state",
+            "operational_state",
+            "verification_evidence",
+        ):
+            _require_nonempty_string(
+                observation.get(field), f"observations[{index}] {field}"
+            )
+        _parse_rfc3339(observation.get("observed_at"), f"observations[{index}] observed_at")
+        _validate_observation_metadata(
+            observation.get("metadata"), f"observations[{index}] metadata"
+        )
+        validated.append(deepcopy(observation))
+    return validated
+
+
+def validate_governance_decisions(
+    payload: object, capability_ids: object
+) -> list[dict]:
+    """Validate append-only, capability-scoped projection decisions."""
+    root = _require_dict(payload, "governance decisions")
+    _reject_unknown_fields(
+        root, "governance decisions", GOVERNANCE_DECISION_ROOT_FIELDS
+    )
+    if type(root.get("schema_version")) is not int or root["schema_version"] != 1:
+        raise RegistryValidationError("governance decisions schema_version must be 1")
+    decisions = _require_list(root.get("decisions"), "governance decisions decisions")
+    known_capability_ids = _identifier_set(capability_ids, "capability ids")
+    validated: list[dict] = []
+    positions: dict[str, int] = {}
+    for index, raw in enumerate(decisions):
+        decision = _require_dict(raw, f"governance decisions[{index}]")
+        _reject_unknown_fields(
+            decision, f"governance decisions[{index}]", GOVERNANCE_DECISION_FIELDS
+        )
+        required = GOVERNANCE_DECISION_FIELDS - {
+            "expires_at",
+            "supersedes_decision_id",
+            "field",
+            "new_value",
+        }
+        missing = required - decision.keys()
+        if missing:
+            raise RegistryValidationError(
+                f"governance decisions[{index}] missing fields: {sorted(missing)}"
+            )
+        decision_id = _require_nonempty_string(
+            decision.get("decision_id"), f"governance decisions[{index}] decision_id"
+        )
+        if decision_id in positions:
+            raise RegistryValidationError(f"duplicate decision: {decision_id}")
+        positions[decision_id] = index
+        target_capability_id = _require_nonempty_string(
+            decision.get("target_capability_id"),
+            f"governance decisions[{index}] target_capability_id",
+        )
+        if target_capability_id not in known_capability_ids:
+            raise RegistryValidationError(f"unknown capability: {target_capability_id}")
+        operation = _require_allowed_string(
+            decision.get("operation"),
+            f"governance decisions[{index}] operation",
+            DECISION_OPERATIONS,
+        )
+        for field in ("scope", "reason", "authority", "provenance"):
+            _require_nonempty_string(
+                decision.get(field), f"governance decisions[{index}] {field}"
+            )
+        created_at = _parse_rfc3339(
+            decision.get("created_at"), f"governance decisions[{index}] created_at"
+        )
+        effective_at = _parse_rfc3339(
+            decision.get("effective_at"), f"governance decisions[{index}] effective_at"
+        )
+        if created_at > effective_at:
+            raise RegistryValidationError(
+                f"governance decisions[{index}] effective_at precedes created_at"
+            )
+        expires_at = decision.get("expires_at")
+        if expires_at is not None:
+            expiration = _parse_rfc3339(
+                expires_at, f"governance decisions[{index}] expires_at"
+            )
+            if expiration <= effective_at:
+                raise RegistryValidationError(
+                    f"governance decisions[{index}] expires_at must follow effective_at"
+                )
+        supersedes = decision.get("supersedes_decision_id")
+        if supersedes is not None:
+            _require_nonempty_string(
+                supersedes,
+                f"governance decisions[{index}] supersedes_decision_id",
+            )
+        _validate_decision_override(decision, index, operation)
+        validated.append(deepcopy(decision))
+
+    by_id = {record["decision_id"]: record for record in validated}
+    for index, decision in enumerate(validated):
+        supersedes = decision.get("supersedes_decision_id")
+        if supersedes is None:
+            continue
+        if supersedes not in by_id:
+            raise RegistryValidationError(f"unknown superseded decision: {supersedes}")
+        if positions[supersedes] >= index:
+            raise RegistryValidationError("superseded decision must precede its replacement")
+        if by_id[supersedes]["target_capability_id"] != decision["target_capability_id"]:
+            raise RegistryValidationError("superseded decision must target the same capability")
+    return validated
+
+
+def active_decisions(decisions: object, as_of: object) -> list[dict]:
+    """Return decisions effective at an RFC 3339 instant without mutating history."""
+    decision_rows = _require_list(decisions, "decisions")
+    instant = _parse_rfc3339(as_of, "as_of")
+    active: list[dict] = []
+    for index, raw in enumerate(decision_rows):
+        decision = _require_dict(raw, f"decisions[{index}]")
+        effective_at = _parse_rfc3339(
+            decision.get("effective_at"), f"decisions[{index}] effective_at"
+        )
+        expires_at = decision.get("expires_at")
+        if expires_at is not None:
+            expiry = _parse_rfc3339(expires_at, f"decisions[{index}] expires_at")
+            if expiry <= effective_at:
+                raise RegistryValidationError(
+                    f"decisions[{index}] expires_at must follow effective_at"
+                )
+        else:
+            expiry = None
+        if effective_at <= instant and (expiry is None or instant < expiry):
+            active.append(deepcopy(decision))
+    return active
 
 
 def _validate_declaration(record: dict, capability_id: str) -> None:
@@ -303,3 +589,94 @@ def _require_string_list(value: object, label: str) -> list:
     for index, item in enumerate(values):
         _require_nonempty_string(item, f"{label}[{index}]")
     return values
+
+
+def _identifier_set(value: object, label: str) -> set[str]:
+    if isinstance(value, dict):
+        values = value.keys()
+    elif isinstance(value, (set, list, tuple)):
+        values = value
+    else:
+        raise RegistryValidationError(f"{label} must be a collection")
+    result: set[str] = set()
+    for index, item in enumerate(values):
+        result.add(_require_nonempty_string(item, f"{label}[{index}]"))
+    return result
+
+
+def _reject_forbidden_observation_fields(value: object) -> None:
+    if isinstance(value, dict):
+        for key, nested in value.items():
+            if isinstance(key, str) and key.lower() in FORBIDDEN_OBSERVATION_FIELDS:
+                raise RegistryValidationError(f"forbidden observation field: {key}")
+            _reject_forbidden_observation_fields(nested)
+    elif isinstance(value, list):
+        for nested in value:
+            _reject_forbidden_observation_fields(nested)
+
+
+def _validate_observation_metadata(value: object, label: str) -> None:
+    metadata = _require_dict(value, label)
+    if len(metadata) > MAX_METADATA_ENTRIES:
+        raise RegistryValidationError(f"{label} has too many entries")
+    for key, item in metadata.items():
+        key_name = _require_nonempty_string(key, f"{label} key")
+        if len(key_name) > MAX_METADATA_STRING_LENGTH:
+            raise RegistryValidationError(f"{label} key is too long")
+        if not _is_scalar_json(item):
+            raise RegistryValidationError(f"{label} values must be scalar JSON data")
+        if isinstance(item, str) and len(item) > MAX_METADATA_STRING_LENGTH:
+            raise RegistryValidationError(f"{label} value is too long")
+    if len(canonical_json(metadata)) > MAX_METADATA_LENGTH:
+        raise RegistryValidationError(f"{label} is too long")
+
+
+def _is_scalar_json(value: object) -> bool:
+    if value is None or type(value) in {bool, int, str}:
+        return True
+    return type(value) is float and math.isfinite(value)
+
+
+def _validate_decision_override(decision: dict, index: int, operation: str) -> None:
+    has_field = "field" in decision
+    has_value = "new_value" in decision
+    if operation != "override_field":
+        if has_field or has_value:
+            raise RegistryValidationError(
+                f"governance decisions[{index}] only override_field may set field values"
+            )
+        return
+    if not has_field or not has_value:
+        raise RegistryValidationError(
+            f"governance decisions[{index}] override_field requires field and new_value"
+        )
+    field = _require_nonempty_string(
+        decision.get("field"), f"governance decisions[{index}] field"
+    )
+    if field in AUTHORIZATION_FIELDS:
+        raise RegistryValidationError(f"authorization field cannot be overridden: {field}")
+    if field not in OVERRIDABLE_FIELDS:
+        raise RegistryValidationError(f"governance decisions[{index}] field is not overridable")
+    new_value = decision.get("new_value")
+    if not isinstance(new_value, str) or not new_value.strip():
+        raise RegistryValidationError(
+            f"governance decisions[{index}] new_value must be a non-empty string"
+        )
+    if field == "lifecycle_state" and new_value not in LIFECYCLE_STATES:
+        raise RegistryValidationError(
+            f"governance decisions[{index}] lifecycle_state has an invalid value"
+        )
+
+
+def _parse_rfc3339(value: object, label: str) -> datetime:
+    timestamp = _require_nonempty_string(value, label)
+    if "T" not in timestamp or not (timestamp.endswith("Z") or "+" in timestamp[10:] or "-" in timestamp[10:]):
+        raise RegistryValidationError(f"{label} must be an RFC 3339 timestamp")
+    try:
+        normalized = timestamp[:-1] + "+00:00" if timestamp.endswith("Z") else timestamp
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError as exc:
+        raise RegistryValidationError(f"{label} must be an RFC 3339 timestamp") from exc
+    if parsed.tzinfo is None:
+        raise RegistryValidationError(f"{label} must include a timezone")
+    return parsed.astimezone(timezone.utc)
