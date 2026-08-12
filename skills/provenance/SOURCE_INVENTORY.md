@@ -1,16 +1,17 @@
 # Public Skill Source Inventory
 
-This inventory records the private source archives used to prepare public Skill
-packages. The archives themselves are intentionally not committed.
+This inventory records the provenance class used to prepare public Skill
+packages. Private filenames, archive fingerprints, account identifiers, and
+source locations are intentionally not published.
 
 ## Verified authoritative exports
 
-| Public package | Private archive | SHA-256 |
+| Public package | Provenance class | Public treatment |
 |---|---|---|
-| Breadcrumb Investigator | `breadcrumb_skill.zip` | `C8F3F000ECA50E2D7223F32111399E91903C00A5E860418423FE21D21F6B2EA8` |
-| Ei R@M Investigative Orchestrator | `eiram_datacollect_skill.zip` | `FE877746112AC015932135916031B5A3D91C818D122BD246760A68E5B003E14B` |
-| EiRAM Editorial Intelligence | `eiram-editorial-intelligence.zip` | `C7A835EA90CAB98B78CE4DAFA7F871A5E72E7A2DA2B382120EECF58AE964A114` |
-| YouTube Ei R@M Ingest | `skill(7)youtube.zip` | `6DFDE41D38A3BFF3BF0F3274768229B91C7D4712948F90BF4F92E4B10A5D09AA` |
+| Breadcrumb Investigator | Owner-supplied authoritative export | Reviewed text package |
+| Ei R@M Investigative Orchestrator | Owner-supplied authoritative export | Reviewed text package |
+| EiRAM Editorial Intelligence | Owner-supplied authoritative export | Reviewed text package with non-redistributable media omitted |
+| YouTube Ei R@M Ingest | Owner-supplied authoritative export | Reviewed text package with non-redistributable media omitted |
 
 ## Normalization record
 
@@ -27,9 +28,9 @@ trigger statements.
 - Breadcrumb Investigator and Ei R@M Investigative Orchestrator: preserved the
   reviewed evidence and routing references while normalizing trigger metadata.
 
-No private archive contains authority to publish personal memory, Agent
-configuration, account identifiers, credentials, or unrelated project files.
-Those materials remain excluded regardless of archive location.
+Possession of an export does not grant authority to publish personal memory,
+Agent configuration, account identifiers, credentials, or unrelated project
+files. Those materials remain excluded regardless of source location.
 
 ## Validation scope
 

@@ -273,7 +273,7 @@ function useChatSessionState(): ChatSessionContextValue {
   const handleExport = useCallback(() => {
     const text = localMessages
       .filter((m) => m.role !== "system")
-      .map((m) => `## ${m.role === "user" ? "Chris (Operator)" : "Seraphim"}\n\n${m.content}`)
+      .map((m) => `## ${m.role === "user" ? "Operator" : "Seraphim"}\n\n${m.content}`)
       .join("\n\n---\n\n");
     const header = `# Seraphim Intelligence Report\n**Mode:** ${MODES.find((m) => m.id === activeMode)?.label || "Standard"}\n**Date:** ${new Date().toISOString().split("T")[0]}\n**Classification:** OPERATOR EYES ONLY\n\n---\n\n`;
     const blob = new Blob([header + text], { type: "text/markdown" });

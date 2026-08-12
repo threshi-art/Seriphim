@@ -45,8 +45,8 @@ Deferred data scope includes:
 - `REQUIREMENTS.md`
 - `DATA_MODEL.md`
 - `ARCHITECTURE.md`
-- `ACADEMIC_AND_DESIGN_STANDARDS.md`
-- Existing EI-RAM FastAPI engine source under `AGI Training/EI-RAM/eiram API`
+- `../../ACADEMIC_AND_DESIGN_STANDARDS.md`
+- Curated EI-RAM FastAPI engine source under `../engine-api/`
 
 ### 1.4 Definitions and Acronyms
 

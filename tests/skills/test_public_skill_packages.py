@@ -12,7 +12,8 @@ FORBIDDEN_PATTERNS = {
     "Windows user path": re.compile(r"[A-Za-z]:\\Users\\", re.IGNORECASE),
     "private Skill ID": re.compile(r"chatgpt\.com/skills\?skill_id=", re.IGNORECASE),
     "identity-linked personalization": re.compile(
-        r"Chris\s+Richardson", re.IGNORECASE
+        r"\b(?:also known as|personal psychological profile|relationship covenant|personalized cognitive companion)\b",
+        re.IGNORECASE,
     ),
     "email address": re.compile(
         r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE

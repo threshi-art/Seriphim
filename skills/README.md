@@ -10,6 +10,10 @@ tested is design evidence—not a substitute for reviewing the package body.
 
 ## Published packages
 
+Fourteen reviewed public packages are currently available. Four are normalized
+authoritative exports; the remaining ten are explicitly labeled reconstructed
+public editions.
+
 | Skill | Role | Package |
 |---|---|---|
 | Breadcrumb Investigator | Evidence supplier | `investigation/breadcrumb-investigator/` |
@@ -32,7 +36,7 @@ directory into a compatible Skills location; do not copy the category wrapper.
 Tool availability remains environment-dependent, and a package does not grant
 access to private sources or restricted services.
 
-See `provenance/SOURCE_INVENTORY.md` for source digests, normalizations, and
+See `provenance/SOURCE_INVENTORY.md` for provenance classes, normalizations, and
 intentional omissions.
 
 ## Publication Gate
@@ -62,9 +66,12 @@ skills/
   provenance/
 ```
 
-Personal writing style, memory, relationships, and private Agent configuration
-remain outside the public repository. Published orchestration and specialized
-packages are explicitly labeled reconstructed public editions.
+Personal writing style, memory, relationships, life-operations context, and
+private Agent configuration remain outside the public repository. Chief of
+Staff is the internal architecture name for the role exposed by Seraphim
+Operator Routing; it is not a second package. Plato Constraint remains a
+specified candidate until an independently reviewable package and safety
+evidence exist.
 
 See `recovery/RECOVERY_MANIFEST.md` for the ranked recovery queue and its
 publication requirements.

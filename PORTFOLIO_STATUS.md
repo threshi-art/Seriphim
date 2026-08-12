@@ -27,8 +27,12 @@ redistribution rights for every tracked artifact.
 
 ## Validation still required
 
-1. Reproduce `pnpm install`, development startup, and the declared verification
-   command from a clean checkout.
+Linux CI now performs a frozen `pnpm` install, the declared platform verification
+command, local-bridge tests, EI-RAM engine tests, and root architecture/hygiene
+checks. The following release-oriented validation remains:
+
+1. Reproduce development startup and the packaged desktop entry point from a
+   clean Windows checkout.
 2. Inventory runtime configuration and distinguish sample values from secrets or
    machine-local state.
 3. Validate the Windows desktop build and packaged entry point.
@@ -37,9 +41,9 @@ redistribution rights for every tracked artifact.
    boundaries, and desktop behavior before considering any public extraction.
 6. Define a focused public showcase that excludes private research and imported
    artifacts.
-7. Repair the package/lockfile mismatch that currently prevents a frozen clean
-   install from reaching the declared verification command.
-8. Audit generated desktop documentation, duplicate page components,
+7. Add the public Skill validation suites to the enforced CI policy after their
+   behavior fixtures receive an independent review.
+8. Audit generated desktop assets,
    machine-local paths, and third-party media before treating the current tree
    as a release artifact.
 

@@ -1,6 +1,6 @@
 # SeraphimGPT App Portfolio
 
-This folder is a clean planning area for app concepts discovered inside the SeraphimGPT archive.
+This folder separates application concepts from the primary platform source.
 
 Each project folder starts as a placeholder with:
 
@@ -15,9 +15,9 @@ Each project folder starts as a placeholder with:
 
 | # | Project | Status | Purpose |
 |---|---|---|---|
-| 01 | Seraphim Command Center | Placeholder | Main AI command center and dashboard |
-| 02 | Desktop AI Companion | Placeholder | Local desktop cockpit and permissioned operator loop |
-| 03 | EI-RAM Analysis Studio | Starter scaffold | Narrative, ideological, and risk-analysis workbench |
+| 01 | Seraphim Command Center | Concept brief; implementation under `seraphim-platform/` | Main AI command center and dashboard |
+| 02 | Desktop AI Companion | Concept brief; prototype under `seraphim-platform/desktop/` | Local desktop cockpit and permissioned operator loop |
+| 03 | EI-RAM Analysis Studio | Phase-1 prototype | Deterministic evidence-first analysis workbench and FastAPI engine |
 | 04 | SystemSentinel Windows Health | Placeholder | Defensive Windows health and maintenance dashboard |
 | 05 | Network Intelligence Trainer | Placeholder | Networking lab, subnetting, and troubleshooting trainer |
 | 06 | Intel Research Knowledge Vault | Placeholder | Searchable local research archive and report builder |
@@ -28,4 +28,6 @@ Each project folder starts as a placeholder with:
 
 ## Current Priority
 
-Project 03, EI-RAM Analysis Studio, is the first project to develop beyond placeholder status.
+Project 03, EI-RAM Analysis Studio, is the first standalone portfolio project
+to develop beyond a concept brief. Projects 01 and 02 point to related platform
+implementations maintained under `seraphim-platform/`.

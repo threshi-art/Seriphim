@@ -11,6 +11,6 @@
 | Red action | Destructive, shell, external, or sensitive system actions; requires explicit approval |
 | Approved workspace | Operator-selected directory boundary for local tools |
 | Mock / Simulated | UI or state behavior that does not perform real side effects |
-| Operator | Chris “Loki”, sole authority for approvals and release |
+| Operator | Human authority for approvals and release |
 | Audit log | Immutable-enough record of actions, decisions, and outcomes |
 | Trace matrix | Mapping of requirements to design, implementation, and tests |

@@ -79,7 +79,7 @@ Publish four packages recovered from authoritative local archives:
 - EiRAM Editorial Intelligence
 - YouTube Ei R@M Ingest
 
-The source inventory will record the archive filename, SHA-256 digest, review
+The source inventory will record a non-identifying provenance class, review
 date, and any normalization or redaction applied. The preferred editorial and
 YouTube sources are the latest coherent archive versions, not every historical
 duplicate.
@@ -134,7 +134,7 @@ for destructive operations.
 
 The following remain outside the public package collection:
 
-- **Chris Writing Style / Personal Writing Style:** private voice calibration
+- **Personal Writing Style:** private voice calibration
   and identity-linked personalization.
 - **Seraphim Life Operations:** personal memory, relationships, routines, and
   private operational context.
@@ -160,10 +160,11 @@ Each manifest entry promoted to `packaged` will include:
   `reconstructed-public-edition`;
 - package version and review date;
 - validation evidence location;
-- source archive digest when an authoritative export exists.
+- non-identifying provenance class when an authoritative export exists.
 
-Original private archives remain outside GitHub. Digests demonstrate which
-source was reviewed without publishing redundant or unreviewed bundles.
+Original private archives, filenames, fingerprints, and source locations remain
+outside GitHub. The public inventory records only the provenance class and
+review treatment.
 
 ## Validation Strategy
 

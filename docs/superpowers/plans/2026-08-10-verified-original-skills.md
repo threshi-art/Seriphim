@@ -25,7 +25,7 @@
 
 - `tests/skills/test_public_skill_packages.py`: reusable package validator and one independently runnable test class per published Skill.
 - `tests/skills/fixtures/pr1-routing-cases.json`: synthetic positive, negative, and overlap cases with reviewed expected owners.
-- `skills/provenance/SOURCE_INVENTORY.md`: archive digests, transformations, exclusions, and validation scope.
+- `skills/provenance/SOURCE_INVENTORY.md`: provenance classes, transformations, exclusions, and validation scope.
 - `skills/capability-manifest.json`: machine-readable package status, paths, provenance types, versions, and validation evidence.
 - `skills/README.md`: public installation layout, package index, and remaining publication gate.
 - `skills/investigation/breadcrumb-investigator/`: normalized Breadcrumb Investigator package.
@@ -43,7 +43,7 @@
 - Create: `skills/investigation/breadcrumb-investigator/references/eiram-integration.md`
 
 **Interfaces:**
-- Consumes: authoritative archive `breadcrumb_skill.zip`, SHA-256 `C8F3F000ECA50E2D7223F32111399E91903C00A5E860418423FE21D21F6B2EA8`.
+- Consumes: reviewed owner-supplied authoritative export.
 - Produces: `assert_valid_skill(testcase, package, expected_name)` for later package tests and the public package at `skills/investigation/breadcrumb-investigator`.
 
 - [ ] **Step 1: Write the failing package test**
@@ -102,7 +102,7 @@ git commit -m "feat(skills): publish breadcrumb investigator"
 - Create: `skills/analysis/eiram-investigative-orchestrator/references/eiram-routing.md`
 
 **Interfaces:**
-- Consumes: authoritative archive `eiram_datacollect_skill.zip`, SHA-256 `FE877746112AC015932135916031B5A3D91C818D122BD246760A68E5B003E14B`, plus Task 1's package validator.
+- Consumes: reviewed owner-supplied authoritative export plus Task 1's package validator.
 - Produces: the public analytical owner at `skills/analysis/eiram-investigative-orchestrator`.
 
 - [ ] **Step 1: Write the failing orchestrator test**
@@ -154,7 +154,7 @@ git commit -m "feat(skills): publish eiram investigative orchestrator"
 - Create: `skills/editorial/eiram-editorial-intelligence/references/source-map.md`
 
 **Interfaces:**
-- Consumes: authoritative archive `eiram-editorial-intelligence.zip`, SHA-256 `C7A835EA90CAB98B78CE4DAFA7F871A5E72E7A2DA2B382120EECF58AE964A114`, plus Task 1's validator.
+- Consumes: reviewed owner-supplied authoritative export plus Task 1's validator.
 - Produces: the public editorial package and its executable metadata validator.
 
 - [ ] **Step 1: Add failing package and script behavior tests**
@@ -203,7 +203,7 @@ git commit -m "feat(skills): publish eiram editorial intelligence"
 - Create: `skills/media-ingest/youtube-eiram-ingest/references/fallback-acquisition.md`
 
 **Interfaces:**
-- Consumes: authoritative archive `skill(7)youtube.zip`, SHA-256 `6DFDE41D38A3BFF3BF0F3274768229B91C7D4712948F90BF4F92E4B10A5D09AA`, plus Task 1's validator.
+- Consumes: reviewed owner-supplied authoritative export plus Task 1's validator.
 - Produces: a portable media-ingest evidence supplier that respects access boundaries.
 
 - [ ] **Step 1: Write the failing YouTube package test**
@@ -246,7 +246,7 @@ git commit -m "feat(skills): publish youtube eiram ingest"
 - Modify: `skills/recovery/RECOVERY_MANIFEST.md`
 
 **Interfaces:**
-- Consumes: all four validated package paths and archive digests from Tasks 1–4.
+- Consumes: all four validated package paths and provenance classes from Tasks 1–4.
 - Produces: a discoverable public collection whose machine-readable state matches its checked-in packages.
 
 - [ ] **Step 1: Write failing collection-integrity tests**
@@ -276,8 +276,8 @@ Expected: FAIL because the manifest still marks the four capabilities
 
 - [ ] **Step 3: Update the collection records**
 
-Promote only the four published entries. Record the exact SHA-256 digests and
-normalizations in `SOURCE_INVENTORY.md`. Replace the recovery manifest's claim
+Promote only the four published entries. Record non-identifying provenance
+classes and normalizations in `SOURCE_INVENTORY.md`. Replace the recovery manifest's claim
 that no source archives were found with the new audit result, while leaving
 unrecovered capabilities in the queue. Update `skills/README.md` with package
 paths, installation guidance, provenance meanings, and explicit private

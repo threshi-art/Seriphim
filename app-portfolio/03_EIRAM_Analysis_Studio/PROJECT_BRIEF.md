@@ -20,8 +20,8 @@ EI-RAM is the cleanest candidate for the first standalone product because it alr
 
 ## Source Material
 
-- `AGI Training/EI-RAM/eiram API/`
-- `AGI Training/EI-RAM/EiRAM_MASTER_README.md`
+- Curated EI-RAM engine source now tracked under `engine-api/`
+- Public project documentation tracked in this project folder
 - EI-RAM PDFs, DOCX files, and system blueprint documents
 - Existing Seraphim `server/eiram.ts` integration
 - Seraphim `AnalysisPage` and `InsightForgePage`

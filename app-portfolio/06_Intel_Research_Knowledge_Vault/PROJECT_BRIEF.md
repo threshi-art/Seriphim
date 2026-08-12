@@ -19,10 +19,12 @@ The folder contains a large mixed archive of PDFs, DOCX files, reports, intellig
 
 ## Source Material
 
-- `AGI Training/**`
-- `Loki Profile/**`
-- `Backmatter/`
-- PDFs, DOCX files, TXT files, images, and media files across the archive
+- Operator-approved research documents with a documented rights basis
+- Public-domain or licensed technical references
+- Original notes and media explicitly selected for indexing
+
+Private profiles, health records, conversations, and restricted reference
+libraries are excluded by default.
 
 ## MVP Scope
 

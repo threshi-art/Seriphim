@@ -19,14 +19,11 @@ Use these source families when they are available in the user's connected files 
 - NSA network infrastructure security guide: use for defensive architecture, segmentation, access control, integrity, maintenance, and secure operations.
 - Patents and speculative aerospace material: treat patent grant as proof of patent issuance, not proof that the claimed physics works. Separate legal status, engineering plausibility, and experimental evidence.
 
-## Personal and voice context
+## Private and sensitive material
 
-- Loki and Seraphim reports, thread analyses, and competence essays: use as user authored or user approved voice and preference context, not as independent clinical evidence.
-- Personal psychological profiles are narrative artifacts unless prepared by a qualified clinician using valid methods.
-
-## Clinical and assessment materials
-
-- DSM, MMPI, Beck Depression Inventory, GAD-7, and Child Behavior Checklist: use only for general education, source based explanation, or clinician directed work. Do not administer restricted instruments, reproduce protected content, diagnose, or present scores as clinical conclusions without appropriate professional involvement.
+- Treat operator-authored writing as voice context, not as independent evidence about the operator.
+- Do not ingest personal profiles, health records, clinical instruments, private conversations, or relationship material into a public workflow.
+- Use lawful, licensed clinical references only for general education or qualified professional work. Do not administer restricted instruments, reproduce protected content, diagnose, or present scores as clinical conclusions.
 
 ## Excluded operationalization
 

@@ -72,7 +72,7 @@ This package provides DO-178-style planning, requirements, design, verification,
 
 ## Authority Order
 
-1. Operator (Chris “Loki”) decisions and explicit approvals
+1. Operator decisions and explicit approvals
 2. `AGENTS.md` safety and development rules
 3. This documentation package
 4. White Paper v8.0 baseline facts
