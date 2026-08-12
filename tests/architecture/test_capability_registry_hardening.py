@@ -4,10 +4,12 @@ from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from skills.registry.contracts import (
     RegistryValidationError,
@@ -844,6 +846,20 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
             scope="public-capabilities",
         )
 
+    def copy_registry_fixture(self, root: Path) -> Path:
+        registry = root / "skills" / "registry"
+        registry.mkdir(parents=True)
+        shutil.copyfile(
+            MANIFEST, root / "skills" / "capability-manifest.json"
+        )
+        shutil.copyfile(
+            DISCOVERY_SOURCES, registry / "discovery-sources.json"
+        )
+        shutil.copyfile(
+            GOVERNANCE_DECISIONS, registry / "governance-decisions.json"
+        )
+        return registry
+
     def test_public_projection_is_sanitized_and_informational(self) -> None:
         projection = build_public_projection(self.snapshot)
         ids = {row["capability_id"] for row in projection["capabilities"]}
@@ -924,35 +940,191 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
         )
 
     def test_drift_report_identifies_added_and_removed_capability_ids(self) -> None:
-        approved = {
-            "capabilities": [{"capability_id": "cap-a", "version": "1.0.0"}]
-        }
-        observed = {
-            "capabilities": [{"capability_id": "cap-b", "version": "1.0.0"}]
-        }
+        approved = build_public_projection(self.snapshot)
+        observed = deepcopy(approved)
+        removed_id = approved["capabilities"][0]["capability_id"]
+        del observed["capabilities"][0]
+        added = deepcopy(approved["capabilities"][1])
+        added["capability_id"] = "new-capability"
+        observed["capabilities"].append(added)
         report = compare_snapshots(approved, observed)
-        self.assertEqual(["cap-b"], report["added_capability_ids"])
-        self.assertEqual(["cap-a"], report["removed_capability_ids"])
+        self.assertEqual(["new-capability"], report["added_capability_ids"])
+        self.assertEqual([removed_id], report["removed_capability_ids"])
         self.assertEqual([], report["changed_capabilities"])
         self.assertEqual(content_digest(approved), report["approved_digest"])
         self.assertEqual(content_digest(observed), report["observed_digest"])
+
+    def test_top_level_drift_is_structured_and_material(self) -> None:
+        approved = build_public_projection(self.snapshot)
+        changes = {
+            "schema_version": 2,
+            "as_of": "2026-08-13T00:00:00Z",
+            "authority": "changed-informational-authority",
+            "source_snapshot_digest": "sha256:" + "0" * 64,
+        }
+        for field, value in changes.items():
+            observed = deepcopy(approved)
+            observed[field] = value
+            report = compare_snapshots(approved, observed)
+            with self.subTest(field=field):
+                self.assertNotEqual(
+                    report["approved_digest"], report["observed_digest"]
+                )
+                self.assertEqual("material_drift", report["state"])
+                self.assertEqual(
+                    {"old": approved[field], "new": value},
+                    report["changed_top_level_fields"][field],
+                )
+
+    def test_missing_field_differs_from_explicit_null(self) -> None:
+        approved = build_public_projection(self.snapshot)
+        approved["optional_extension"] = None
+        observed = deepcopy(approved)
+        del observed["optional_extension"]
+        report = compare_snapshots(approved, observed)
+        change = report["changed_top_level_fields"]["optional_extension"]
+        self.assertEqual("material_drift", report["state"])
+        self.assertIsNone(change["old"])
+        self.assertNotEqual(change["old"], change["new"])
+
+    def test_json_representation_difference_is_structurally_explained(self) -> None:
+        approved = build_public_projection(self.snapshot)
+        observed = deepcopy(approved)
+        approved["optional_number"] = 1
+        observed["optional_number"] = 1.0
+        report = compare_snapshots(approved, observed)
+        self.assertNotEqual(
+            report["approved_digest"], report["observed_digest"]
+        )
+        self.assertEqual("material_drift", report["state"])
+        self.assertEqual(
+            {"old": 1, "new": 1.0},
+            report["changed_top_level_fields"]["optional_number"],
+        )
+
+    def test_capability_order_difference_is_explained_and_material(self) -> None:
+        approved = build_public_projection(self.snapshot)
+        observed = deepcopy(approved)
+        observed["capabilities"].reverse()
+        report = compare_snapshots(approved, observed)
+        self.assertEqual("material_drift", report["state"])
+        self.assertNotEqual(
+            report["approved_digest"], report["observed_digest"]
+        )
+        self.assertIsNotNone(report["capability_order_change"])
+        self.assertEqual({}, report["changed_top_level_fields"])
+        self.assertEqual([], report["changed_capabilities"])
+
+    def test_comparison_rejects_duplicate_capability_ids(self) -> None:
+        approved = build_public_projection(self.snapshot)
+        approved["capabilities"].append(deepcopy(approved["capabilities"][0]))
+        with self.assertRaisesRegex(ValueError, "duplicate capability"):
+            compare_snapshots(approved, build_public_projection(self.snapshot))
+
+    def test_comparison_inputs_fail_closed_on_malformed_shapes(self) -> None:
+        valid = build_public_projection(self.snapshot)
+        malformed_inputs = []
+
+        not_a_mapping = []
+        malformed_inputs.append((not_a_mapping, "mapping"))
+
+        capabilities_not_a_list = deepcopy(valid)
+        capabilities_not_a_list["capabilities"] = {}
+        malformed_inputs.append((capabilities_not_a_list, "capabilities"))
+
+        capability_not_a_mapping = deepcopy(valid)
+        capability_not_a_mapping["capabilities"][0] = "not-a-record"
+        malformed_inputs.append((capability_not_a_mapping, "capability record"))
+
+        missing_required_field = deepcopy(valid)
+        del missing_required_field["capabilities"][0]["display_name"]
+        malformed_inputs.append((missing_required_field, "display_name"))
+
+        invalid_capability_id = deepcopy(valid)
+        invalid_capability_id["capabilities"][0]["capability_id"] = ""
+        malformed_inputs.append((invalid_capability_id, "capability_id"))
+
+        invalid_schema_type = deepcopy(valid)
+        invalid_schema_type["schema_version"] = True
+        malformed_inputs.append((invalid_schema_type, "schema_version"))
+
+        invalid_source_ids = deepcopy(valid)
+        invalid_source_ids["capabilities"][0]["source_ids"] = "not-a-list"
+        malformed_inputs.append((invalid_source_ids, "source_ids"))
+
+        for malformed, message in malformed_inputs:
+            with self.subTest(message=message), self.assertRaisesRegex(
+                (TypeError, ValueError), message
+            ):
+                compare_snapshots(malformed, valid)
+
+        with self.assertRaisesRegex(ValueError, "compatible snapshot"):
+            compare_snapshots(valid, serializable_snapshot(self.snapshot))
+
+    def test_generate_rejects_fixed_input_symlink_that_escapes_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            root = base / "root"
+            registry = self.copy_registry_fixture(root)
+            external = base / "external-sources.json"
+            shutil.copyfile(DISCOVERY_SOURCES, external)
+            linked_input = registry / "discovery-sources.json"
+            linked_input.unlink()
+            try:
+                os.symlink(external, linked_input)
+            except (NotImplementedError, OSError) as error:
+                self.skipTest(f"symlink creation unavailable: {error}")
+
+            with self.assertRaisesRegex(ValueError, "outside root"):
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                )
+            self.assertFalse((registry / "public-capabilities.json").exists())
+
+    def test_generate_rejects_reparse_output_parent_without_writing(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            output = registry / "public-capabilities.json"
+
+            def simulated_reparse(path: Path) -> bool:
+                return path == registry.resolve()
+
+            with patch(
+                "skills.registry.projection._is_link_or_reparse",
+                side_effect=simulated_reparse,
+                create=True,
+            ), self.assertRaisesRegex(ValueError, "link or reparse"):
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                )
+            self.assertFalse(output.exists())
+
+    def test_generate_rejects_output_symlink_without_touching_target(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            root = base / "root"
+            registry = self.copy_registry_fixture(root)
+            external = base / "external-projection.json"
+            external.write_bytes(b"external sentinel")
+            output = registry / "public-capabilities.json"
+            try:
+                os.symlink(external, output)
+            except (NotImplementedError, OSError) as error:
+                self.skipTest(f"symlink creation unavailable: {error}")
+
+            with self.assertRaisesRegex(ValueError, "link or reparse"):
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                )
+            self.assertEqual(b"external sentinel", external.read_bytes())
 
     def test_cli_generate_check_and_compare_are_deterministic_and_non_mutating(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            registry = root / "skills" / "registry"
-            registry.mkdir(parents=True)
-            shutil.copyfile(
-                MANIFEST, root / "skills" / "capability-manifest.json"
-            )
-            shutil.copyfile(
-                DISCOVERY_SOURCES, registry / "discovery-sources.json"
-            )
-            shutil.copyfile(
-                GOVERNANCE_DECISIONS, registry / "governance-decisions.json"
-            )
+            registry = self.copy_registry_fixture(root)
 
             self.assertEqual(
                 0,
@@ -966,6 +1138,20 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 0, projection_main(["check", "--root", str(root)])
             )
             self.assertEqual(first_bytes, generated.read_bytes())
+
+            generated.write_text(
+                json.dumps(json.loads(first_bytes), indent=2) + "\n",
+                encoding="utf-8",
+            )
+            noncanonical_bytes = generated.read_bytes()
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                self.assertEqual(
+                    1, projection_main(["check", "--root", str(root)])
+                )
+            self.assertIn("byte_encoding=noncanonical", stderr.getvalue())
+            self.assertNotIn("none", stderr.getvalue())
+            self.assertEqual(noncanonical_bytes, generated.read_bytes())
 
             hand_edited = json.loads(first_bytes)
             hand_edited["capabilities"][0]["display_name"] = "hand edited"
@@ -987,12 +1173,9 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
 
             approved = root / "approved.json"
             observed = root / "observed.json"
-            approved.write_text(
-                canonical_json({"capabilities": []}), encoding="utf-8"
-            )
-            observed.write_text(
-                canonical_json({"capabilities": []}), encoding="utf-8"
-            )
+            generated_bytes = generated.read_bytes()
+            approved.write_bytes(generated_bytes)
+            observed.write_bytes(generated_bytes)
             before = (approved.read_bytes(), observed.read_bytes())
             stdout = io.StringIO()
             with redirect_stdout(stdout):

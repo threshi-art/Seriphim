@@ -668,7 +668,7 @@ git commit -m "fix(registry): close capability hardening verification gaps"
 - [ ] **Step 7: Synchronize the clean OneDrive Git mirror**
 
 Fetch the exact local branch into
-`C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT\GitHub\Seriphim`,
+`<OneDrive SeraphimGPT Git mirror>`,
 switch that mirror to the implementation branch, and verify both checkouts have
 the same commit and a clean status. Do not touch the sibling legacy non-Git
 folder.
