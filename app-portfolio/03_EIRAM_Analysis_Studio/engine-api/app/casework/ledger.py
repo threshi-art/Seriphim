@@ -1,6 +1,7 @@
 """Durable SQLite-backed Shared Case Ledger."""
 
 import sqlite3
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Set
@@ -173,6 +174,53 @@ class CaseLedger:
                     prior_state=previous,
                     target_state=target,
                     reason=reason,
+                    created_at=now,
+                ),
+            )
+        return self.get_case(case_id)
+
+    def transfer_primary_owner(
+        self,
+        case_id: str,
+        new_owner: str,
+        actor: str,
+        reason: str,
+        handoff_state: dict,
+    ) -> CaseRecord:
+        """Replace the sole primary owner and audit the bounded handoff atomically."""
+        now = datetime.now(timezone.utc)
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT primary_owner, state FROM cases WHERE case_id = ?", (case_id,)
+            ).fetchone()
+            if row is None:
+                raise CaseNotFound(case_id)
+            previous_owner = row["primary_owner"]
+            if not new_owner.strip() or new_owner == previous_owner:
+                raise ValueError("new primary owner must be non-empty and different")
+            detail = json.dumps(
+                {
+                    "prior_owner": previous_owner,
+                    "new_owner": new_owner,
+                    "reason": reason,
+                    "handoff_state": handoff_state,
+                },
+                sort_keys=True,
+            )
+            connection.execute(
+                "UPDATE cases SET primary_owner = ?, updated_at = ? WHERE case_id = ?",
+                (new_owner, now.isoformat(), case_id),
+            )
+            state = CaseState(row["state"])
+            self._insert_audit(
+                connection,
+                AuditEvent(
+                    case_id=case_id,
+                    actor=actor,
+                    event_type="owner.transferred",
+                    prior_state=state,
+                    target_state=state,
+                    reason=detail,
                     created_at=now,
                 ),
             )
