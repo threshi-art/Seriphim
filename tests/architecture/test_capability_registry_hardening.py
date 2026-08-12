@@ -232,6 +232,42 @@ class DiscoveryAndGovernanceTests(unittest.TestCase):
         )
         self.assertEqual(2, len(decisions))
 
+    def test_public_projection_source_ids_require_explicit_safe_marking(self) -> None:
+        base_source = {
+            "source_id": "public-fixture-source",
+            "source_type": "synthetic_fixture",
+            "authority": "test_only",
+            "trust_class": "untrusted_test_data",
+            "discovery_method": "in_process_fixture",
+            "enabled": True,
+        }
+
+        unmarked = validate_discovery_sources(
+            {"schema_version": 1, "sources": [base_source]}
+        )
+        self.assertNotIn("public_projection", unmarked["public-fixture-source"])
+
+        explicitly_public = deepcopy(base_source)
+        explicitly_public["public_projection"] = True
+        self.assertTrue(
+            validate_discovery_sources(
+                {"schema_version": 1, "sources": [explicitly_public]}
+            )["public-fixture-source"]["public_projection"]
+        )
+
+        for source_id in (
+            "account_id-alice-private",
+            "account-id-alice-private",
+        ):
+            sensitive = deepcopy(explicitly_public)
+            sensitive["source_id"] = source_id
+            with self.subTest(source_id=source_id), self.assertRaisesRegex(
+                RegistryValidationError, "public.*source_id|source_id.*public"
+            ):
+                validate_discovery_sources(
+                    {"schema_version": 1, "sources": [sensitive]}
+                )
+
     def test_observation_requires_approved_source_and_cannot_set_authorization(self) -> None:
         sources = {"repository-manifest": {"source_id": "repository-manifest"}}
         with self.assertRaisesRegex(RegistryValidationError, "unknown source"):
@@ -484,6 +520,42 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
             sorted(item["capability_id"] for item in first["capabilities"]),
             [item["capability_id"] for item in first["capabilities"]],
         )
+
+    def test_governance_input_digest_preserves_append_only_ledger_order(self) -> None:
+        first = resolve_registry(
+            self.manifest,
+            self.sources,
+            self.decisions,
+            [],
+            AS_OF,
+            scope="public-capabilities",
+        )
+        identical = resolve_registry(
+            deepcopy(self.manifest),
+            deepcopy(self.sources),
+            deepcopy(self.decisions),
+            [],
+            AS_OF,
+            scope="public-capabilities",
+        )
+        reordered_decisions = deepcopy(self.decisions)
+        reordered_decisions["decisions"].reverse()
+        reordered = resolve_registry(
+            self.manifest,
+            self.sources,
+            reordered_decisions,
+            [],
+            AS_OF,
+            scope="public-capabilities",
+        )
+
+        self.assertEqual(first, identical)
+        self.assertNotEqual(
+            first["input_digests"]["governance_decisions"],
+            reordered["input_digests"]["governance_decisions"],
+        )
+        self.assertNotEqual(first["snapshot_digest"], reordered["snapshot_digest"])
+        self.assertEqual(first["capabilities"], reordered["capabilities"])
 
     def test_discovery_does_not_change_authorization(self) -> None:
         before = resolve_registry(
@@ -781,6 +853,44 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
         )
         self.assertIn("repository-capability-manifest", item["source_ids"])
 
+    def test_private_or_unmarked_observation_source_id_is_not_projected(
+        self,
+    ) -> None:
+        sources = deepcopy(self.sources)
+        sources["sources"].append(
+            {
+                "source_id": "account_id-alice-private",
+                "source_type": "synthetic_fixture",
+                "authority": "test_only",
+                "trust_class": "untrusted_test_data",
+                "discovery_method": "in_process_fixture",
+                "enabled": True,
+            }
+        )
+        observation = valid_observation(
+            "account_id-alice-private", "seraphim-action-controller"
+        )
+        snapshot = resolve_registry(
+            self.manifest,
+            sources,
+            self.decisions,
+            [observation],
+            AS_OF,
+            scope="public-capabilities",
+        )
+        item = capability(snapshot, "seraphim-action-controller")
+        projected = next(
+            row
+            for row in build_public_projection(snapshot)["capabilities"]
+            if row["capability_id"] == "seraphim-action-controller"
+        )
+
+        self.assertIn("account_id-alice-private", item["source_ids"])
+        self.assertNotIn(
+            "account_id-alice-private", item["public_source_ids"]
+        )
+        self.assertEqual(item["public_source_ids"], projected["source_ids"])
+
     def test_resolution_revalidates_observations_and_decision_targets(self) -> None:
         unknown_observation = valid_observation(
             "repository-capability-manifest", "unknown-capability"
@@ -965,27 +1075,75 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
         ):
             resolve_registry(self.manifest, self.sources, decisions, [], AS_OF)
 
-    def test_only_explicit_supersession_disables_an_earlier_decision(self) -> None:
+    def test_differing_active_unsuperseded_overrides_fail_closed(self) -> None:
+        cases = (
+            ("display_name", "First Name", "Second Name"),
+            ("lifecycle_state", "experimental", "deprecated"),
+            ("publication_class", "public", "internal"),
+            (
+                "privacy_class",
+                "ordinary_public",
+                "private_or_unpublished",
+            ),
+        )
+        for field, first_value, second_value in cases:
+            decisions = deepcopy(self.decisions)
+            decisions["decisions"].extend(
+                [
+                    {
+                        **valid_decision("first-" + field, "override_field"),
+                        "target_capability_id": "seraphim-action-controller",
+                        "field": field,
+                        "new_value": first_value,
+                    },
+                    {
+                        **valid_decision("second-" + field, "override_field"),
+                        "target_capability_id": "seraphim-action-controller",
+                        "field": field,
+                        "new_value": second_value,
+                    },
+                ]
+            )
+            with self.subTest(field=field), self.assertRaisesRegex(
+                RegistryValidationError, "conflicting active override"
+            ):
+                resolve_registry(
+                    self.manifest,
+                    self.sources,
+                    decisions,
+                    [],
+                    AS_OF,
+                    scope="public-capabilities",
+                )
+
+    def test_expired_override_does_not_conflict_with_active_replacement(
+        self,
+    ) -> None:
         decisions = deepcopy(self.decisions)
-        prior = {
-            **valid_decision(
-                "prior-name", "override_field", "2026-08-12T00:00:00Z"
-            ),
-            "target_capability_id": "seraphim-action-controller",
-            "field": "display_name",
-            "new_value": "Prior Name",
-        }
-        later = {
-            **valid_decision(
-                "later-name", "override_field", "2026-08-12T01:00:00Z"
-            ),
-            "target_capability_id": "seraphim-action-controller",
-            "created_at": "2026-08-12T01:00:00Z",
-            "field": "display_name",
-            "new_value": "Later Name",
-        }
-        decisions["decisions"].extend([prior, later])
-        without_supersession = resolve_registry(
+        decisions["decisions"].extend(
+            [
+                {
+                    **valid_decision("expired-name", "override_field"),
+                    "target_capability_id": "seraphim-action-controller",
+                    "field": "display_name",
+                    "new_value": "Expired Name",
+                    "expires_at": "2026-08-12T01:00:00Z",
+                },
+                {
+                    **valid_decision(
+                        "active-name",
+                        "override_field",
+                        "2026-08-12T02:00:00Z",
+                    ),
+                    "target_capability_id": "seraphim-action-controller",
+                    "created_at": "2026-08-12T02:00:00Z",
+                    "field": "display_name",
+                    "new_value": "Active Name",
+                },
+            ]
+        )
+
+        snapshot = resolve_registry(
             self.manifest,
             self.sources,
             decisions,
@@ -994,14 +1152,34 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
             scope="public-capabilities",
         )
         self.assertEqual(
-            "Prior Name",
-            capability(without_supersession, "seraphim-action-controller")[
-                "display_name"
-            ],
+            "Active Name",
+            capability(snapshot, "seraphim-action-controller")["display_name"],
         )
 
-        decisions["decisions"][-1]["supersedes_decision_id"] = "prior-name"
-        with_supersession = resolve_registry(
+    def test_explicit_supersession_resolves_override_without_conflict(self) -> None:
+        decisions = deepcopy(self.decisions)
+        prior = {
+            **valid_decision(
+                "prior-name", "override_field", "2026-08-11T00:00:00Z"
+            ),
+            "target_capability_id": "seraphim-action-controller",
+            "created_at": "2026-08-11T00:00:00Z",
+            "field": "display_name",
+            "new_value": "Prior Name",
+        }
+        successor = {
+            **valid_decision(
+                "successor-name", "override_field", "2026-08-12T01:00:00Z"
+            ),
+            "target_capability_id": "seraphim-action-controller",
+            "created_at": "2026-08-12T01:00:00Z",
+            "supersedes_decision_id": "prior-name",
+            "field": "display_name",
+            "new_value": "Successor Name",
+        }
+        decisions["decisions"].extend([prior, successor])
+
+        snapshot = resolve_registry(
             self.manifest,
             self.sources,
             decisions,
@@ -1009,8 +1187,8 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
             AS_OF,
             scope="public-capabilities",
         )
-        item = capability(with_supersession, "seraphim-action-controller")
-        self.assertEqual("Later Name", item["display_name"])
+        item = capability(snapshot, "seraphim-action-controller")
+        self.assertEqual("Successor Name", item["display_name"])
         self.assertNotIn("prior-name", item["governance_decision_ids"])
 
     def test_canonical_resolution_preserves_but_does_not_apply_scoped_override(
@@ -2371,6 +2549,111 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 self.assertEqual(1, result)
                 self.assertIn(expected_error, stderr.getvalue())
 
+    def test_commit_range_rejects_append_then_remove_before_event_head(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            self._initialize_registry_git_fixture(root)
+            baseline = self._commit_registry_fixture(root, "baseline")
+            ledger_path = registry / "governance-decisions.json"
+            original = json.loads(ledger_path.read_text(encoding="utf-8"))
+            appended = deepcopy(original)
+            appended["decisions"].append(
+                {
+                    **valid_decision(
+                        "temporary-appended-decision", "exclude_projection"
+                    ),
+                    "target_capability_id": "seraphim-action-controller",
+                }
+            )
+            ledger_path.write_text(
+                json.dumps(appended, indent=2) + "\n", encoding="utf-8"
+            )
+            self._commit_registry_fixture(root, "append decision")
+            ledger_path.write_text(
+                json.dumps(original, indent=2) + "\n", encoding="utf-8"
+            )
+            event_head = self._commit_registry_fixture(root, "remove appended decision")
+            stderr = io.StringIO()
+
+            with redirect_stderr(stderr):
+                result = self._event_ledger_check(
+                    root,
+                    event_name="push",
+                    push_before=baseline,
+                    event_head=event_head,
+                )
+
+            self.assertEqual(1, result)
+            self.assertIn("missing prior decision", stderr.getvalue())
+
+    def test_commit_range_rejects_rewrite_then_restore_before_event_head(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            self._initialize_registry_git_fixture(root)
+            baseline = self._commit_registry_fixture(root, "baseline")
+            ledger_path = registry / "governance-decisions.json"
+            original = json.loads(ledger_path.read_text(encoding="utf-8"))
+            rewritten = deepcopy(original)
+            rewritten["decisions"][0]["reason"] = "temporary rewrite"
+            ledger_path.write_text(
+                json.dumps(rewritten, indent=2) + "\n", encoding="utf-8"
+            )
+            self._commit_registry_fixture(root, "rewrite prior decision")
+            ledger_path.write_text(
+                json.dumps(original, indent=2) + "\n", encoding="utf-8"
+            )
+            event_head = self._commit_registry_fixture(root, "restore prior decision")
+            stderr = io.StringIO()
+
+            with redirect_stderr(stderr):
+                result = self._event_ledger_check(
+                    root,
+                    event_name="push",
+                    push_before=baseline,
+                    event_head=event_head,
+                )
+
+            self.assertEqual(1, result)
+            self.assertIn("rewritten prior decision", stderr.getvalue())
+
+    def test_pre_ledger_introduction_then_rewrite_fails_within_range(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            ledger_path = registry / "governance-decisions.json"
+            original = json.loads(ledger_path.read_text(encoding="utf-8"))
+            ledger_path.unlink()
+            self._initialize_registry_git_fixture(root)
+            baseline = self._commit_registry_fixture(root, "pre-ledger baseline")
+            ledger_path.write_text(
+                json.dumps(original, indent=2) + "\n", encoding="utf-8"
+            )
+            self._commit_registry_fixture(root, "introduce ledger")
+            rewritten = deepcopy(original)
+            rewritten["decisions"][0]["reason"] = "rewritten after introduction"
+            ledger_path.write_text(
+                json.dumps(rewritten, indent=2) + "\n", encoding="utf-8"
+            )
+            event_head = self._commit_registry_fixture(root, "rewrite ledger")
+            stderr = io.StringIO()
+
+            with redirect_stderr(stderr):
+                result = self._event_ledger_check(
+                    root,
+                    event_name="push",
+                    push_before=baseline,
+                    event_head=event_head,
+                )
+
+            self.assertEqual(1, result)
+            self.assertIn("rewritten prior decision", stderr.getvalue())
+
     def test_push_event_ledger_check_accepts_pre_ledger_baseline_as_empty(
         self,
     ) -> None:
@@ -2398,6 +2681,8 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.copy_registry_fixture(root)
+            self._initialize_registry_git_fixture(root)
+            event_head = self._commit_registry_fixture(root, "initial history")
 
             self.assertEqual(
                 0,
@@ -2405,8 +2690,41 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                     root,
                     event_name="push",
                     push_before="0" * 40,
+                    event_head=event_head,
                 ),
             )
+
+    def test_initial_push_checks_every_reachable_commit_oldest_first(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            ledger_path = registry / "governance-decisions.json"
+            original = json.loads(ledger_path.read_text(encoding="utf-8"))
+            ledger_path.unlink()
+            self._initialize_registry_git_fixture(root)
+            self._commit_registry_fixture(root, "initial pre-ledger commit")
+            ledger_path.write_text(
+                json.dumps(original, indent=2) + "\n", encoding="utf-8"
+            )
+            self._commit_registry_fixture(root, "introduce ledger")
+            rewritten = deepcopy(original)
+            rewritten["decisions"][0]["reason"] = "initial push rewrite"
+            ledger_path.write_text(
+                json.dumps(rewritten, indent=2) + "\n", encoding="utf-8"
+            )
+            event_head = self._commit_registry_fixture(root, "rewrite ledger")
+            stderr = io.StringIO()
+
+            with redirect_stderr(stderr):
+                result = self._event_ledger_check(
+                    root,
+                    event_name="push",
+                    push_before="0" * 40,
+                    event_head=event_head,
+                )
+
+            self.assertEqual(1, result)
+            self.assertIn("rewritten prior decision", stderr.getvalue())
 
     def test_initial_push_zero_sha_still_rejects_malformed_current_ledger(
         self,
@@ -2418,6 +2736,8 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 json.dumps({"schema_version": 1, "decisions": "invalid"}),
                 encoding="utf-8",
             )
+            self._initialize_registry_git_fixture(root)
+            event_head = self._commit_registry_fixture(root, "malformed initial ledger")
             stderr = io.StringIO()
 
             with redirect_stderr(stderr):
@@ -2425,10 +2745,55 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                     root,
                     event_name="push",
                     push_before="0" * 40,
+                    event_head=event_head,
                 )
 
             self.assertEqual(1, result)
             self.assertIn("must be a list", stderr.getvalue())
+
+    def test_feature_branch_push_uses_full_branch_commit_range(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            self._initialize_registry_git_fixture(root)
+            baseline = self._commit_registry_fixture(root, "shared branch baseline")
+            subprocess.run(
+                ["git", "switch", "-c", "feature/ledger-history"],
+                cwd=root,
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
+            ledger_path = registry / "governance-decisions.json"
+            original = json.loads(ledger_path.read_text(encoding="utf-8"))
+            appended = deepcopy(original)
+            appended["decisions"].append(
+                {
+                    **valid_decision(
+                        "feature-branch-decision", "exclude_projection"
+                    ),
+                    "target_capability_id": "seraphim-action-controller",
+                }
+            )
+            ledger_path.write_text(
+                json.dumps(appended, indent=2) + "\n", encoding="utf-8"
+            )
+            self._commit_registry_fixture(root, "feature append")
+            ledger_path.write_text(
+                json.dumps(original, indent=2) + "\n", encoding="utf-8"
+            )
+            event_head = self._commit_registry_fixture(root, "feature remove")
+            stderr = io.StringIO()
+
+            with redirect_stderr(stderr):
+                result = self._event_ledger_check(
+                    root,
+                    event_name="push",
+                    push_before=baseline,
+                    event_head=event_head,
+                )
+
+            self.assertEqual(1, result)
+            self.assertIn("missing prior decision", stderr.getvalue())
 
     def test_pull_request_event_ledger_check_uses_base_sha(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -2494,6 +2859,37 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
             self.assertEqual(1, result)
             self.assertIn("could not be inspected", stderr.getvalue())
 
+    def test_ledger_check_rejects_uninspectable_or_unsafe_event_head(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.copy_registry_fixture(root)
+            self._initialize_registry_git_fixture(root)
+            baseline = self._commit_registry_fixture(root, "baseline")
+
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                missing_result = self._event_ledger_check(
+                    root,
+                    event_name="push",
+                    push_before=baseline,
+                    event_head="f" * 40,
+                )
+            self.assertEqual(1, missing_result)
+            self.assertIn("event head could not be inspected", stderr.getvalue())
+
+            with self.assertRaisesRegex(ValueError, "event head"):
+                projection_main(
+                    [
+                        "check-ledger",
+                        "--root",
+                        str(root),
+                        "--baseline",
+                        baseline,
+                        "--event-head",
+                        "HEAD^",
+                    ]
+                )
+
     def test_ci_wires_event_baselines_without_head_parent_fallback(self) -> None:
         workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(
             encoding="utf-8"
@@ -2503,10 +2899,13 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
         self.assertIn(
             "PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}", workflow
         )
+        self.assertIn("EVENT_HEAD_SHA: ${{ github.sha }}", workflow)
         self.assertIn('--event-name "$GITHUB_EVENT_NAME"', workflow)
         self.assertIn('--push-before "$PUSH_BEFORE_SHA"', workflow)
         self.assertIn('--pull-request-base "$PR_BASE_SHA"', workflow)
+        self.assertIn('--event-head "$EVENT_HEAD_SHA"', workflow)
         self.assertNotIn("HEAD^", workflow)
+        self.assertNotIn("branches: [main]", workflow)
 
     def _initialize_registry_git_fixture(self, root: Path) -> None:
         subprocess.run(["git", "init", "--quiet"], cwd=root, check=True)
@@ -2548,6 +2947,7 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
         event_name: str,
         push_before: str = "",
         pull_request_base: str = "",
+        event_head: str = "HEAD",
     ) -> int:
         arguments = [
             "check-ledger",
@@ -2559,6 +2959,8 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
             push_before,
             "--pull-request-base",
             pull_request_base,
+            "--event-head",
+            event_head,
         ]
         try:
             return projection_main(arguments)

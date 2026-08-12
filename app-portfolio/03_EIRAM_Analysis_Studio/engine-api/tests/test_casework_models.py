@@ -23,6 +23,12 @@ from app.casework.state_machine import InvalidCaseTransition, validate_transitio
 MANIFEST = Path(__file__).parents[4] / "skills" / "capability-manifest.json"
 
 
+def write_manifest(tmp_path: Path, payload: object) -> Path:
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
 def mission_data() -> dict:
     return {
         "mission_id": "mission-001",
@@ -152,3 +158,95 @@ def test_capability_registry_rejects_old_or_unknown_manifest_schema(
 
     with pytest.raises(ValueError, match="schema_version"):
         CapabilityRegistry.load(path)
+
+
+def test_capability_registry_rejects_duplicate_forged_contract_before_overwrite(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    forged = json.loads(json.dumps(payload["capabilities"][0]))
+    forged["runtime_contract"]["read_or_write"] = "write"
+    forged["runtime_contract"]["authorization_scope"] = ["forged-write"]
+    payload["capabilities"].append(forged)
+
+    with pytest.raises(ValueError, match="duplicate capability"):
+        CapabilityRegistry.load(write_manifest(tmp_path, payload))
+
+
+@pytest.mark.parametrize("boundary", ["root", "capability", "runtime"])
+def test_capability_registry_rejects_unknown_manifest_fields(
+    tmp_path: Path, boundary: str
+) -> None:
+    payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    targets = {
+        "root": payload,
+        "capability": payload["capabilities"][0],
+        "runtime": payload["capabilities"][0]["runtime_contract"],
+    }
+    targets[boundary]["unexpected"] = "forged"
+
+    with pytest.raises(ValueError, match="unknown fields"):
+        CapabilityRegistry.load(write_manifest(tmp_path, payload))
+
+
+@pytest.mark.parametrize(
+    ("path", "value"),
+    [
+        (("capabilities",), {}),
+        (("capabilities", 0, "id"), True),
+        (("capabilities", 0, "public_package"), "true"),
+        (("capabilities", 0, "runtime_contract", "capability_id"), True),
+        (("capabilities", 0, "runtime_contract", "authorization_scope"), True),
+        (("capabilities", 0, "runtime_contract", "authorization_scope"), [True]),
+        (("capabilities", 0, "runtime_contract", "data_boundary"), "public"),
+        (("capabilities", 0, "runtime_contract", "last_verified"), []),
+    ],
+)
+def test_capability_registry_rejects_bool_string_and_list_confusion(
+    tmp_path: Path, path: tuple, value: object
+) -> None:
+    payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    target = payload
+    for segment in path[:-1]:
+        target = target[segment]
+    target[path[-1]] = value
+
+    with pytest.raises(ValueError, match="must be"):
+        CapabilityRegistry.load(write_manifest(tmp_path, payload))
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("architectural_type", "forged_type"),
+        ("available_runtime", "remote_worker"),
+        ("current_status", "production"),
+        ("read_or_write", "execute"),
+    ],
+)
+def test_capability_registry_rejects_invalid_runtime_vocabularies(
+    tmp_path: Path, field: str, value: str
+) -> None:
+    payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    payload["capabilities"][0]["runtime_contract"][field] = value
+
+    with pytest.raises(ValueError, match=field):
+        CapabilityRegistry.load(write_manifest(tmp_path, payload))
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("capability_id", "forged-id", "capability_id"),
+        ("version", "999.0.0", "version"),
+        ("current_status", "packaged", "current_status"),
+    ],
+)
+def test_capability_registry_requires_runtime_identity_to_match_declaration(
+    tmp_path: Path, field: str, value: str, message: str
+) -> None:
+    payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    payload["capabilities"][0]["runtime_contract"][field] = value
+
+    with pytest.raises(ValueError, match=message):
+        CapabilityRegistry.load(write_manifest(tmp_path, payload))
