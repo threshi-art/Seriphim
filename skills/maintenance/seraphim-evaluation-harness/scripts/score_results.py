@@ -40,6 +40,7 @@ def summarize(rows):
     category_scores = {
         name: round(sum(values) / len(values) / 4 * 100, 2)
         for name, values in scores.items()
+        if values
     }
     aggregate = round(
         sum(category_scores.get(name, 0) * weight for name, weight in WEIGHTS.items()),
@@ -57,7 +58,11 @@ def main():
     candidate_scores, aggregate, critical, missing = summarize(load(args.candidate))
     regressions = {}
     if args.baseline:
-        baseline_scores, _, _, _ = summarize(load(args.baseline))
+        baseline_scores, _, _, baseline_missing = summarize(load(args.baseline))
+        if baseline_missing:
+            raise ValueError(
+                f"baseline missing categories: {', '.join(baseline_missing)}"
+            )
         regressions = {
             name: round(candidate_scores.get(name, 0) - baseline_scores.get(name, 0), 2)
             for name in WEIGHTS

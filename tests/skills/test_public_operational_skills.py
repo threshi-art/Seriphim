@@ -1,4 +1,7 @@
 import json
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -23,6 +26,70 @@ class EvaluationHarnessTests(unittest.TestCase):
         package = ROOT / "skills" / "maintenance" / "seraphim-evaluation-harness"
         self.assertTrue((package / "assets" / "seraphim-tests.yaml").is_file())
         self.assertTrue((package / "scripts" / "score_results.py").is_file())
+
+    def test_scorer_enforces_release_and_baseline_gates(self):
+        script = (
+            ROOT
+            / "skills"
+            / "maintenance"
+            / "seraphim-evaluation-harness"
+            / "scripts"
+            / "score_results.py"
+        )
+
+        passing = [
+            {"id": name, "category": name, "score": 4, "critical": False}
+            for name in (
+                "routing",
+                "skill_collisions",
+                "prompt_injection",
+                "capability_truthfulness",
+                "operational_status",
+            )
+        ]
+        critical = [{**row, "critical": row["category"] == "prompt_injection"} for row in passing]
+        missing = passing[:-1]
+
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            passing_path = directory / "passing.json"
+            critical_path = directory / "critical.json"
+            missing_path = directory / "missing.json"
+            passing_path.write_text(json.dumps(passing), encoding="utf-8")
+            critical_path.write_text(json.dumps(critical), encoding="utf-8")
+            missing_path.write_text(json.dumps(missing), encoding="utf-8")
+
+            pass_run = subprocess.run(
+                [sys.executable, str(script), str(passing_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            critical_run = subprocess.run(
+                [sys.executable, str(script), str(critical_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            baseline_run = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    str(passing_path),
+                    "--baseline",
+                    str(missing_path),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        self.assertEqual(0, pass_run.returncode, pass_run.stderr)
+        self.assertEqual("PASS", json.loads(pass_run.stdout)["decision"])
+        self.assertEqual(1, critical_run.returncode)
+        self.assertEqual("FAIL", json.loads(critical_run.stdout)["decision"])
+        self.assertNotEqual(0, baseline_run.returncode)
+        self.assertIn("baseline missing categories", baseline_run.stderr)
 
 
 class SoftwareArchitectTests(unittest.TestCase):
@@ -121,12 +188,23 @@ class OperationalCohortTests(unittest.TestCase):
         }
         for case in cases:
             self.assertTrue(case["synthetic"])
+            self.assertTrue(case.get("id"))
+            self.assertTrue(case.get("prompt"))
+            self.assertNotIn("http://", case["prompt"])
+            self.assertNotIn("https://", case["prompt"])
             target = case["target_skill"]
             kind = case["kind"]
             self.assertIn(target, coverage)
             self.assertIn(kind, coverage[target])
             coverage[target][kind] = True
-            self.assertIn(case["expected"]["primary"], self.capabilities)
+            expected = case["expected"]
+            self.assertIn(expected["state"], {"planned", "answer", "blocked", "escalate"})
+            self.assertIn(expected["primary"], self.capabilities)
+            supporting = expected.get("supporting", [])
+            excluded = expected.get("excluded", [])
+            self.assertNotIn(expected["primary"], supporting)
+            self.assertNotIn(expected["primary"], excluded)
+            self.assertTrue(set(supporting).isdisjoint(excluded))
 
         for skill_id, kinds in coverage.items():
             self.assertTrue(all(kinds.values()), f"incomplete coverage: {skill_id}")
