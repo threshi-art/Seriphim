@@ -14,6 +14,7 @@ from app.casework.models import (
     MissionContract,
     MissionDepth,
 )
+from app.casework.state_machine import InvalidCaseTransition, validate_transition
 
 
 def mission_data() -> dict:
@@ -106,3 +107,29 @@ def test_evidence_defaults_relationship_lists_independently() -> None:
 
     assert second.supports == []
 
+
+@pytest.mark.parametrize(
+    ("previous", "target"),
+    [
+        (CaseState.PROPOSED, CaseState.OPEN),
+        (CaseState.OPEN, CaseState.COLLECTING),
+        (CaseState.COLLECTING, CaseState.ANALYZING),
+        (CaseState.ANALYZING, CaseState.CHALLENGING),
+        (CaseState.CHALLENGING, CaseState.REVISING),
+        (CaseState.REVISING, CaseState.COLLECTING),
+        (CaseState.DELIVERED, CaseState.CLOSED),
+        (CaseState.MONITORING, CaseState.REOPENED),
+    ],
+)
+def test_allowed_case_transitions(previous: CaseState, target: CaseState) -> None:
+    validate_transition(previous, target)
+
+
+def test_closed_case_cannot_collect_without_reopen() -> None:
+    with pytest.raises(InvalidCaseTransition, match="closed -> collecting"):
+        validate_transition(CaseState.CLOSED, CaseState.COLLECTING)
+
+
+def test_archived_case_has_no_outbound_transition() -> None:
+    with pytest.raises(InvalidCaseTransition, match="archived -> reopened"):
+        validate_transition(CaseState.ARCHIVED, CaseState.REOPENED)
