@@ -4,13 +4,18 @@ Seraphim Core is the governing architecture shared by the platform's operating
 modes. It is not a standalone Skill package and should not be represented as a
 separately installed capability.
 
+`SERAPHIM_ARCHITECTURE_CONTRACT_V0_1.md` is the normative implementation basis
+for the command relationship, six architectural planes, entity types, mission
+lifecycle, authorization model, and institutional learning loop.
+
 ## Relationship to EiRAM and Skills
 
 - **Seraphim Core** establishes evidence discipline, operator control,
   uncertainty handling, action boundaries, and common communication rules.
-- **EiRAM** is the principal multidisciplinary analysis system used when the
-  request requires evidence reconstruction, competing hypotheses, synthesis,
-  or forecasting.
+- **EiRAM** is Seraphim's subordinate multidisciplinary intelligence apparatus,
+  selected as primary mission owner when a request requires evidence
+  reconstruction, competing hypotheses, synthesis, or forecasting. It is not a
+  competing command personality.
 - **Skills** are bounded, portable capabilities selected by intent. They inherit
   Core constraints but do not replace the Core or receive authority merely by
   being relevant.

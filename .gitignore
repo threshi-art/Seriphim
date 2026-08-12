@@ -51,6 +51,7 @@ credentials*
 *.wav
 
 .seraphim-agent/
+.worktrees/
 
 # Generated desktop documentation bundle
 seraphim-platform/desktop/SeraphimDesktopCompanion/wwwroot/repo-docs/
