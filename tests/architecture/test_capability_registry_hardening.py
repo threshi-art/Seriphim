@@ -2408,6 +2408,54 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 ),
             )
 
+    def test_initial_push_zero_sha_still_rejects_malformed_current_ledger(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            (registry / "governance-decisions.json").write_text(
+                json.dumps({"schema_version": 1, "decisions": "invalid"}),
+                encoding="utf-8",
+            )
+            stderr = io.StringIO()
+
+            with redirect_stderr(stderr):
+                result = self._event_ledger_check(
+                    root,
+                    event_name="push",
+                    push_before="0" * 40,
+                )
+
+            self.assertEqual(1, result)
+            self.assertIn("must be a list", stderr.getvalue())
+
+    def test_pull_request_event_ledger_check_uses_base_sha(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            self._initialize_registry_git_fixture(root)
+            baseline = self._commit_registry_fixture(root, "pull request base")
+            ledger_path = registry / "governance-decisions.json"
+            rewritten = json.loads(ledger_path.read_text(encoding="utf-8"))
+            rewritten["decisions"][0]["reason"] = "rewritten in branch"
+            ledger_path.write_text(
+                json.dumps(rewritten, indent=2) + "\n", encoding="utf-8"
+            )
+            self._commit_registry_fixture(root, "rewrite ledger in branch")
+            stderr = io.StringIO()
+
+            with redirect_stderr(stderr):
+                result = self._event_ledger_check(
+                    root,
+                    event_name="pull_request",
+                    push_before="0" * 40,
+                    pull_request_base=baseline,
+                )
+
+            self.assertEqual(1, result)
+            self.assertIn("rewritten prior decision", stderr.getvalue())
+
     def test_push_event_ledger_check_fails_when_nonzero_baseline_unavailable(
         self,
     ) -> None:
