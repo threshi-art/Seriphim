@@ -2,14 +2,18 @@ from contextlib import redirect_stderr, redirect_stdout
 from copy import deepcopy
 from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
+import ctypes
 import io
 import json
 import os
 from pathlib import Path
 import shutil
+import stat
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
+import warnings
 
 from skills.registry.contracts import (
     RegistryValidationError,
@@ -1311,6 +1315,377 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 self.assertEqual(
                     [], list(registry.glob(".public-capabilities.*.tmp"))
                 )
+
+    def test_temp_entry_swap_at_commit_cannot_publish_attacker_symlink(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            root = base / "root"
+            registry = self.copy_registry_fixture(root)
+            output = registry / "public-capabilities.json"
+            prior_bytes = output.read_bytes()
+            external = base / "external-projection.json"
+            external.write_bytes(b"external sentinel")
+            symlink_probe = registry / ".projection-symlink-probe"
+            try:
+                os.symlink(external, symlink_probe)
+            except (NotImplementedError, OSError) as error:
+                self.skipTest(f"symlink creation unavailable: {error}")
+            else:
+                symlink_probe.unlink()
+            real_atomic_replace = projection_module._atomic_replace_temp
+
+            def swap_temp_entry(*args, **kwargs):
+                candidates = list(
+                    registry.glob(".public-capabilities.*.tmp")
+                )
+                self.assertEqual(1, len(candidates))
+                candidates[0].unlink()
+                os.symlink(external, candidates[0])
+                return real_atomic_replace(*args, **kwargs)
+
+            with patch.object(
+                projection_module,
+                "_atomic_replace_temp",
+                side_effect=swap_temp_entry,
+            ), self.assertRaisesRegex(ValueError, "safe|identity|temporary"):
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                )
+
+            self.assertEqual(b"external sentinel", external.read_bytes())
+            self.assertEqual(prior_bytes, output.read_bytes())
+            self.assertFalse(output.is_symlink())
+            self.assertEqual(
+                [], list(registry.glob(".public-capabilities.*.tmp"))
+            )
+
+    @unittest.skipUnless(
+        os.name != "nt" and hasattr(os, "geteuid"),
+        "POSIX ownership rule",
+    )
+    def test_posix_projection_parent_must_be_owned_by_current_user(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            output = registry / "public-capabilities.json"
+            prior_bytes = output.read_bytes()
+            owner = os.stat(registry).st_uid
+
+            with patch.object(
+                projection_module.os, "geteuid", return_value=owner + 1
+            ), self.assertRaisesRegex(ValueError, "owned by the current user"):
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                )
+
+            self.assertEqual(prior_bytes, output.read_bytes())
+            self.assertEqual(
+                [], list(registry.glob(".public-capabilities.*.tmp"))
+            )
+
+    @unittest.skipUnless(os.name != "nt", "POSIX permission rule")
+    def test_posix_projection_parent_must_not_be_group_or_world_writable(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            output = registry / "public-capabilities.json"
+            prior_bytes = output.read_bytes()
+            prior_mode = stat.S_IMODE(os.stat(registry).st_mode)
+            try:
+                os.chmod(registry, prior_mode | 0o022)
+                with self.assertRaisesRegex(
+                    ValueError, "group/world writable"
+                ):
+                    projection_main(
+                        ["generate", "--root", str(root), "--as-of", AS_OF]
+                    )
+            finally:
+                os.chmod(registry, prior_mode)
+
+            self.assertEqual(prior_bytes, output.read_bytes())
+            self.assertEqual(
+                [], list(registry.glob(".public-capabilities.*.tmp"))
+            )
+
+    @unittest.skipUnless(os.name != "nt", "POSIX durability rule")
+    def test_post_commit_directory_flush_failure_reports_committed_success(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            output = registry / "public-capabilities.json"
+            prior_bytes = output.read_bytes()
+            real_fsync = os.fsync
+
+            def fail_directory_flush(descriptor: int) -> None:
+                if stat.S_ISDIR(os.fstat(descriptor).st_mode):
+                    raise OSError("synthetic directory fsync failure")
+                real_fsync(descriptor)
+
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                with patch.object(
+                    projection_module.os,
+                    "fsync",
+                    side_effect=fail_directory_flush,
+                ):
+                    self.assertEqual(
+                        0,
+                        projection_main(
+                            [
+                                "generate",
+                                "--root",
+                                str(root),
+                                "--as-of",
+                                AS_OF,
+                            ]
+                        ),
+                    )
+
+            self.assertNotEqual(prior_bytes, output.read_bytes())
+            self.assertEqual(
+                AS_OF, json.loads(output.read_bytes())["as_of"]
+            )
+            self.assertTrue(
+                any(
+                    "committed" in str(item.message).lower()
+                    and "durability" in str(item.message).lower()
+                    for item in caught
+                )
+            )
+
+    @unittest.skipUnless(os.name != "nt", "POSIX durability rule")
+    def test_warning_filter_cannot_turn_committed_replacement_into_failure(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            output = registry / "public-capabilities.json"
+            real_fsync = os.fsync
+
+            def fail_directory_flush(descriptor: int) -> None:
+                if stat.S_ISDIR(os.fstat(descriptor).st_mode):
+                    raise OSError("synthetic directory fsync failure")
+                real_fsync(descriptor)
+
+            stderr = io.StringIO()
+            with redirect_stderr(stderr), warnings.catch_warnings():
+                warnings.simplefilter("error")
+                with patch.object(
+                    projection_module.os,
+                    "fsync",
+                    side_effect=fail_directory_flush,
+                ):
+                    self.assertEqual(
+                        0,
+                        projection_main(
+                            [
+                                "generate",
+                                "--root",
+                                str(root),
+                                "--as-of",
+                                AS_OF,
+                            ]
+                        ),
+                    )
+
+            self.assertEqual(
+                AS_OF, json.loads(output.read_bytes())["as_of"]
+            )
+            self.assertIn("committed", stderr.getvalue().lower())
+            self.assertIn("durability", stderr.getvalue().lower())
+
+    @unittest.skipUnless(os.name != "nt", "POSIX mode rule")
+    def test_posix_replacement_preserves_existing_destination_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            output = registry / "public-capabilities.json"
+            os.chmod(output, 0o640)
+
+            self.assertEqual(
+                0,
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                ),
+            )
+
+            self.assertEqual(0o640, stat.S_IMODE(os.stat(output).st_mode))
+
+    @unittest.skipUnless(os.name != "nt", "POSIX mode rule")
+    def test_posix_first_generation_uses_public_artifact_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            output = registry / "public-capabilities.json"
+            output.unlink()
+
+            self.assertEqual(
+                0,
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                ),
+            )
+
+            self.assertEqual(0o644, stat.S_IMODE(os.stat(output).st_mode))
+
+    @unittest.skipUnless(os.name == "nt", "Windows ACL rule")
+    def test_windows_replacement_preserves_existing_destination_acl(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            output = registry / "public-capabilities.json"
+            identity = subprocess.run(
+                ["whoami"],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            configured = subprocess.run(
+                [
+                    "icacls",
+                    str(output),
+                    "/inheritance:r",
+                    "/grant:r",
+                    f"{identity}:(R)",
+                ],
+                capture_output=True,
+                text=True,
+            )
+            if configured.returncode != 0:
+                self.skipTest(
+                    "custom ACL fixture unavailable: " + configured.stderr
+                )
+
+            def acl_listing() -> str:
+                result = subprocess.run(
+                    ["icacls", str(output)],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                return result.stdout
+
+            before = acl_listing()
+            self.assertEqual(
+                0,
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                ),
+            )
+            self.assertEqual(before, acl_listing())
+
+    @unittest.skipUnless(os.name != "nt", "POSIX cleanup rule")
+    def test_posix_cleanup_faults_do_not_mask_primary_or_stop_later_cleanup(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            output = registry / "public-capabilities.json"
+            prior_bytes = output.read_bytes()
+            real_close = os.close
+            real_unlink = os.unlink
+            close_attempts = []
+
+            def observed_close(descriptor: int) -> None:
+                close_attempts.append(descriptor)
+                real_close(descriptor)
+
+            def unlink_then_fail(*args, **kwargs) -> None:
+                real_unlink(*args, **kwargs)
+                raise OSError("synthetic unlink cleanup failure")
+
+            with patch.object(
+                projection_module,
+                "_atomic_replace_temp",
+                side_effect=OSError("synthetic primary commit failure"),
+            ), patch.object(
+                projection_module.os, "close", side_effect=observed_close
+            ), patch.object(
+                projection_module.os, "unlink", side_effect=unlink_then_fail
+            ), self.assertRaisesRegex(
+                ValueError,
+                "primary commit failure.*cleanup failures",
+            ):
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                )
+
+            self.assertGreaterEqual(len(close_attempts), 4)
+            self.assertEqual(prior_bytes, output.read_bytes())
+            self.assertEqual(
+                [], list(registry.glob(".public-capabilities.*.tmp"))
+            )
+
+    @unittest.skipUnless(os.name == "nt", "Windows cleanup rule")
+    def test_windows_cleanup_faults_are_reported_without_masking_primary(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            output = registry / "public-capabilities.json"
+            prior_bytes = output.read_bytes()
+            api = projection_module._windows_api()
+            real_close = api["CloseHandle"]
+            real_delete = api["DeleteFileW"]
+            close_attempts = []
+            delete_attempts = []
+
+            def close_then_report_failure(handle: int) -> int:
+                close_attempts.append(handle)
+                result = real_close(handle)
+                if len(close_attempts) == 1:
+                    ctypes.set_last_error(6)
+                    return 0
+                return result
+
+            def delete_then_report_failure(path: str) -> int:
+                delete_attempts.append(path)
+                result = real_delete(path)
+                if result:
+                    ctypes.set_last_error(5)
+                    return 0
+                return result
+
+            controlled_api = dict(api)
+            controlled_api["CloseHandle"] = close_then_report_failure
+            controlled_api["DeleteFileW"] = delete_then_report_failure
+            with patch.object(
+                projection_module, "_windows_api", return_value=controlled_api
+            ), patch.object(
+                projection_module,
+                "_atomic_replace_temp",
+                side_effect=OSError("synthetic primary commit failure"),
+            ), self.assertRaisesRegex(ValueError, "cleanup failures") as caught:
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                )
+
+            self.assertIn(
+                "synthetic primary commit failure",
+                str(caught.exception.__cause__),
+            )
+            self.assertIn(
+                "delete projection temporary entry", str(caught.exception)
+            )
+            self.assertIn(
+                "close existing projection security handle",
+                str(caught.exception),
+            )
+            self.assertEqual(1, len(delete_attempts))
+            self.assertGreaterEqual(len(close_attempts), 4)
+            self.assertEqual(prior_bytes, output.read_bytes())
+            self.assertEqual(
+                [], list(registry.glob(".public-capabilities.*.tmp"))
+            )
 
     def test_windows_reparse_tag_classifier_distinguishes_cloud_placeholders(
         self,
