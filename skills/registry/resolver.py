@@ -18,6 +18,13 @@ from .contracts import (
 
 
 REPOSITORY_SOURCE_ID = "repository-capability-manifest"
+REPOSITORY_SOURCE_CONTRACT = {
+    "source_type": "repository_manifest",
+    "authority": "institutional_declaration",
+    "trust_class": "governed_internal",
+    "discovery_method": "static_json",
+    "enabled": True,
+}
 SNAPSHOT_SCHEMA_VERSION = 1
 
 
@@ -34,6 +41,7 @@ def resolve_registry(
         raise RegistryValidationError("scope must be a non-empty string")
     declarations = _validated_manifest_records(manifest)
     discovery_sources = _validated_source_records(sources)
+    _validate_repository_source_contract(discovery_sources)
     decision_records = _validated_decision_records(decisions, declarations)
 
     enabled_source_ids = {
@@ -146,6 +154,31 @@ def _validated_decision_records(
     return validate_governance_decisions(payload, declarations)
 
 
+def _validate_repository_source_contract(
+    sources: Mapping[str, dict],
+) -> None:
+    repository_source_ids = {
+        source_id
+        for source_id, source in sources.items()
+        if source["source_type"] == "repository_manifest"
+    }
+    if repository_source_ids != {REPOSITORY_SOURCE_ID}:
+        raise RegistryValidationError(
+            "registry requires exactly the canonical repository manifest source"
+        )
+
+    source = sources.get(REPOSITORY_SOURCE_ID)
+    if source is None:
+        raise RegistryValidationError(
+            "registry requires the canonical repository manifest source"
+        )
+    for field, expected in REPOSITORY_SOURCE_CONTRACT.items():
+        if source[field] != expected:
+            raise RegistryValidationError(
+                "canonical repository manifest source has invalid " + field
+            )
+
+
 def _resolved_declaration(capability_id: str, declaration: dict) -> dict:
     runtime = declaration["runtime_contract"]
     runtime_name = runtime["available_runtime"]
@@ -167,6 +200,7 @@ def _resolved_declaration(capability_id: str, declaration: dict) -> dict:
             if declaration["public_package"]
             else "private_or_unpublished"
         ),
+        "scope_eligibility": "eligible",
         "authorization": {
             "read_or_write": runtime["read_or_write"],
             "authorization_scope": deepcopy(runtime["authorization_scope"]),
@@ -263,14 +297,30 @@ def _active_superseded_ids(decisions: list[dict]) -> set[str]:
 def _apply_decisions(
     resolved_by_id: dict[str, dict], decisions: list[dict], scope: str
 ) -> None:
+    eligibility_operations: dict[str, set[str]] = {}
     for decision in decisions:
         resolved = resolved_by_id[decision["target_capability_id"]]
-        if (
-            decision["operation"] == "override_field"
-            and decision["scope"] == scope
-        ):
-            resolved[decision["field"]] = deepcopy(decision["new_value"])
+        if decision["scope"] == scope:
+            if decision["operation"] == "override_field":
+                resolved[decision["field"]] = deepcopy(decision["new_value"])
+            elif decision["operation"] in {
+                "include_projection",
+                "exclude_projection",
+            }:
+                eligibility_operations.setdefault(
+                    decision["target_capability_id"], set()
+                ).add(decision["operation"])
         resolved["governance_decision_ids"].append(decision["decision_id"])
+
+    for capability_id, operations in eligibility_operations.items():
+        # An unsuperseded exclusion wins conflicts fail closed. A successor
+        # include can restore eligibility only because explicit supersession
+        # removes its predecessor from ``decisions`` before this point.
+        resolved_by_id[capability_id]["scope_eligibility"] = (
+            "excluded"
+            if "exclude_projection" in operations
+            else "eligible"
+        )
 
 
 def _timestamp_key(value: object) -> tuple[datetime, int]:

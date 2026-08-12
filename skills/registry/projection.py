@@ -7,13 +7,21 @@ import json
 import math
 import os
 from pathlib import Path, PureWindowsPath
+import re
 import secrets
 import stat
+import subprocess
 import sys
 from typing import Any, Optional, Union
 import warnings
 
-from .contracts import canonical_json, content_digest
+from .contracts import (
+    RegistryValidationError,
+    canonical_json,
+    content_digest,
+    validate_governance_ledger,
+    validate_manifest,
+)
 from .resolver import resolve_registry
 
 
@@ -58,6 +66,7 @@ RESOLVED_CAPABILITY_STRING_FIELDS = {
     "lifecycle_state",
     "publication_class",
     "privacy_class",
+    "scope_eligibility",
 }
 WINDOWS_NAME_SURROGATE_BIT = 0x20000000
 WINDOWS_CLOUD_TAG_BASE = 0x9000001A
@@ -70,6 +79,11 @@ WINDOWS_NONREDIRECTING_CLOUD_TAGS = {
 PROJECTION_TEMP_PREFIX = ".public-capabilities."
 PROJECTION_TEMP_SUFFIX = ".tmp"
 POSIX_DEFAULT_PUBLIC_MODE = 0o644
+GOVERNANCE_LEDGER_GIT_PATH = "skills/registry/governance-decisions.json"
+GOVERNANCE_LEDGER_BASELINE_ENV = "SERAPHIM_GOVERNANCE_LEDGER_BASELINE"
+SAFE_GIT_BASELINE_REF = re.compile(
+    r"^[A-Za-z0-9][A-Za-z0-9._/-]*(?:\^[0-9]*)?$"
+)
 
 
 def build_public_projection(snapshot: Mapping[str, object]) -> dict[str, object]:
@@ -82,7 +96,8 @@ def build_public_projection(snapshot: Mapping[str, object]) -> dict[str, object]
     capabilities = []
     for item in snapshot["capabilities"]:
         if (
-            not item["public_package"]
+            item["scope_eligibility"] != "eligible"
+            or not item["public_package"]
             or item["publication_class"] != "public"
             or item["privacy_class"] != "ordinary_public"
         ):
@@ -187,6 +202,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     check = commands.add_parser("check")
     check.add_argument("--root", type=Path, default=Path("."))
 
+    check_ledger = commands.add_parser("check-ledger")
+    check_ledger.add_argument("--root", type=Path, default=Path("."))
+    check_ledger.add_argument("--baseline")
+
     compare = commands.add_parser("compare")
     compare.add_argument("--approved", type=Path, required=True)
     compare.add_argument("--observed", type=Path, required=True)
@@ -209,6 +228,25 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             generated = json.loads(expected.decode("utf-8"))
             report = compare_snapshots(committed, generated)
             print(_concise_projection_diff(report), file=sys.stderr)
+            return 1
+        return 0
+    if args.command == "check-ledger":
+        root = _resolved_root(args.root)
+        baseline = args.baseline or os.environ.get(
+            GOVERNANCE_LEDGER_BASELINE_ENV
+        )
+        if not baseline:
+            print(
+                "governance ledger baseline is required via --baseline or "
+                + GOVERNANCE_LEDGER_BASELINE_ENV,
+                file=sys.stderr,
+            )
+            return 2
+        _validate_git_baseline_ref(baseline)
+        try:
+            _check_governance_ledger_against_git(root, baseline)
+        except (RegistryValidationError, ValueError) as error:
+            print(f"governance ledger check failed: {error}", file=sys.stderr)
             return 1
         return 0
 
@@ -434,6 +472,91 @@ def _governance_decisions_path(root: Path) -> Path:
     )
 
 
+def _check_governance_ledger_against_git(
+    root: Path, baseline_ref: str
+) -> None:
+    previous_payload = _governance_ledger_from_git(root, baseline_ref)
+    current_payload = _read_json(_governance_decisions_path(root))
+    capability_ids = validate_manifest(_read_json(_manifest_path(root)))
+    validate_governance_ledger(
+        previous_payload, current_payload, capability_ids
+    )
+
+
+def _governance_ledger_from_git(root: Path, baseline_ref: str) -> object:
+    _validate_git_baseline_ref(baseline_ref)
+    listed = _run_git(
+        root,
+        [
+            "ls-tree",
+            "-z",
+            "--name-only",
+            baseline_ref,
+            "--",
+            GOVERNANCE_LEDGER_GIT_PATH,
+        ],
+    )
+    if listed.returncode != 0:
+        raise ValueError(
+            "Git baseline could not be inspected: "
+            + _git_error_text(listed)
+        )
+    entries = {
+        entry.decode("utf-8")
+        for entry in listed.stdout.split(b"\0")
+        if entry
+    }
+    if GOVERNANCE_LEDGER_GIT_PATH not in entries:
+        return {"schema_version": 1, "decisions": []}
+
+    shown = _run_git(
+        root,
+        [
+            "show",
+            "--no-ext-diff",
+            "--no-textconv",
+            f"{baseline_ref}:{GOVERNANCE_LEDGER_GIT_PATH}",
+        ],
+    )
+    if shown.returncode != 0:
+        raise ValueError(
+            "Git baseline ledger could not be read: "
+            + _git_error_text(shown)
+        )
+    try:
+        return json.loads(shown.stdout.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("Git baseline ledger is not valid UTF-8 JSON") from error
+
+
+def _run_git(
+    root: Path, arguments: Sequence[str]
+) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", "--no-pager", *arguments],
+        cwd=root,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=False,
+        check=False,
+    )
+
+
+def _git_error_text(result: subprocess.CompletedProcess) -> str:
+    detail = result.stderr.decode("utf-8", errors="replace").strip()
+    return detail or f"git exited with status {result.returncode}"
+
+
+def _validate_git_baseline_ref(baseline_ref: object) -> str:
+    if (
+        not isinstance(baseline_ref, str)
+        or not SAFE_GIT_BASELINE_REF.fullmatch(baseline_ref)
+    ):
+        raise ValueError("baseline Git revision has unsafe syntax")
+    return baseline_ref
+
+
 def _resolved_root(root: Path) -> Path:
     resolved = root.expanduser().resolve(strict=True)
     if not resolved.is_dir():
@@ -608,6 +731,7 @@ def _write_projection_windows(root: Path, path: Path, data: bytes) -> None:
     api = _windows_api()
     parent_handles = []
     destination_handle = None
+    destination_identity = None
     temp_handle = None
     temp_descriptor = None
     temp_path = None
@@ -680,6 +804,9 @@ def _write_projection_windows(root: Path, path: Path, data: bytes) -> None:
             api, path
         )
         if destination_handle is not None:
+            destination_identity = _windows_file_identity(
+                api, destination_handle
+            )
             _windows_copy_dacl(
                 api,
                 destination_handle,
@@ -688,6 +815,9 @@ def _write_projection_windows(root: Path, path: Path, data: bytes) -> None:
         _flush_temp_descriptor(temp_descriptor, windows_api=api)
         _windows_validate_single_link(
             api, msvcrt.get_osfhandle(temp_descriptor)
+        )
+        _windows_recheck_destination_identity(
+            api, path, destination_identity
         )
         _atomic_replace_temp(
             temp_path,
@@ -1116,6 +1246,7 @@ def _windows_api() -> dict[str, Any]:
         "INVALID_HANDLE_VALUE": ctypes.c_void_p(-1).value,
         "FILE_ATTRIBUTE_REPARSE_POINT": 0x00000400,
         "FILE_ATTRIBUTE_TAG_INFO_CLASS": 9,
+        "FILE_ID_INFO_CLASS": 18,
         "FILE_RENAME_INFO_EX_CLASS": 22,
         "FILE_RENAME_REPLACE_IF_EXISTS": 0x00000001,
         "FILE_RENAME_POSIX_SEMANTICS": 0x00000002,
@@ -1259,6 +1390,84 @@ def _windows_copy_dacl(
         raise primary_error
     if free_error is not None:
         raise free_error
+
+
+def _windows_file_identity(
+    api: Mapping[str, Any], handle: int
+) -> tuple[int, bytes]:
+    """Return a volume-qualified Windows file ID for a retained handle."""
+
+    class FileId128(ctypes.Structure):
+        _fields_ = (("Identifier", ctypes.c_ubyte * 16),)
+
+    class FileIdInfo(ctypes.Structure):
+        _fields_ = (
+            ("VolumeSerialNumber", ctypes.c_ulonglong),
+            ("FileId", FileId128),
+        )
+
+    information = FileIdInfo()
+    if not api["GetFileInformationByHandleEx"](
+        handle,
+        api["FILE_ID_INFO_CLASS"],
+        ctypes.byref(information),
+        ctypes.sizeof(information),
+    ):
+        raise ctypes.WinError(ctypes.get_last_error())
+    return (
+        int(information.VolumeSerialNumber),
+        bytes(information.FileId.Identifier),
+    )
+
+
+def _windows_recheck_destination_identity(
+    api: Mapping[str, Any],
+    path: Path,
+    expected_identity: Optional[tuple[int, bytes]],
+) -> None:
+    """Fail when the destination name changed since metadata capture.
+
+    The check closes the detectable metadata-copy race immediately before the
+    commit. A process running as the same Windows user remains inside the
+    trusted local-repository boundary and could still mutate the name after
+    this recheck; the publisher does not claim to prevent that trusted race.
+    """
+    current_handle = _windows_open_existing_destination(api, path)
+    primary_error = None
+    cleanup_error = None
+    try:
+        if current_handle is None:
+            if expected_identity is not None:
+                raise ValueError(
+                    "projection destination identity changed before commit"
+                )
+            return
+        current_identity = _windows_file_identity(api, current_handle)
+        if expected_identity is None or current_identity != expected_identity:
+            raise ValueError(
+                "projection destination identity changed before commit"
+            )
+    except Exception as error:
+        primary_error = error
+    finally:
+        if current_handle is not None:
+            try:
+                _windows_close_handle(api, current_handle)
+            except Exception as error:
+                cleanup_error = error
+
+    if primary_error is not None:
+        if cleanup_error is not None:
+            raise ValueError(
+                "projection destination identity check failed; recheck "
+                f"handle cleanup also failed: {cleanup_error}"
+            ) from primary_error
+        raise primary_error
+    if cleanup_error is not None:
+        raise ValueError(
+            "projection destination identity recheck handle cleanup failed: "
+            f"{cleanup_error}"
+        )
 
 
 def _windows_rename_handle(

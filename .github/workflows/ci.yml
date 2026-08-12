@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -27,6 +29,35 @@ jobs:
           tests.skills.test_public_orchestration_skills
           tests.skills.test_public_specialized_skills
           tests.skills.test_public_operational_skills
+      - name: Verify generated capability projection
+        run: python -m skills.registry.projection check --root .
+      - name: Select governance ledger baseline
+        id: governance-baseline
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            printf 'ref=%s\n' "$PR_BASE_SHA" >> "$GITHUB_OUTPUT"
+          elif git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+            printf 'ref=HEAD^\n' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Verify append-only governance ledger
+        if: steps.governance-baseline.outputs.ref != ''
+        env:
+          SERAPHIM_GOVERNANCE_LEDGER_BASELINE: ${{ steps.governance-baseline.outputs.ref }}
+        run: python -m skills.registry.projection check-ledger --root .
+
+  registry-windows:
+    name: Capability registry (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify registry and Windows projection boundaries
+        run: python -m unittest tests.architecture.test_capability_registry_hardening
       - name: Verify generated capability projection
         run: python -m skills.registry.projection check --root .
 

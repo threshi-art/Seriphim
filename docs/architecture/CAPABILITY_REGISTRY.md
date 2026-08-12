@@ -31,7 +31,11 @@ Generated projection files are not hand-edited. From the repository root, use
 `python -m skills.registry.projection generate --root . --as-of <RFC3339>` to
 publish an explicitly timed projection and
 `python -m skills.registry.projection check --root .` to detect drift without
-remediation.
+remediation. CI additionally runs
+`python -m skills.registry.projection check-ledger --root . --baseline <git-ref>`
+to require baseline governance decisions to remain an identical ordered prefix.
+Matching include/exclude decisions resolve to explicit scope eligibility;
+projection still requires declaration-public, publication, and privacy gates.
 
 Seraphim Core is the governing architecture described in
 `docs/architecture/SERAPHIM_CORE.md`, not an installable Skill and therefore not
@@ -114,8 +118,11 @@ Changing a capability from `specified` to `packaged` requires:
 
 Projection publication does not broaden those rules. On Windows, replacement's
 security-metadata guarantee is limited to preserving the destination DACL and
-its inheritance-protection state; owner, group, SACL/audit data, and integrity
-labels are outside that guarantee. On POSIX, publication assumes a trusted
-current-user-owned directory chain that is not group/world writable and trusts
-same-user processes. See the registry package documentation for the complete
-publication and privacy boundary.
+its inheritance-protection state within an operator-controlled local repository
+chain. The destination's file identity is rechecked immediately before commit;
+a same-Windows-user mutation after that check remains trusted and out of scope,
+not a protected race. Owner, group, SACL/audit data, and integrity labels are
+outside the guarantee. On POSIX, publication assumes a trusted current-user-owned
+directory chain that is not group/world writable and trusts same-user processes.
+See the registry package documentation for the complete publication and privacy
+boundary.

@@ -2,6 +2,7 @@ from .contracts import (
     RegistryValidationError,
     canonical_json,
     content_digest,
+    validate_governance_ledger,
     validate_manifest,
 )
 from .resolver import resolve_registry, serializable_snapshot
@@ -14,6 +15,7 @@ __all__ = [
     "content_digest",
     "resolve_registry",
     "serializable_snapshot",
+    "validate_governance_ledger",
     "validate_manifest",
 ]
 

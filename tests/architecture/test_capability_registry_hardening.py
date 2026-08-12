@@ -21,11 +21,11 @@ from skills.registry.contracts import (
     canonical_json,
     content_digest,
     validate_discovery_sources,
-    validate_governance_ledger,
     validate_governance_decisions,
     validate_manifest,
     validate_observations,
 )
+from skills.registry import validate_governance_ledger
 from skills.registry.resolver import resolve_registry, serializable_snapshot
 from skills.registry import projection as projection_module
 from skills.registry.projection import (
@@ -194,6 +194,24 @@ class CapabilityDeclarationTests(unittest.TestCase):
             payload["capabilities"][0]["stewardship"][field] = "incorrect owner"
             with self.subTest(field=field), self.assertRaises(RegistryValidationError):
                 validate_manifest(payload)
+
+    def test_optional_public_equivalent_and_private_reason_are_typed(self) -> None:
+        for field in ("public_equivalent", "private_reason"):
+            for valid_value in (None, "bounded explanatory value"):
+                payload = deepcopy(self.payload)
+                payload["capabilities"][0][field] = valid_value
+                with self.subTest(field=field, valid_value=valid_value):
+                    validate_manifest(payload)
+
+            for invalid_value in ("", "   ", True, [], {}):
+                payload = deepcopy(self.payload)
+                payload["capabilities"][0][field] = invalid_value
+                with self.subTest(
+                    field=field, invalid_value=invalid_value
+                ), self.assertRaisesRegex(
+                    RegistryValidationError, field
+                ):
+                    validate_manifest(payload)
 
 
 class DiscoveryAndGovernanceTests(unittest.TestCase):
@@ -487,14 +505,159 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
         )
 
     def test_include_does_not_create_trust_or_publish_private_capability(self) -> None:
-        decisions = with_include(self.decisions, "seraphim-life-operations")
-        snapshot = resolve_registry(
-            self.manifest, self.sources, decisions, [], AS_OF
+        decisions = with_include(self.decisions, "direct-response")
+        baseline = resolve_registry(
+            self.manifest,
+            self.sources,
+            self.decisions,
+            [],
+            AS_OF,
+            scope="public-capabilities",
         )
-        item = capability(snapshot, "seraphim-life-operations")
+        snapshot = resolve_registry(
+            self.manifest,
+            self.sources,
+            decisions,
+            [],
+            AS_OF,
+            scope="public-capabilities",
+        )
+        item = capability(snapshot, "direct-response")
+        self.assertEqual("eligible", item["scope_eligibility"])
         self.assertFalse(item["public_package"])
         self.assertEqual("internal", item["publication_class"])
+        self.assertEqual("private_or_unpublished", item["privacy_class"])
+        self.assertEqual(
+            capability(baseline, "direct-response")["authorization"],
+            item["authorization"],
+        )
         self.assertNotIn("trusted", item)
+        self.assertNotIn(
+            "direct-response",
+            {
+                row["capability_id"]
+                for row in build_public_projection(snapshot)["capabilities"]
+            },
+        )
+
+    def test_matching_exclusion_removes_public_capability_from_projection(self) -> None:
+        decisions = deepcopy(self.decisions)
+        decisions["decisions"].append(
+            {
+                **valid_decision(
+                    "exclude-action-controller", "exclude_projection"
+                ),
+                "target_capability_id": "seraphim-action-controller",
+            }
+        )
+
+        snapshot = resolve_registry(
+            self.manifest,
+            self.sources,
+            decisions,
+            [],
+            AS_OF,
+            scope="public-capabilities",
+        )
+        item = capability(snapshot, "seraphim-action-controller")
+
+        self.assertEqual("excluded", item["scope_eligibility"])
+        self.assertTrue(item["public_package"])
+        self.assertEqual("public", item["publication_class"])
+        self.assertEqual("ordinary_public", item["privacy_class"])
+        self.assertIn(
+            "exclude-action-controller", item["governance_decision_ids"]
+        )
+        self.assertNotIn(
+            "seraphim-action-controller",
+            {
+                row["capability_id"]
+                for row in build_public_projection(snapshot)["capabilities"]
+            },
+        )
+
+    def test_expired_exclusion_restores_declared_projection_eligibility(self) -> None:
+        decisions = deepcopy(self.decisions)
+        decisions["decisions"].append(
+            {
+                **valid_decision(
+                    "temporary-action-controller-exclusion",
+                    "exclude_projection",
+                ),
+                "target_capability_id": "seraphim-action-controller",
+                "expires_at": "2026-08-12T01:00:00Z",
+            }
+        )
+
+        snapshot = resolve_registry(
+            self.manifest,
+            self.sources,
+            decisions,
+            [],
+            AS_OF,
+            scope="public-capabilities",
+        )
+        item = capability(snapshot, "seraphim-action-controller")
+
+        self.assertEqual("eligible", item["scope_eligibility"])
+        self.assertIn(
+            "seraphim-action-controller",
+            {
+                row["capability_id"]
+                for row in build_public_projection(snapshot)["capabilities"]
+            },
+        )
+
+    def test_include_supersession_and_expiry_restore_prior_eligibility(self) -> None:
+        decisions = deepcopy(self.decisions)
+        exclusion = {
+            **valid_decision("action-controller-exclusion", "exclude_projection"),
+            "target_capability_id": "seraphim-action-controller",
+            "created_at": "2026-08-11T00:00:00Z",
+            "effective_at": "2026-08-11T00:00:00Z",
+        }
+        temporary_include = {
+            **valid_decision(
+                "temporary-action-controller-include",
+                "include_projection",
+                effective_at="2026-08-12T01:00:00Z",
+            ),
+            "target_capability_id": "seraphim-action-controller",
+            "created_at": "2026-08-12T01:00:00Z",
+            "expires_at": "2026-08-12T02:00:00Z",
+            "supersedes_decision_id": "action-controller-exclusion",
+        }
+        decisions["decisions"].extend([exclusion, temporary_include])
+
+        while_include_active = resolve_registry(
+            self.manifest,
+            self.sources,
+            decisions,
+            [],
+            "2026-08-12T01:30:00Z",
+            scope="public-capabilities",
+        )
+        after_include_expires = resolve_registry(
+            self.manifest,
+            self.sources,
+            decisions,
+            [],
+            AS_OF,
+            scope="public-capabilities",
+        )
+
+        self.assertEqual(
+            "eligible",
+            capability(
+                while_include_active, "seraphim-action-controller"
+            )["scope_eligibility"],
+        )
+        self.assertEqual(
+            "excluded",
+            capability(
+                after_include_expires, "seraphim-action-controller"
+            )["scope_eligibility"],
+        )
 
     def test_snapshot_and_all_nested_records_are_immutable(self) -> None:
         snapshot = resolve_registry(
@@ -637,6 +800,74 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
             resolve_registry(
                 self.manifest, self.sources, unknown_decision, [], AS_OF
             )
+
+    def test_resolution_requires_enabled_canonical_repository_source(self) -> None:
+        mutations = []
+
+        absent = deepcopy(self.sources)
+        absent["sources"] = [
+            source
+            for source in absent["sources"]
+            if source["source_id"] != "repository-capability-manifest"
+        ]
+        mutations.append(("absent", absent))
+
+        for field, value in (
+            ("enabled", False),
+            ("source_type", "synthetic_fixture"),
+            ("authority", "test_only"),
+            ("trust_class", "untrusted_test_data"),
+            ("discovery_method", "in_process_fixture"),
+        ):
+            changed = deepcopy(self.sources)
+            canonical = next(
+                source
+                for source in changed["sources"]
+                if source["source_id"]
+                == "repository-capability-manifest"
+            )
+            canonical[field] = value
+            mutations.append((field, changed))
+
+        alternate = deepcopy(self.sources)
+        alternate["sources"].append(
+            {
+                "source_id": "alternate-repository-manifest",
+                "source_type": "repository_manifest",
+                "authority": "institutional_declaration",
+                "trust_class": "governed_internal",
+                "discovery_method": "static_json",
+                "enabled": True,
+            }
+        )
+        mutations.append(("alternate", alternate))
+
+        for label, sources in mutations:
+            with self.subTest(label=label), self.assertRaisesRegex(
+                RegistryValidationError,
+                "repository.*source|source.*repository",
+            ):
+                resolve_registry(
+                    self.manifest,
+                    sources,
+                    self.decisions,
+                    [],
+                    AS_OF,
+                )
+
+    def test_resolved_source_ids_are_declared_and_not_dangling(self) -> None:
+        snapshot = resolve_registry(
+            self.manifest, self.sources, self.decisions, [], AS_OF
+        )
+        declared_source_ids = {
+            source["source_id"] for source in self.sources["sources"]
+        }
+
+        for item in snapshot["capabilities"]:
+            with self.subTest(capability_id=item["capability_id"]):
+                self.assertLessEqual(
+                    set(item["source_ids"]), declared_source_ids
+                )
 
     def test_duplicate_and_contradictory_observations_fail_closed(self) -> None:
         first = valid_observation(
@@ -1695,6 +1926,59 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 )
                 self.assertEqual(before, dacl_contract())
 
+    @unittest.skipUnless(os.name == "nt", "Windows destination identity rule")
+    def test_windows_detects_destination_replacement_after_dacl_capture(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            output = registry / "public-capabilities.json"
+            replacement = registry / "same-user-replacement.json"
+            replacement_bytes = b"detectable same-user replacement"
+            real_copy_dacl = projection_module._windows_copy_dacl
+
+            def copy_dacl_then_replace(
+                api: Mapping[str, object],
+                source_handle: int,
+                target_handle: int,
+            ) -> None:
+                real_copy_dacl(api, source_handle, target_handle)
+                replacement.write_bytes(replacement_bytes)
+                replacement_handle = projection_module._windows_open_path_handle(
+                    api,
+                    replacement,
+                    desired_access=(
+                        api["DELETE"] | api["FILE_READ_ATTRIBUTES"]
+                    ),
+                    share_mode=0,
+                    directory=False,
+                )
+                try:
+                    projection_module._windows_rename_handle(
+                        api, replacement_handle, output
+                    )
+                finally:
+                    projection_module._windows_close_handle(
+                        api, replacement_handle
+                    )
+
+            with patch.object(
+                projection_module,
+                "_windows_copy_dacl",
+                side_effect=copy_dacl_then_replace,
+            ), self.assertRaisesRegex(
+                ValueError, "destination.*identity|identity.*destination"
+            ):
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                )
+
+            self.assertEqual(replacement_bytes, output.read_bytes())
+            self.assertEqual(
+                [], list(registry.glob(".public-capabilities.*.tmp"))
+            )
+
     @unittest.skipUnless(os.name != "nt", "POSIX cleanup rule")
     def test_posix_cleanup_faults_do_not_mask_primary_or_stop_later_cleanup(
         self,
@@ -1756,7 +2040,10 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
             def close_then_report_failure(handle: int) -> int:
                 close_attempts.append(handle)
                 result = real_close(handle)
-                if len(close_attempts) == 1:
+                # The first API close releases the successful destination
+                # identity recheck handle. Fault the retained destination
+                # security handle during final cleanup instead.
+                if len(close_attempts) == 2:
                     ctypes.set_last_error(6)
                     return 0
                 return result
@@ -1904,3 +2191,132 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
             self.assertEqual(
                 before, (approved.read_bytes(), observed.read_bytes())
             )
+
+    def test_cli_ledger_check_enforces_git_baseline_as_an_append_only_prefix(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            subprocess.run(
+                ["git", "init", "--quiet"], cwd=root, check=True
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Registry Test"],
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "registry@example.invalid"],
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "core.autocrlf", "false"],
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+            subprocess.run(
+                ["git", "commit", "--quiet", "-m", "baseline"],
+                cwd=root,
+                check=True,
+            )
+            baseline = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            ledger_path = registry / "governance-decisions.json"
+            baseline_payload = json.loads(ledger_path.read_text(encoding="utf-8"))
+
+            with patch.dict(
+                os.environ,
+                {
+                    "SERAPHIM_GOVERNANCE_LEDGER_BASELINE": baseline,
+                },
+            ):
+                self.assertEqual(
+                    0,
+                    projection_main(
+                        ["check-ledger", "--root", str(root)]
+                    ),
+                )
+
+            appended = deepcopy(baseline_payload)
+            appended["decisions"].append(
+                {
+                    **valid_decision(
+                        "appended-action-controller-exclusion",
+                        "exclude_projection",
+                    ),
+                    "target_capability_id": "seraphim-action-controller",
+                }
+            )
+            ledger_path.write_text(
+                json.dumps(appended, indent=2) + "\n", encoding="utf-8"
+            )
+            self.assertEqual(
+                0,
+                projection_main(
+                    [
+                        "check-ledger",
+                        "--root",
+                        str(root),
+                        "--baseline",
+                        baseline,
+                    ]
+                ),
+            )
+
+            invalid_payloads = {}
+            removed = deepcopy(baseline_payload)
+            del removed["decisions"][0]
+            invalid_payloads["missing prior decision"] = removed
+
+            rewritten = deepcopy(baseline_payload)
+            rewritten["decisions"][0]["reason"] = "rewritten history"
+            invalid_payloads["rewritten prior decision"] = rewritten
+
+            reordered = deepcopy(baseline_payload)
+            reordered["decisions"].reverse()
+            invalid_payloads["prior decision order changed"] = reordered
+
+            for expected_error, payload in invalid_payloads.items():
+                ledger_path.write_text(
+                    json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+                )
+                stderr = io.StringIO()
+                with self.subTest(
+                    expected_error=expected_error
+                ), redirect_stderr(stderr):
+                    self.assertEqual(
+                        1,
+                        projection_main(
+                            [
+                                "check-ledger",
+                                "--root",
+                                str(root),
+                                "--baseline",
+                                baseline,
+                            ]
+                        ),
+                    )
+                self.assertIn(expected_error, stderr.getvalue())
+
+    def test_cli_ledger_check_rejects_unsafe_baseline_revision_syntax(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.copy_registry_fixture(root)
+            with self.assertRaisesRegex(ValueError, "baseline"):
+                projection_main(
+                    [
+                        "check-ledger",
+                        "--root",
+                        str(root),
+                        "--baseline",
+                        "HEAD:../../untrusted-path",
+                    ]
+                )

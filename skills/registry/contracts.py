@@ -315,7 +315,7 @@ def validate_governance_decisions(
 def validate_governance_ledger(
     previous_payload: object, current_payload: object, capability_ids: object
 ) -> list[dict]:
-    """Validate a revision while requiring every prior decision to remain identical."""
+    """Require prior canonical decision bytes and order to remain a prefix."""
     previous = validate_governance_decisions(previous_payload, capability_ids)
     current = validate_governance_decisions(current_payload, capability_ids)
     current_by_id = {decision["decision_id"]: decision for decision in current}
@@ -323,10 +323,12 @@ def validate_governance_ledger(
         decision_id = decision["decision_id"]
         if decision_id not in current_by_id:
             raise RegistryValidationError(f"missing prior decision: {decision_id}")
-        if canonical_json(decision) != canonical_json(current_by_id[decision_id]):
-            raise RegistryValidationError(f"rewritten prior decision: {decision_id}")
         if current[index]["decision_id"] != decision_id:
             raise RegistryValidationError(f"prior decision order changed: {decision_id}")
+        prior_bytes = canonical_json(decision).encode("utf-8")
+        current_bytes = canonical_json(current[index]).encode("utf-8")
+        if prior_bytes != current_bytes:
+            raise RegistryValidationError(f"rewritten prior decision: {decision_id}")
     return current
 
 
@@ -487,6 +489,11 @@ def _validate_declaration(record: dict, capability_id: str) -> None:
         raise RegistryValidationError(f"{capability_id} has invalid lifecycle_state")
     _validate_license(record.get("license"), capability_id, status)
     _validate_stewardship(record.get("stewardship"), capability_id)
+    for field in ("public_equivalent", "private_reason"):
+        if field in record and record[field] is not None:
+            _require_nonempty_string(
+                record[field], f"{capability_id} {field}"
+            )
 
     if "package_path" not in record:
         raise RegistryValidationError(f"{capability_id} package_path is required")

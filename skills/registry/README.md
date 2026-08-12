@@ -26,7 +26,12 @@ and neither observation nor projection can grant authority.
 - **Discovery-source declaration** — `discovery-sources.json` allowlists sources
   from which an attributed observation may be accepted. Being listed or enabled
   makes a source eligible for validation; it does not make its claims trusted or
-  authoritative.
+  authoritative. Resolution requires exactly one enabled
+  `repository-capability-manifest` source with `repository_manifest` type,
+  `institutional_declaration` authority, `governed_internal` trust class, and
+  static-JSON discovery. A missing, disabled, ambiguous, or semantically altered
+  canonical source fails closed, so resolved records never cite a dangling
+  declaration source ID.
 - **Attributed observation** — a source-identified, time-stamped report about a
   capability's availability, verification, and operational state in one
   runtime. Observation metadata is inert. Observations cannot set trust,
@@ -34,8 +39,12 @@ and neither observation nor projection can grant authority.
 - **Active governance decision** — a validated decision in
   `governance-decisions.json` that is effective at the requested `as_of` instant,
   has not expired, and has not been explicitly superseded by an active
-  successor. Include/exclude operations are scoped governance audit records in
-  this slice; they do not bypass the fail-closed publication/privacy gates.
+  successor. In a matching resolution scope, `exclude_projection` sets explicit
+  scope eligibility to `excluded`; `include_projection` may restore it to
+  `eligible` when no active unsuperseded exclusion remains. Exclusion wins an
+  unresolved conflict fail closed. Inclusion permits consideration only: it
+  does not change declaration trust, `public_package`, `publication_class`,
+  `privacy_class`, or authorization, and it cannot bypass the projection gates.
   Scoped overrides may change only a small allowlist of descriptive/publication
   fields. No decision can override authorization.
 - **Resolved snapshot** — `resolve_registry(...)` deterministically combines the
@@ -69,6 +78,9 @@ These dimensions answer different questions and must remain separate:
 - **Publication class** (`public`, `internal`) records projection eligibility;
   **privacy class** (`ordinary_public`, `private_or_unpublished`) is a separate
   disclosure boundary. Public projection also requires `public_package: true`.
+- **Scope eligibility** (`eligible`, `excluded`) records the effective active
+  include/exclude result for the snapshot's named scope. It is an additional
+  projection filter, not declaration, privacy, trust, or authorization state.
 - **License and stewardship** record redistribution status and accountable
   owners; neither is an operational or authorization assertion.
 - **Authorization** is the manifest runtime contract's access mode, allowed
@@ -86,7 +98,8 @@ The corresponding negative equalities are contractual:
   healthy, and healthy is not authorized;
 - an observation is not a governance decision or authorization grant;
 - an `include_projection` decision is not trust, authorization, runtime
-  availability, or routing eligibility and does not bypass privacy gates;
+  availability, or routing eligibility and does not bypass declaration,
+  publication, or privacy gates;
 - an `exclude_projection` decision does not delete declaration, observation, or
   governance history;
 - an informational projection is not a resolved snapshot and is not runtime or
@@ -99,6 +112,7 @@ Run commands from the repository root:
 ```powershell
 python -m skills.registry.projection generate --root . --as-of 2026-08-12T00:00:00Z
 python -m skills.registry.projection check --root .
+python -m skills.registry.projection check-ledger --root . --baseline <git-ref>
 ```
 
 `generate` validates the fixed repository inputs, resolves the explicit
@@ -111,6 +125,16 @@ evidence only and performs no remediation (`actions_executed` remains empty).
 Do not hand-edit `public-capabilities.json`. Change a reviewed source declaration
 or append a valid governance decision, then run `generate` and review the diff.
 Resolved snapshots are produced in memory; they are not this generated file.
+
+`check-ledger` is the append-only history gate. It reads the fixed
+`skills/registry/governance-decisions.json` path from a validated Git revision
+with a non-shell `git show`, canonicalizes each decision to UTF-8 JSON bytes,
+and requires every baseline decision to remain an identical ordered prefix of
+the current ledger. Removal, rewriting, insertion before prior history, and
+reordering fail. CI supplies the baseline through
+`SERAPHIM_GOVERNANCE_LEDGER_BASELINE`: pull requests use the fetched base SHA;
+main pushes use `HEAD^` when it exists. The ordinary projection `check` remains
+usable locally without a Git baseline.
 
 ## Privacy and publication boundary
 
@@ -127,12 +151,18 @@ Projection publication is confined to the fixed repository-relative path and
 uses an atomic replacement. Its platform security contract is deliberately
 narrow:
 
-- **Windows:** replacement preserves an existing destination's DACL and its
-  protected-versus-unprotected inheritance state; publication fails before
-  commit if that copy cannot be completed. This guarantee is DACL/protection
-  only. Owner, primary group, SACL/audit data, and mandatory integrity labels
-  are inherited or OS-managed and are not preserved by the publisher. A new
-  destination uses the OS-inherited security metadata.
+- **Windows:** generation requires the explicitly selected local repository
+  root and its fixed descendant directory chain to be operator controlled. The
+  publisher retains non-delete-sharing handles to that nonredirecting chain,
+  preserves an existing destination's DACL and protected-versus-unprotected
+  inheritance state, and rechecks the destination's volume-qualified file
+  identity immediately before commit. A detectable replacement after metadata
+  capture fails before commit. This guarantee is DACL/protection and detectable
+  pre-commit identity only. Owner, primary group, SACL/audit data, and mandatory
+  integrity labels are inherited or OS-managed and are not preserved. A new
+  destination uses OS-inherited metadata. Other processes running as the same
+  Windows user are inside this local trusted boundary; mutation after the final
+  identity recheck is out of scope and is not represented as prevented.
 - **POSIX:** publication requires the resolved root-to-parent directory chain to
   be owned by the current user and not group/world writable. Descriptor-anchored
   checks reject link and ancestor substitution, while the threat model trusts
