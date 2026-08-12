@@ -226,6 +226,36 @@ class CaseLedger:
             )
         return self.get_case(case_id)
 
+    def increment_collection_loops(self, case_id: str, actor: str, reason: str) -> CaseRecord:
+        now = datetime.now(timezone.utc)
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT collection_loops, state FROM cases WHERE case_id = ?", (case_id,)
+            ).fetchone()
+            if row is None:
+                raise CaseNotFound(case_id)
+            loops = row["collection_loops"] + 1
+            if loops > 1:
+                raise ValueError("proof mission permits at most one recollection loop")
+            connection.execute(
+                "UPDATE cases SET collection_loops = ?, updated_at = ? WHERE case_id = ?",
+                (loops, now.isoformat(), case_id),
+            )
+            state = CaseState(row["state"])
+            self._insert_audit(
+                connection,
+                AuditEvent(
+                    case_id=case_id,
+                    actor=actor,
+                    event_type="collection.loop_incremented",
+                    prior_state=state,
+                    target_state=state,
+                    reason=reason,
+                    created_at=now,
+                ),
+            )
+        return self.get_case(case_id)
+
     def record_audit_event(self, event: AuditEvent) -> None:
         with self._connect() as connection:
             self._insert_audit(connection, event)
@@ -323,6 +353,15 @@ class CaseLedger:
 
     def add_hypothesis(self, record: Hypothesis) -> None:
         self._add_record("hypotheses", "hypothesis_id", record.hypothesis_id, record.case_id, record)
+
+    def upsert_hypothesis(self, record: Hypothesis) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """INSERT INTO hypotheses (hypothesis_id, case_id, record_json)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT(hypothesis_id) DO UPDATE SET record_json = excluded.record_json""",
+                (record.hypothesis_id, record.case_id, _dump(record)),
+            )
 
     def list_hypotheses(self, case_id: str) -> List[Hypothesis]:
         return self._list_records("hypotheses", case_id, Hypothesis)

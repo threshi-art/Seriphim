@@ -53,10 +53,8 @@ class FusionEngine:
                 status=HypothesisStatus.NOT_ESTABLISHED,
             ),
         ]
-        existing_hypotheses = {item.hypothesis_id for item in self.ledger.list_hypotheses(case_id)}
         for hypothesis in hypotheses:
-            if hypothesis.hypothesis_id not in existing_hypotheses:
-                self.ledger.add_hypothesis(hypothesis)
+            self.ledger.upsert_hypothesis(hypothesis)
 
         claims = [
             ClaimRecord(
