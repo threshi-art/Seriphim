@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "status_definitions": {
     "specified": "Behavior is documented, but no audited portable package is present.",
     "packaged": "An audited portable package is present.",
@@ -25,7 +25,22 @@
         "approval_requirement": "not_available",
         "data_boundary": [],
         "last_verified": "2026-08-11"
-      }
+      },
+      "version": "0.1.0",
+      "lifecycle_state": "proposed",
+      "license": {
+        "status": "not_packaged",
+        "spdx_id": null
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
+      },
+      "package_path": null,
+      "provenance": "not_packaged",
+      "validation": "not_packaged"
     },
     {
       "id": "context-sentinel",
@@ -55,6 +70,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -85,6 +111,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -116,6 +153,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -137,7 +185,22 @@
         "approval_requirement": "not_available",
         "data_boundary": [],
         "last_verified": "2026-08-11"
-      }
+      },
+      "version": "0.1.0",
+      "lifecycle_state": "proposed",
+      "license": {
+        "status": "not_packaged",
+        "spdx_id": null
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
+      },
+      "package_path": null,
+      "provenance": "not_packaged",
+      "validation": "not_packaged"
     },
     {
       "id": "seraphim-operator-routing",
@@ -167,6 +230,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -198,6 +272,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -228,6 +313,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -258,6 +354,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -289,6 +396,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -309,7 +427,22 @@
         "approval_requirement": "not_available",
         "data_boundary": [],
         "last_verified": "2026-08-11"
-      }
+      },
+      "version": "0.1.0",
+      "lifecycle_state": "proposed",
+      "license": {
+        "status": "not_packaged",
+        "spdx_id": null
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
+      },
+      "package_path": null,
+      "provenance": "not_packaged",
+      "validation": "not_packaged"
     },
     {
       "id": "seraphim-action-controller",
@@ -340,6 +473,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -370,6 +514,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -401,6 +556,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -432,6 +598,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -457,7 +634,22 @@
           "private_operator_context"
         ],
         "last_verified": "2026-08-11"
-      }
+      },
+      "version": "0.1.0",
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "not_packaged",
+        "spdx_id": null
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
+      },
+      "package_path": null,
+      "provenance": "not_packaged",
+      "validation": "not_packaged"
     },
     {
       "id": "lawful-humint-planner",
@@ -487,6 +679,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -517,6 +720,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -547,6 +761,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -577,6 +802,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -608,6 +844,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -638,6 +885,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -668,6 +926,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -699,6 +968,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -729,6 +1009,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -759,6 +1050,17 @@
           "operator_provided_material"
         ],
         "last_verified": "2026-08-11"
+      },
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "project_original",
+        "spdx_id": "MIT"
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
       }
     },
     {
@@ -783,7 +1085,22 @@
           "private_operator_context"
         ],
         "last_verified": "2026-08-11"
-      }
+      },
+      "version": "0.1.0",
+      "lifecycle_state": "experimental",
+      "license": {
+        "status": "not_packaged",
+        "spdx_id": null
+      },
+      "stewardship": {
+        "publisher": "Seraphim project",
+        "maintainer": "Seraphim project",
+        "technical_owner": "Seraphim engineering",
+        "governance_owner": "Seraphim governance"
+      },
+      "package_path": null,
+      "provenance": "not_packaged",
+      "validation": "not_packaged"
     }
   ]
 }
