@@ -529,12 +529,17 @@ def _write_projection_posix(root: Path, path: Path, data: bytes) -> None:
     cleanup_failures = []
     try:
         descriptors.append(os.open(root, directory_flags))
+        _validate_posix_directory_security(
+            descriptors[-1], "resolved projection root"
+        )
         for part in relative_parts[:-1]:
             descriptors.append(
                 os.open(part, directory_flags, dir_fd=descriptors[-1])
             )
+            _validate_posix_directory_security(
+                descriptors[-1], f"projection directory {part}"
+            )
         parent_descriptor = descriptors[-1]
-        _validate_posix_parent_security(parent_descriptor)
         destination_mode = _posix_destination_mode(
             parent_descriptor, relative_parts[-1]
         )
@@ -559,6 +564,8 @@ def _write_projection_posix(root: Path, path: Path, data: bytes) -> None:
             relative_parts[-1],
             temp_descriptor=temp_descriptor,
             parent_descriptor=parent_descriptor,
+            directory_descriptors=tuple(descriptors),
+            directory_names=relative_parts[:-1],
         )
         committed = True
         _flush_parent_after_commit(parent_descriptor)
@@ -757,26 +764,68 @@ def _validate_fresh_temp_descriptor(descriptor: int) -> None:
         )
 
 
-def _validate_posix_parent_security(parent_descriptor: int) -> None:
-    """Exclude cross-principal name races at the POSIX commit boundary.
+def _validate_posix_directory_security(
+    descriptor: int, label: str
+) -> None:
+    """Require a trusted POSIX directory for the publication path.
 
-    Descriptor-relative lstat/fstat identity checks close controlled entry
-    swaps immediately before rename. They cannot exclude another process with
-    the same user identity, so generation trusts same-user processes and
-    rejects a parent writable by any other user or group.
+    The retained-chain identity check separately closes controlled entry swaps
+    immediately before rename. It cannot exclude another process with the same
+    user identity, so generation trusts same-user processes and rejects every
+    traversed directory writable by any other user or group.
     """
     current_user = getattr(os, "geteuid", None)
     if current_user is None:
         raise ValueError("current POSIX user identity is unavailable")
-    metadata = os.fstat(parent_descriptor)
+    metadata = os.fstat(descriptor)
+    if not stat.S_ISDIR(metadata.st_mode):
+        raise ValueError(f"{label} must remain a directory")
     if metadata.st_uid != current_user():
         raise ValueError(
-            "projection parent must be owned by the current user"
+            f"{label} must be owned by the current user"
         )
     if stat.S_IMODE(metadata.st_mode) & 0o022:
         raise ValueError(
-            "projection parent must not be group/world writable"
+            f"{label} must not be group/world writable"
         )
+
+
+def _validate_posix_directory_chain(
+    descriptors: Sequence[int], child_names: Sequence[str]
+) -> None:
+    """Revalidate the retained root-to-parent name chain before commit."""
+    if len(descriptors) != len(child_names) + 1:
+        raise ValueError("projection directory descriptor chain is incomplete")
+
+    for index, descriptor in enumerate(descriptors):
+        label = (
+            "resolved projection root"
+            if index == 0
+            else f"projection directory {child_names[index - 1]}"
+        )
+        _validate_posix_directory_security(descriptor, label)
+        if index == 0:
+            continue
+
+        opened = os.fstat(descriptor)
+        try:
+            named = os.stat(
+                child_names[index - 1],
+                dir_fd=descriptors[index - 1],
+                follow_symlinks=False,
+            )
+        except OSError as error:
+            raise ValueError(
+                "projection directory ancestor identity could not be "
+                "verified before commit"
+            ) from error
+        if (
+            not stat.S_ISDIR(named.st_mode)
+            or (named.st_dev, named.st_ino) != (opened.st_dev, opened.st_ino)
+        ):
+            raise ValueError(
+                "projection directory ancestor identity changed before commit"
+            )
 
 
 def _posix_destination_mode(
@@ -849,6 +898,8 @@ def _atomic_replace_temp(
     *,
     temp_descriptor: Optional[int] = None,
     parent_descriptor: Optional[int] = None,
+    directory_descriptors: Optional[Sequence[int]] = None,
+    directory_names: Optional[Sequence[str]] = None,
     windows_api: Optional[Mapping[str, Any]] = None,
 ) -> None:
     if windows_api is not None:
@@ -865,10 +916,19 @@ def _atomic_replace_temp(
         )
         return
 
-    if parent_descriptor is None or temp_descriptor is None:
+    if (
+        parent_descriptor is None
+        or temp_descriptor is None
+        or directory_descriptors is None
+        or directory_names is None
+    ):
         raise ValueError(
-            "safe atomic replace requires verified parent and temp descriptors"
+            "safe atomic replace requires the retained directory chain and "
+            "verified temp descriptor"
         )
+    _validate_posix_directory_chain(
+        directory_descriptors, directory_names
+    )
     _validate_posix_temp_name_identity(
         parent_descriptor, str(temp), temp_descriptor
     )
@@ -1127,6 +1187,17 @@ def _windows_open_existing_destination(
 def _windows_copy_dacl(
     api: Mapping[str, Any], source_handle: int, target_handle: int
 ) -> None:
+    """Preserve the destination DACL and its inheritance-protection state.
+
+    This is the supported Windows security-metadata contract for replacement
+    of the repository-generated public projection. If an existing destination
+    DACL cannot be copied exactly, publication fails before commit. Owner,
+    primary group, SACL/audit data, and mandatory integrity labels remain the
+    fresh file's inherited or OS-managed values and are outside this catalog's
+    threat contract: setting owner/group requires WRITE_OWNER, while SACL
+    access requires security privilege that normal and OneDrive-backed
+    checkouts must not need.
+    """
     from ctypes import wintypes
 
     dacl = ctypes.c_void_p()

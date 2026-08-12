@@ -1411,6 +1411,86 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 [], list(registry.glob(".public-capabilities.*.tmp"))
             )
 
+    @unittest.skipUnless(os.name != "nt", "POSIX ancestor permission rule")
+    def test_posix_projection_ancestors_must_not_be_group_or_world_writable(
+        self,
+    ) -> None:
+        for ancestor_name in ("root", "skills"):
+            with self.subTest(
+                ancestor=ancestor_name
+            ), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary) / "root"
+                registry = self.copy_registry_fixture(root)
+                output = registry / "public-capabilities.json"
+                prior_bytes = output.read_bytes()
+                ancestor = root if ancestor_name == "root" else root / "skills"
+                prior_mode = stat.S_IMODE(os.stat(ancestor).st_mode)
+                try:
+                    os.chmod(ancestor, prior_mode | 0o022)
+                    with self.assertRaisesRegex(
+                        ValueError, "group/world writable"
+                    ):
+                        projection_main(
+                            ["generate", "--root", str(root), "--as-of", AS_OF]
+                        )
+                finally:
+                    os.chmod(ancestor, prior_mode)
+
+                self.assertEqual(prior_bytes, output.read_bytes())
+                self.assertEqual(
+                    [], list(registry.glob(".public-capabilities.*.tmp"))
+                )
+
+    @unittest.skipUnless(os.name != "nt", "POSIX ancestor identity rule")
+    def test_posix_ancestor_substitution_at_commit_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            root = base / "root"
+            registry = self.copy_registry_fixture(root)
+            output = registry / "public-capabilities.json"
+            prior_bytes = output.read_bytes()
+            skills = root / "skills"
+            parked_skills = base / "parked-skills"
+            attacker_skills = base / "attacker-skills"
+            attacker_registry = attacker_skills / "registry"
+            attacker_registry.mkdir(parents=True)
+            attacker_output = attacker_registry / "public-capabilities.json"
+            attacker_output.write_bytes(b"attacker directory sentinel")
+            real_atomic_replace = projection_module._atomic_replace_temp
+
+            def substitute_ancestor(*args, **kwargs):
+                skills.rename(parked_skills)
+                attacker_skills.rename(skills)
+                return real_atomic_replace(*args, **kwargs)
+
+            with patch.object(
+                projection_module,
+                "_atomic_replace_temp",
+                side_effect=substitute_ancestor,
+            ), self.assertRaisesRegex(
+                ValueError, "ancestor|directory|identity|safe"
+            ):
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                )
+
+            substituted_skills = base / "substituted-skills"
+            skills.rename(substituted_skills)
+            parked_skills.rename(skills)
+            self.assertEqual(prior_bytes, output.read_bytes())
+            self.assertNotIn(b"attacker", output.read_bytes())
+            self.assertEqual(
+                b"attacker directory sentinel",
+                (
+                    substituted_skills
+                    / "registry"
+                    / "public-capabilities.json"
+                ).read_bytes(),
+            )
+            self.assertEqual(
+                [], list(registry.glob(".public-capabilities.*.tmp"))
+            )
+
     @unittest.skipUnless(os.name != "nt", "POSIX durability rule")
     def test_post_commit_directory_flush_failure_reports_committed_success(
         self,
@@ -1535,51 +1615,85 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
 
             self.assertEqual(0o644, stat.S_IMODE(os.stat(output).st_mode))
 
-    @unittest.skipUnless(os.name == "nt", "Windows ACL rule")
-    def test_windows_replacement_preserves_existing_destination_acl(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            registry = self.copy_registry_fixture(root)
-            output = registry / "public-capabilities.json"
-            identity = subprocess.run(
-                ["whoami"],
-                check=True,
-                capture_output=True,
-                text=True,
-            ).stdout.strip()
-            configured = subprocess.run(
-                [
-                    "icacls",
-                    str(output),
-                    "/inheritance:r",
-                    "/grant:r",
-                    f"{identity}:(R)",
-                ],
-                capture_output=True,
-                text=True,
-            )
-            if configured.returncode != 0:
-                self.skipTest(
-                    "custom ACL fixture unavailable: " + configured.stderr
-                )
-
-            def acl_listing() -> str:
-                result = subprocess.run(
-                    ["icacls", str(output)],
-                    check=True,
+    @unittest.skipUnless(os.name == "nt", "Windows DACL rule")
+    def test_windows_replacement_preserves_destination_dacl_and_protection(
+        self,
+    ) -> None:
+        identity = subprocess.run(
+            ["whoami"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        for inheritance_switch, expected_protected in (
+            ("/inheritance:r", True),
+            ("/inheritance:e", False),
+        ):
+            with self.subTest(
+                protected=expected_protected
+            ), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                registry = self.copy_registry_fixture(root)
+                output = registry / "public-capabilities.json"
+                configured = subprocess.run(
+                    [
+                        "icacls",
+                        str(output),
+                        inheritance_switch,
+                        "/grant:r",
+                        f"{identity}:(R)",
+                    ],
                     capture_output=True,
                     text=True,
                 )
-                return result.stdout
+                if configured.returncode != 0:
+                    self.skipTest(
+                        "custom DACL fixture unavailable: " + configured.stderr
+                    )
 
-            before = acl_listing()
-            self.assertEqual(
-                0,
-                projection_main(
-                    ["generate", "--root", str(root), "--as-of", AS_OF]
-                ),
-            )
-            self.assertEqual(before, acl_listing())
+                def dacl_contract() -> dict:
+                    environment = dict(os.environ)
+                    environment["SERAPHIM_TEST_ACL_PATH"] = str(output)
+                    result = subprocess.run(
+                        [
+                            "powershell.exe",
+                            "-NoLogo",
+                            "-NoProfile",
+                            "-NonInteractive",
+                            "-Command",
+                            (
+                                "$acl = [System.IO.File]::GetAccessControl("
+                                "$env:SERAPHIM_TEST_ACL_PATH, "
+                                "[System.Security.AccessControl."
+                                "AccessControlSections]::Access); "
+                                "[ordered]@{dacl=$acl."
+                                "GetSecurityDescriptorSddlForm("
+                                "[System.Security.AccessControl."
+                                "AccessControlSections]::Access); "
+                                "protected=$acl.AreAccessRulesProtected} "
+                                "| ConvertTo-Json -Compress"
+                            ),
+                        ],
+                        capture_output=True,
+                        text=True,
+                        env=environment,
+                    )
+                    if result.returncode != 0:
+                        raise RuntimeError(
+                            "DACL contract inspection failed: " + result.stderr
+                        )
+                    return json.loads(result.stdout)
+
+                before = dacl_contract()
+                self.assertEqual(expected_protected, before["protected"])
+                self.assertTrue(before["dacl"].startswith("D:"))
+                self.assertEqual(
+                    0,
+                    projection_main(
+                        ["generate", "--root", str(root), "--as-of", AS_OF]
+                    ),
+                )
+                self.assertEqual(before, dacl_contract())
 
     @unittest.skipUnless(os.name != "nt", "POSIX cleanup rule")
     def test_posix_cleanup_faults_do_not_mask_primary_or_stop_later_cleanup(
