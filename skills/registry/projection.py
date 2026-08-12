@@ -2,10 +2,11 @@
 
 import argparse
 from collections.abc import Mapping, Sequence
+import ctypes
 import json
 import math
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import stat
 import sys
 from typing import Any, Optional
@@ -18,7 +19,6 @@ PUBLIC_PROJECTION_SCOPE = "public-capabilities"
 PROJECTION_SCHEMA_VERSION = 1
 DRIFT_REPORT_SCHEMA_VERSION = 1
 _MISSING = object()
-_MISSING_FIELD_REPORT = {"field_state": "missing"}
 PROJECTION_TOP_LEVEL_FIELDS = {
     "schema_version": int,
     "as_of": str,
@@ -56,6 +56,14 @@ RESOLVED_CAPABILITY_STRING_FIELDS = {
     "lifecycle_state",
     "publication_class",
     "privacy_class",
+}
+WINDOWS_NAME_SURROGATE_BIT = 0x20000000
+WINDOWS_CLOUD_TAG_BASE = 0x9000001A
+WINDOWS_CLOUD_TAG_MASK = 0x0000F000
+WINDOWS_NONREDIRECTING_CLOUD_TAGS = {
+    0x80000015,  # IO_REPARSE_TAG_FILE_PLACEHOLDER
+    0x8000001E,  # IO_REPARSE_TAG_STORAGE_SYNC
+    0x80000021,  # IO_REPARSE_TAG_ONEDRIVE
 }
 
 
@@ -182,7 +190,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.command == "generate":
         root = _resolved_root(args.root)
         projection = _projection_for_root(root, args.as_of)
-        _write_projection(_projection_path(root), projection)
+        _write_projection(root, _projection_path(root), projection)
         return 0
     if args.command == "check":
         root = _resolved_root(args.root)
@@ -375,8 +383,8 @@ def _field_values_differ(old: Any, new: Any) -> bool:
 
 def _reported_field_value(value: Any) -> Any:
     if value is _MISSING:
-        return dict(_MISSING_FIELD_REPORT)
-    return value
+        return {"present": False}
+    return {"present": True, "value": value}
 
 
 def _projection_for_root(root: Path, as_of: str) -> dict[str, object]:
@@ -454,11 +462,29 @@ def _is_link_or_reparse(path: Path) -> bool:
     if path.is_symlink():
         return True
     try:
-        attributes = getattr(os.lstat(path), "st_file_attributes", 0)
+        metadata = os.lstat(path)
     except FileNotFoundError:
         return False
     reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
-    return bool(attributes & reparse_flag)
+    attributes = getattr(metadata, "st_file_attributes", 0)
+    if not attributes & reparse_flag:
+        return False
+    tag = getattr(metadata, "st_reparse_tag", 0)
+    return _windows_reparse_tag_disposition(tag) != "nonredirecting_cloud"
+
+
+def _windows_reparse_tag_disposition(tag: int) -> str:
+    """Classify a Windows reparse tag without touching live placeholder state."""
+    if tag == 0:
+        return "ordinary"
+    if tag & WINDOWS_NAME_SURROGATE_BIT:
+        return "redirecting"
+    if (
+        tag in WINDOWS_NONREDIRECTING_CLOUD_TAGS
+        or (tag & ~WINDOWS_CLOUD_TAG_MASK) == WINDOWS_CLOUD_TAG_BASE
+    ):
+        return "nonredirecting_cloud"
+    return "unsupported"
 
 
 def _read_json(path: Path) -> Any:
@@ -469,12 +495,283 @@ def _encoded_projection(projection: Mapping[str, object]) -> bytes:
     return (canonical_json(projection) + "\n").encode("utf-8")
 
 
-def _write_projection(path: Path, projection: Mapping[str, object]) -> None:
-    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
-    no_follow = getattr(os, "O_NOFOLLOW", 0)
-    descriptor = os.open(path, flags | no_follow, 0o666)
-    with os.fdopen(descriptor, "wb") as output:
-        output.write(_encoded_projection(projection))
+def _write_projection(
+    root: Path, path: Path, projection: Mapping[str, object]
+) -> None:
+    data = _encoded_projection(projection)
+    if os.name == "nt":
+        _write_projection_windows(root, path, data)
+    else:
+        _write_projection_posix(root, path, data)
+
+
+def _write_projection_posix(root: Path, path: Path, data: bytes) -> None:
+    no_follow = getattr(os, "O_NOFOLLOW", None)
+    directory_flag = getattr(os, "O_DIRECTORY", None)
+    if no_follow is None or directory_flag is None:
+        raise ValueError("safe descriptor-anchored projection writes unavailable")
+
+    relative_parts = path.relative_to(root).parts
+    if not relative_parts:
+        raise ValueError("projection output must be below root")
+    close_on_exec = getattr(os, "O_CLOEXEC", 0)
+    directory_flags = os.O_RDONLY | directory_flag | no_follow | close_on_exec
+    descriptors = []
+    output_descriptor = None
+    try:
+        descriptors.append(os.open(root, directory_flags))
+        for part in relative_parts[:-1]:
+            descriptors.append(
+                os.open(part, directory_flags, dir_fd=descriptors[-1])
+            )
+        output_descriptor = os.open(
+            relative_parts[-1],
+            os.O_WRONLY | os.O_CREAT | no_follow | close_on_exec,
+            0o666,
+            dir_fd=descriptors[-1],
+        )
+        if not stat.S_ISREG(os.fstat(output_descriptor).st_mode):
+            raise ValueError("safe projection output must be a regular file")
+        _truncate_write_and_flush(output_descriptor, data)
+    except OSError as error:
+        raise ValueError("safe descriptor-anchored projection write failed") from error
+    finally:
+        if output_descriptor is not None:
+            os.close(output_descriptor)
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+def _write_projection_windows(root: Path, path: Path, data: bytes) -> None:
+    if not path.exists():
+        raise ValueError("Windows projection output must already exist")
+
+    api = _windows_api()
+    parent_handles = []
+    output_handle = None
+    output_descriptor = None
+    try:
+        root_handle = _windows_open_path_handle(
+            api,
+            root,
+            desired_access=api["FILE_READ_ATTRIBUTES"],
+            share_mode=api["FILE_SHARE_READ"] | api["FILE_SHARE_WRITE"],
+            directory=True,
+        )
+        parent_handles.append(root_handle)
+        root_final = _windows_validate_handle(
+            api, root_handle, label="root", contained_root=None
+        )
+
+        current = root
+        for part in path.relative_to(root).parts[:-1]:
+            current = current / part
+            parent_handle = _windows_open_path_handle(
+                api,
+                current,
+                desired_access=api["FILE_READ_ATTRIBUTES"],
+                share_mode=api["FILE_SHARE_READ"] | api["FILE_SHARE_WRITE"],
+                directory=True,
+            )
+            parent_handles.append(parent_handle)
+            _windows_validate_handle(
+                api,
+                parent_handle,
+                label=f"output parent {current}",
+                contained_root=root_final,
+            )
+
+        output_handle = _windows_open_path_handle(
+            api,
+            path,
+            desired_access=(
+                api["GENERIC_READ"]
+                | api["GENERIC_WRITE"]
+                | api["FILE_READ_ATTRIBUTES"]
+            ),
+            share_mode=0,
+            directory=False,
+        )
+        _windows_validate_handle(
+            api,
+            output_handle,
+            label="projection output",
+            contained_root=root_final,
+        )
+
+        import msvcrt
+
+        output_descriptor = msvcrt.open_osfhandle(
+            int(output_handle), os.O_WRONLY | getattr(os, "O_BINARY", 0)
+        )
+        output_handle = None
+        _truncate_write_and_flush(output_descriptor, data)
+        if not api["FlushFileBuffers"](msvcrt.get_osfhandle(output_descriptor)):
+            raise ctypes.WinError(ctypes.get_last_error())
+    except OSError as error:
+        raise ValueError("safe Windows projection write failed") from error
+    finally:
+        if output_descriptor is not None:
+            os.close(output_descriptor)
+        if output_handle is not None:
+            api["CloseHandle"](output_handle)
+        for handle in reversed(parent_handles):
+            api["CloseHandle"](handle)
+
+
+def _truncate_write_and_flush(descriptor: int, data: bytes) -> None:
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    os.ftruncate(descriptor, 0)
+    remaining = memoryview(data)
+    while remaining:
+        written = os.write(descriptor, remaining)
+        if written <= 0:
+            raise OSError("projection write made no progress")
+        remaining = remaining[written:]
+    os.fsync(descriptor)
+
+
+def _windows_api() -> dict[str, Any]:
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateFileW.argtypes = (
+        wintypes.LPCWSTR,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.HANDLE,
+    )
+    kernel32.CreateFileW.restype = wintypes.HANDLE
+    kernel32.GetFileInformationByHandleEx.argtypes = (
+        wintypes.HANDLE,
+        ctypes.c_int,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+    )
+    kernel32.GetFileInformationByHandleEx.restype = wintypes.BOOL
+    kernel32.GetFinalPathNameByHandleW.argtypes = (
+        wintypes.HANDLE,
+        wintypes.LPWSTR,
+        wintypes.DWORD,
+        wintypes.DWORD,
+    )
+    kernel32.GetFinalPathNameByHandleW.restype = wintypes.DWORD
+    kernel32.FlushFileBuffers.argtypes = (wintypes.HANDLE,)
+    kernel32.FlushFileBuffers.restype = wintypes.BOOL
+    kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+    kernel32.CloseHandle.restype = wintypes.BOOL
+    return {
+        "CreateFileW": kernel32.CreateFileW,
+        "GetFileInformationByHandleEx": kernel32.GetFileInformationByHandleEx,
+        "GetFinalPathNameByHandleW": kernel32.GetFinalPathNameByHandleW,
+        "FlushFileBuffers": kernel32.FlushFileBuffers,
+        "CloseHandle": kernel32.CloseHandle,
+        "GENERIC_READ": 0x80000000,
+        "GENERIC_WRITE": 0x40000000,
+        "FILE_READ_ATTRIBUTES": 0x00000080,
+        "FILE_SHARE_READ": 0x00000001,
+        "FILE_SHARE_WRITE": 0x00000002,
+        "OPEN_EXISTING": 3,
+        "FILE_FLAG_BACKUP_SEMANTICS": 0x02000000,
+        "FILE_FLAG_OPEN_REPARSE_POINT": 0x00200000,
+        "INVALID_HANDLE_VALUE": ctypes.c_void_p(-1).value,
+        "FILE_ATTRIBUTE_REPARSE_POINT": 0x00000400,
+        "FILE_ATTRIBUTE_TAG_INFO_CLASS": 9,
+    }
+
+
+def _windows_open_path_handle(
+    api: Mapping[str, Any],
+    path: Path,
+    desired_access: int,
+    share_mode: int,
+    directory: bool,
+) -> int:
+    flags = api["FILE_FLAG_OPEN_REPARSE_POINT"]
+    if directory:
+        flags |= api["FILE_FLAG_BACKUP_SEMANTICS"]
+    handle = api["CreateFileW"](
+        str(path),
+        desired_access,
+        share_mode,
+        None,
+        api["OPEN_EXISTING"],
+        flags,
+        None,
+    )
+    if handle == api["INVALID_HANDLE_VALUE"]:
+        error = ctypes.get_last_error()
+        if error in {2, 3} and not directory:
+            raise ValueError("Windows projection output must already exist")
+        raise ctypes.WinError(error)
+    return handle
+
+
+def _windows_validate_handle(
+    api: Mapping[str, Any],
+    handle: int,
+    label: str,
+    contained_root: Optional[PureWindowsPath],
+) -> PureWindowsPath:
+    tag = _windows_handle_reparse_tag(api, handle)
+    disposition = _windows_reparse_tag_disposition(tag)
+    if disposition in {"redirecting", "unsupported"}:
+        raise ValueError(
+            f"{label} has unsafe {disposition} reparse tag: {tag:#x}"
+        )
+    final_path = _windows_final_handle_path(api, handle)
+    if contained_root is not None:
+        try:
+            relative = final_path.relative_to(contained_root)
+        except ValueError as error:
+            raise ValueError(f"{label} resolves outside verified root") from error
+        if not relative.parts:
+            raise ValueError(f"{label} must be below verified root")
+    return final_path
+
+
+def _windows_handle_reparse_tag(api: Mapping[str, Any], handle: int) -> int:
+    from ctypes import wintypes
+
+    class FileAttributeTagInfo(ctypes.Structure):
+        _fields_ = (
+            ("FileAttributes", wintypes.DWORD),
+            ("ReparseTag", wintypes.DWORD),
+        )
+
+    information = FileAttributeTagInfo()
+    if not api["GetFileInformationByHandleEx"](
+        handle,
+        api["FILE_ATTRIBUTE_TAG_INFO_CLASS"],
+        ctypes.byref(information),
+        ctypes.sizeof(information),
+    ):
+        raise ctypes.WinError(ctypes.get_last_error())
+    if not information.FileAttributes & api["FILE_ATTRIBUTE_REPARSE_POINT"]:
+        return 0
+    return int(information.ReparseTag)
+
+
+def _windows_final_handle_path(
+    api: Mapping[str, Any], handle: int
+) -> PureWindowsPath:
+    function = api["GetFinalPathNameByHandleW"]
+    required = function(handle, None, 0, 0)
+    if required == 0:
+        raise ctypes.WinError(ctypes.get_last_error())
+    buffer = ctypes.create_unicode_buffer(required + 1)
+    written = function(handle, buffer, len(buffer), 0)
+    if written == 0 or written >= len(buffer):
+        raise ctypes.WinError(ctypes.get_last_error())
+    value = buffer.value
+    if value.startswith("\\\\?\\UNC\\"):
+        value = "\\\\" + value[8:]
+    elif value.startswith("\\\\?\\"):
+        value = value[4:]
+    return PureWindowsPath(value)
 
 
 def _concise_projection_diff(report: Mapping[str, object]) -> str:

@@ -23,6 +23,7 @@ from skills.registry.contracts import (
     validate_observations,
 )
 from skills.registry.resolver import resolve_registry, serializable_snapshot
+from skills.registry import projection as projection_module
 from skills.registry.projection import (
     build_public_projection,
     compare_snapshots,
@@ -34,6 +35,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "skills" / "capability-manifest.json"
 DISCOVERY_SOURCES = ROOT / "skills" / "registry" / "discovery-sources.json"
 GOVERNANCE_DECISIONS = ROOT / "skills" / "registry" / "governance-decisions.json"
+PUBLIC_PROJECTION = ROOT / "skills" / "registry" / "public-capabilities.json"
 AS_OF = "2026-08-12T12:00:00Z"
 
 
@@ -858,6 +860,9 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
         shutil.copyfile(
             GOVERNANCE_DECISIONS, registry / "governance-decisions.json"
         )
+        shutil.copyfile(
+            PUBLIC_PROJECTION, registry / "public-capabilities.json"
+        )
         return registry
 
     def test_public_projection_is_sanitized_and_informational(self) -> None:
@@ -931,8 +936,8 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 "capability_id": capability_id,
                 "fields": {
                     "lifecycle_state": {
-                        "old": "experimental",
-                        "new": "deprecated",
+                        "old": {"present": True, "value": "experimental"},
+                        "new": {"present": True, "value": "deprecated"},
                     }
                 },
             },
@@ -972,7 +977,10 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 )
                 self.assertEqual("material_drift", report["state"])
                 self.assertEqual(
-                    {"old": approved[field], "new": value},
+                    {
+                        "old": {"present": True, "value": approved[field]},
+                        "new": {"present": True, "value": value},
+                    },
                     report["changed_top_level_fields"][field],
                 )
 
@@ -984,8 +992,30 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
         report = compare_snapshots(approved, observed)
         change = report["changed_top_level_fields"]["optional_extension"]
         self.assertEqual("material_drift", report["state"])
-        self.assertIsNone(change["old"])
-        self.assertNotEqual(change["old"], change["new"])
+        self.assertEqual(
+            {
+                "old": {"present": True, "value": None},
+                "new": {"present": False},
+            },
+            change,
+        )
+
+    def test_missing_envelope_cannot_collide_with_present_json_value(self) -> None:
+        approved = build_public_projection(self.snapshot)
+        approved["optional_extension"] = {"present": False}
+        observed = deepcopy(approved)
+        del observed["optional_extension"]
+        report = compare_snapshots(approved, observed)
+        self.assertEqual(
+            {
+                "old": {
+                    "present": True,
+                    "value": {"present": False},
+                },
+                "new": {"present": False},
+            },
+            report["changed_top_level_fields"]["optional_extension"],
+        )
 
     def test_json_representation_difference_is_structurally_explained(self) -> None:
         approved = build_public_projection(self.snapshot)
@@ -998,7 +1028,10 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
         )
         self.assertEqual("material_drift", report["state"])
         self.assertEqual(
-            {"old": 1, "new": 1.0},
+            {
+                "old": {"present": True, "value": 1},
+                "new": {"present": True, "value": 1.0},
+            },
             report["changed_top_level_fields"]["optional_number"],
         )
 
@@ -1079,13 +1112,17 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 projection_main(
                     ["generate", "--root", str(root), "--as-of", AS_OF]
                 )
-            self.assertFalse((registry / "public-capabilities.json").exists())
+            self.assertEqual(
+                PUBLIC_PROJECTION.read_bytes(),
+                (registry / "public-capabilities.json").read_bytes(),
+            )
 
     def test_generate_rejects_reparse_output_parent_without_writing(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             registry = self.copy_registry_fixture(root)
             output = registry / "public-capabilities.json"
+            original_bytes = output.read_bytes()
 
             def simulated_reparse(path: Path) -> bool:
                 return path == registry.resolve()
@@ -1098,7 +1135,7 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 projection_main(
                     ["generate", "--root", str(root), "--as-of", AS_OF]
                 )
-            self.assertFalse(output.exists())
+            self.assertEqual(original_bytes, output.read_bytes())
 
     def test_generate_rejects_output_symlink_without_touching_target(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -1108,6 +1145,7 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
             external = base / "external-projection.json"
             external.write_bytes(b"external sentinel")
             output = registry / "public-capabilities.json"
+            output.unlink()
             try:
                 os.symlink(external, output)
             except (NotImplementedError, OSError) as error:
@@ -1118,6 +1156,104 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                     ["generate", "--root", str(root), "--as-of", AS_OF]
                 )
             self.assertEqual(b"external sentinel", external.read_bytes())
+
+    def test_generate_rejects_final_symlink_swap_after_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            root = base / "root"
+            registry = self.copy_registry_fixture(root)
+            external = base / "external-projection.json"
+            external.write_bytes(b"external sentinel")
+            real_projection_path = projection_module._projection_path
+
+            def swap_after_validation(resolved_root: Path) -> Path:
+                output = real_projection_path(resolved_root)
+                output.unlink()
+                os.symlink(external, output)
+                return output
+
+            with patch.object(
+                projection_module,
+                "_projection_path",
+                side_effect=swap_after_validation,
+            ), self.assertRaisesRegex(ValueError, "safe|reparse|redirect"):
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                )
+            self.assertEqual(b"external sentinel", external.read_bytes())
+            self.assertTrue((registry / "public-capabilities.json").is_symlink())
+
+    def test_generate_rejects_intermediate_directory_swap_after_validation(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            root = base / "root"
+            registry = self.copy_registry_fixture(root)
+            external_registry = base / "external-registry"
+            external_registry.mkdir()
+            external_output = external_registry / "public-capabilities.json"
+            external_output.write_bytes(b"external directory sentinel")
+            parked_registry = base / "parked-registry"
+            real_projection_path = projection_module._projection_path
+
+            def swap_parent_after_validation(resolved_root: Path) -> Path:
+                output = real_projection_path(resolved_root)
+                registry.rename(parked_registry)
+                os.symlink(
+                    external_registry,
+                    registry,
+                    target_is_directory=True,
+                )
+                return output
+
+            with patch.object(
+                projection_module,
+                "_projection_path",
+                side_effect=swap_parent_after_validation,
+            ), self.assertRaisesRegex(ValueError, "safe|reparse|outside"):
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                )
+            self.assertEqual(
+                b"external directory sentinel", external_output.read_bytes()
+            )
+
+    @unittest.skipUnless(os.name == "nt", "Windows-specific fail-closed rule")
+    def test_windows_generate_requires_existing_projection(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            (registry / "public-capabilities.json").unlink()
+            with self.assertRaisesRegex(ValueError, "must already exist"):
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                )
+
+    def test_windows_reparse_tag_classifier_distinguishes_cloud_placeholders(
+        self,
+    ) -> None:
+        redirecting = (0xA0000003, 0xA000000C, 0xA0000027)
+        cloud_placeholders = (0x9000001A, 0x9000F01A, 0x80000021)
+        for tag in redirecting:
+            with self.subTest(tag=hex(tag)):
+                self.assertEqual(
+                    "redirecting",
+                    projection_module._windows_reparse_tag_disposition(tag),
+                )
+        for tag in cloud_placeholders:
+            with self.subTest(tag=hex(tag)):
+                self.assertEqual(
+                    "nonredirecting_cloud",
+                    projection_module._windows_reparse_tag_disposition(tag),
+                )
+        self.assertEqual(
+            "unsupported",
+            projection_module._windows_reparse_tag_disposition(0x80000099),
+        )
+        self.assertEqual(
+            "ordinary", projection_module._windows_reparse_tag_disposition(0)
+        )
 
     def test_cli_generate_check_and_compare_are_deterministic_and_non_mutating(
         self,
