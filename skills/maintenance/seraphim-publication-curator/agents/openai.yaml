@@ -1,0 +1,4 @@
+interface:
+  display_name: "Seraphim Publication Curator"
+  short_description: "Curate safe, reviewable Seraphim releases"
+  default_prompt: "Use $seraphim-publication-curator to classify these Seraphim artifacts and prepare a public-safe publication pull request."

@@ -10,8 +10,8 @@ tested is design evidence—not a substitute for reviewing the package body.
 
 ## Published packages
 
-Fourteen reviewed public packages are currently available. Four are normalized
-authoritative exports; the remaining ten are explicitly labeled reconstructed
+Fifteen reviewed public packages are currently available. Four are normalized
+authoritative exports; the remaining eleven are explicitly labeled reconstructed
 public editions.
 
 | Skill | Role | Package |
@@ -30,6 +30,7 @@ public editions.
 | Seraphim Legal Intelligence | Legal research owner | `legal/seraphim-legal-intelligence/` |
 | Repo Surgeon | Repository repair owner | `maintenance/repo-surgeon/` |
 | Workspace Auditor | Read-only workspace auditor | `maintenance/workspace-auditor/` |
+| Seraphim Publication Curator | Public-release curator | `maintenance/seraphim-publication-curator/` |
 
 Each directory is the installable package root. Copy only the selected package
 directory into a compatible Skills location; do not copy the category wrapper.
