@@ -4,12 +4,13 @@ from .contracts import (
     content_digest,
     validate_manifest,
 )
-from .resolver import resolve_registry
+from .resolver import resolve_registry, serializable_snapshot
 
 __all__ = [
     "RegistryValidationError",
     "canonical_json",
     "content_digest",
     "resolve_registry",
+    "serializable_snapshot",
     "validate_manifest",
 ]

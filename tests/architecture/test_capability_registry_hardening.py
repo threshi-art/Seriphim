@@ -16,7 +16,7 @@ from skills.registry.contracts import (
     validate_manifest,
     validate_observations,
 )
-from skills.registry.resolver import resolve_registry
+from skills.registry.resolver import resolve_registry, serializable_snapshot
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -438,7 +438,11 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
         self.assertEqual(
             first["snapshot_digest"],
             content_digest(
-                {key: value for key, value in first.items() if key != "snapshot_digest"}
+                {
+                    key: value
+                    for key, value in serializable_snapshot(first).items()
+                    if key != "snapshot_digest"
+                }
             ),
         )
         self.assertEqual(
@@ -486,6 +490,69 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
             item["authorization"]["read_or_write"] = "write"
         with self.assertRaises((AttributeError, TypeError)):
             snapshot["capabilities"].append(item)
+
+    def test_dict_base_class_cannot_bypass_snapshot_immutability(self) -> None:
+        snapshot = resolve_registry(
+            self.manifest, self.sources, self.decisions, [], AS_OF
+        )
+        item = capability(snapshot, "seraphim-action-controller")
+        authorization = item["authorization"]
+        digest = snapshot["snapshot_digest"]
+        original_access = authorization["read_or_write"]
+
+        bypass_attempts = (
+            lambda: dict.__setitem__(
+                snapshot, "as_of", "2027-01-01T00:00:00Z"
+            ),
+            lambda: dict.__setitem__(
+                authorization, "read_or_write", "write"
+            ),
+            lambda: dict.update(
+                authorization, {"read_or_write": "write"}
+            ),
+            lambda: list.append(snapshot["capabilities"], item),
+        )
+        for attempt in bypass_attempts:
+            with self.subTest(attempt=attempt), self.assertRaises(TypeError):
+                attempt()
+
+        self.assertEqual(original_access, authorization["read_or_write"])
+        self.assertEqual(digest, snapshot["snapshot_digest"])
+        serialized = serializable_snapshot(snapshot)
+        self.assertEqual(
+            digest,
+            content_digest(
+                {
+                    key: value
+                    for key, value in serialized.items()
+                    if key != "snapshot_digest"
+                }
+            ),
+        )
+
+    def test_explicit_serialization_returns_an_isolated_plain_copy(self) -> None:
+        snapshot = resolve_registry(
+            self.manifest, self.sources, self.decisions, [], AS_OF
+        )
+        serialized = serializable_snapshot(snapshot)
+        self.assertIs(dict, type(serialized))
+        self.assertIs(list, type(serialized["capabilities"]))
+        self.assertIs(dict, type(serialized["capabilities"][0]))
+        self.assertEqual(
+            snapshot["snapshot_digest"],
+            content_digest(
+                {
+                    key: value
+                    for key, value in serialized.items()
+                    if key != "snapshot_digest"
+                }
+            ),
+        )
+
+        serialized["capabilities"][0]["display_name"] = "mutable copy"
+        self.assertNotEqual(
+            "mutable copy", snapshot["capabilities"][0]["display_name"]
+        )
 
     def test_repository_declaration_only_creates_unverified_unknown_runtime_state(
         self,
@@ -606,6 +673,42 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
             ],
         )
 
+    def test_expired_successor_reactivates_its_indefinite_predecessor(
+        self,
+    ) -> None:
+        decisions = deepcopy(self.decisions)
+        prior = {
+            **valid_decision("prior-name", "override_field"),
+            "target_capability_id": "seraphim-action-controller",
+            "field": "display_name",
+            "new_value": "Indefinite Prior Name",
+        }
+        successor = {
+            **valid_decision(
+                "temporary-name", "override_field", "2026-08-12T01:00:00Z"
+            ),
+            "target_capability_id": "seraphim-action-controller",
+            "created_at": "2026-08-12T01:00:00Z",
+            "expires_at": "2026-08-12T02:00:00Z",
+            "supersedes_decision_id": "prior-name",
+            "field": "display_name",
+            "new_value": "Temporary Name",
+        }
+        decisions["decisions"].extend([prior, successor])
+
+        snapshot = resolve_registry(
+            self.manifest,
+            self.sources,
+            decisions,
+            [],
+            AS_OF,
+            scope="public-capabilities",
+        )
+        item = capability(snapshot, "seraphim-action-controller")
+        self.assertEqual("Indefinite Prior Name", item["display_name"])
+        self.assertIn("prior-name", item["governance_decision_ids"])
+        self.assertNotIn("temporary-name", item["governance_decision_ids"])
+
     def test_missing_superseded_decision_fails_closed(self) -> None:
         decisions = with_include(self.decisions, "seraphim-life-operations")
         decisions["decisions"][-1]["supersedes_decision_id"] = "missing-decision"
@@ -635,7 +738,12 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
         }
         decisions["decisions"].extend([prior, later])
         without_supersession = resolve_registry(
-            self.manifest, self.sources, decisions, [], AS_OF
+            self.manifest,
+            self.sources,
+            decisions,
+            [],
+            AS_OF,
+            scope="public-capabilities",
         )
         self.assertEqual(
             "Prior Name",
@@ -646,8 +754,68 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
 
         decisions["decisions"][-1]["supersedes_decision_id"] = "prior-name"
         with_supersession = resolve_registry(
-            self.manifest, self.sources, decisions, [], AS_OF
+            self.manifest,
+            self.sources,
+            decisions,
+            [],
+            AS_OF,
+            scope="public-capabilities",
         )
         item = capability(with_supersession, "seraphim-action-controller")
         self.assertEqual("Later Name", item["display_name"])
         self.assertNotIn("prior-name", item["governance_decision_ids"])
+
+    def test_canonical_resolution_preserves_but_does_not_apply_scoped_override(
+        self,
+    ) -> None:
+        decisions = deepcopy(self.decisions)
+        override = {
+            **valid_decision("public-name", "override_field"),
+            "target_capability_id": "seraphim-action-controller",
+            "field": "display_name",
+            "new_value": "Public Projection Name",
+        }
+        decisions["decisions"].append(override)
+
+        snapshot = resolve_registry(
+            self.manifest, self.sources, decisions, [], AS_OF
+        )
+        item = capability(snapshot, "seraphim-action-controller")
+        self.assertEqual("canonical", snapshot["scope"])
+        self.assertEqual("Seraphim Action Controller", item["display_name"])
+        self.assertIn("public-name", item["governance_decision_ids"])
+
+    def test_override_applies_only_to_matching_resolution_scope(self) -> None:
+        decisions = deepcopy(self.decisions)
+        override = {
+            **valid_decision("public-name", "override_field"),
+            "target_capability_id": "seraphim-action-controller",
+            "field": "display_name",
+            "new_value": "Public Projection Name",
+        }
+        decisions["decisions"].append(override)
+
+        unrelated = resolve_registry(
+            self.manifest,
+            self.sources,
+            decisions,
+            [],
+            AS_OF,
+            scope="internal-capabilities",
+        )
+        matching = resolve_registry(
+            self.manifest,
+            self.sources,
+            decisions,
+            [],
+            AS_OF,
+            scope="public-capabilities",
+        )
+        self.assertEqual(
+            "Seraphim Action Controller",
+            capability(unrelated, "seraphim-action-controller")["display_name"],
+        )
+        self.assertEqual(
+            "Public Projection Name",
+            capability(matching, "seraphim-action-controller")["display_name"],
+        )

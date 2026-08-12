@@ -3,6 +3,7 @@
 from collections.abc import Mapping
 from copy import deepcopy
 from datetime import datetime, timezone
+from types import MappingProxyType
 from typing import Any
 
 from .contracts import (
@@ -20,39 +21,17 @@ REPOSITORY_SOURCE_ID = "repository-capability-manifest"
 SNAPSHOT_SCHEMA_VERSION = 1
 
 
-class _FrozenDict(dict):
-    """JSON-serializable dictionary that rejects mutation at every entry point."""
-
-    def _immutable(self, *args: object, **kwargs: object) -> None:
-        raise TypeError("registry snapshots are immutable")
-
-    __setitem__ = _immutable
-    __delitem__ = _immutable
-    __ior__ = _immutable
-    clear = _immutable
-    pop = _immutable
-    popitem = _immutable
-    setdefault = _immutable
-    update = _immutable
-
-    def __copy__(self) -> "_FrozenDict":
-        return self
-
-    def __deepcopy__(self, memo: dict[int, object]) -> "_FrozenDict":
-        return self
-
-    def copy(self) -> "_FrozenDict":
-        return self
-
-
 def resolve_registry(
     manifest: object,
     sources: object,
     decisions: object,
     observations: object,
     as_of: object,
+    scope: str = "canonical",
 ) -> Mapping[str, object]:
     """Validate inputs and resolve a content-addressed immutable snapshot."""
+    if not isinstance(scope, str) or not scope.strip():
+        raise RegistryValidationError("scope must be a non-empty string")
     declarations = _validated_manifest_records(manifest)
     discovery_sources = _validated_source_records(sources)
     decision_records = _validated_decision_records(decisions, declarations)
@@ -69,7 +48,7 @@ def resolve_registry(
     as_of_key = _timestamp_key(as_of)
 
     _reject_contradictory_observations(observation_records)
-    superseded_ids = _effective_superseded_ids(decision_records, as_of_key)
+    superseded_ids = _active_superseded_ids(current_decisions)
     applicable_decisions = sorted(
         (
             decision
@@ -84,11 +63,12 @@ def resolve_registry(
         for capability_id, declaration in declarations.items()
     }
     _apply_observations(resolved_by_id, observation_records, as_of_key)
-    _apply_decisions(resolved_by_id, applicable_decisions)
+    _apply_decisions(resolved_by_id, applicable_decisions, scope)
 
     snapshot = {
         "schema_version": SNAPSHOT_SCHEMA_VERSION,
         "as_of": as_of,
+        "scope": scope,
         "input_digests": {
             "manifest": content_digest(
                 _normalized_manifest_input(manifest, declarations)
@@ -113,6 +93,14 @@ def resolve_registry(
     }
     snapshot["snapshot_digest"] = content_digest(snapshot)
     return _freeze(snapshot)
+
+
+def serializable_snapshot(snapshot: Mapping[str, object]) -> dict[str, object]:
+    """Return an isolated plain JSON-compatible copy of an immutable snapshot."""
+    thawed = _thaw(snapshot)
+    if not isinstance(thawed, dict):
+        raise TypeError("snapshot must be a mapping")
+    return thawed
 
 
 def _validated_manifest_records(manifest: object) -> dict[str, dict]:
@@ -264,23 +252,23 @@ def _apply_observations(
         )
 
 
-def _effective_superseded_ids(
-    decisions: list[dict], as_of_key: tuple[datetime, int]
-) -> set[str]:
+def _active_superseded_ids(decisions: list[dict]) -> set[str]:
     return {
         decision["supersedes_decision_id"]
         for decision in decisions
         if decision.get("supersedes_decision_id") is not None
-        and _timestamp_key(decision["effective_at"]) <= as_of_key
     }
 
 
 def _apply_decisions(
-    resolved_by_id: dict[str, dict], decisions: list[dict]
+    resolved_by_id: dict[str, dict], decisions: list[dict], scope: str
 ) -> None:
     for decision in decisions:
         resolved = resolved_by_id[decision["target_capability_id"]]
-        if decision["operation"] == "override_field":
+        if (
+            decision["operation"] == "override_field"
+            and decision["scope"] == scope
+        ):
             resolved[decision["field"]] = deepcopy(decision["new_value"])
         resolved["governance_decision_ids"].append(decision["decision_id"])
 
@@ -337,9 +325,19 @@ def _normalized_decisions_input(decisions: object, records: list[dict]) -> objec
 
 def _freeze(value: Any) -> Any:
     if isinstance(value, dict):
-        return _FrozenDict({key: _freeze(item) for key, item in value.items()})
+        return MappingProxyType(
+            {key: _freeze(item) for key, item in value.items()}
+        )
     if isinstance(value, list):
         return tuple(_freeze(item) for item in value)
     if isinstance(value, tuple):
         return tuple(_freeze(item) for item in value)
     return value
+
+
+def _thaw(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {key: _thaw(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_thaw(item) for item in value]
+    return deepcopy(value)
