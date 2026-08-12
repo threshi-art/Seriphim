@@ -34,9 +34,29 @@ files. Those materials remain excluded regardless of source location.
 
 ## Validation scope
 
-The packages are checked by `tests/skills/test_public_skill_packages.py` and the
+The packages are checked by the `tests/skills/test_public_*.py` suites and the
 platform Skill validator. Synthetic routing fixtures record reviewed expected
 outcomes, but do not claim live independent-agent evaluation.
+
+## Reviewed live-agent exports
+
+These packages were exported from the owner's current Seraphim Core skill
+attachments and reviewed as text before publication:
+
+| Public package | Provenance class | Public treatment |
+|---|---|---|
+| Seraphim Mission Intake | Owner-supplied live export | Trigger normalized; private-capability dependency made conditional |
+| Seraphim Evaluation Harness | Owner-supplied live export | Bytecode omitted; synthetic destinations neutralized |
+| Software Architect | Owner-supplied live export | Trigger and interface metadata normalized |
+| Technical Project Manager | Owner-supplied live export | Trigger metadata normalized |
+| AI Solutions Engineer | Owner-supplied live export | Trigger metadata normalized |
+| Technical Lead | Owner-supplied live export | Trigger metadata normalized |
+| Cybersecurity Specialist | Owner-supplied live export | Trigger metadata normalized; defensive authorization boundary preserved |
+
+The public packages contain no installed Skill IDs, Agent configuration, memory,
+account identifiers, or private source material. The Evaluation Harness omits
+generated Python bytecode and retains only source, rubric, configuration, and
+synthetic fixtures.
 
 ## Reconstructed public editions
 

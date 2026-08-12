@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cybersecurity Specialist"
+  short_description: "Assess and integrate security, privacy, and compliance controls"
+  default_prompt: "Use $cybersecurity-specialist to assess the risks and secure this system."

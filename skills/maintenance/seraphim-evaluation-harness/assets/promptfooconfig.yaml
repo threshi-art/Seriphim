@@ -1,0 +1,22 @@
+description: Seraphim control-plane regression harness
+
+prompts:
+  - "{{prompt}}"
+
+providers:
+  # Replace with the real Seraphim API or local provider adapter.
+  - id: file://provider.js
+    label: seraphim-candidate
+
+tests: file://seraphim-tests.yaml
+
+defaultTest:
+  options:
+    transform: output.trim()
+
+evaluateOptions:
+  maxConcurrency: 4
+
+outputPath:
+  - results.json
+  - results.html

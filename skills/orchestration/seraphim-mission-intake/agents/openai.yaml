@@ -1,0 +1,4 @@
+interface:
+  display_name: "Seraphim Mission Intake"
+  short_description: "Route requests with proportionate depth and control"
+  default_prompt: "Use $seraphim-mission-intake to classify and route this request."

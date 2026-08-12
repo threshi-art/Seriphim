@@ -1,0 +1,4 @@
+interface:
+  display_name: "Seraphim Evaluation Harness"
+  short_description: "Test routing, safety, capability, and action truthfulness"
+  default_prompt: "Use $seraphim-evaluation-harness to evaluate this Seraphim build."

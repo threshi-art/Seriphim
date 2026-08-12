@@ -24,8 +24,9 @@ because a historical chat reported that it was created or validated.
 Context Sentinel, Semantic Priority Router, Seraphim Operator Routing, Action
 Controller, and Skill Ecosystem Governor manage continuity, intent
 classification, public role assignment, external-effect state, and replay
-auditing. Chief of Staff remains a specified internal architecture role rather
-than a standalone public package.
+auditing. Mission Intake provides the silent owner-and-depth gate before those
+specialists run. Chief of Staff remains a specified internal architecture role
+rather than a standalone public package.
 
 ### Evidence and Analysis
 
@@ -48,6 +49,16 @@ read-only inventory and evidence-backed hygiene findings. Audit authority does
 not imply mutation authority, and both packages preserve unrelated user work.
 Seraphim Publication Curator owns public-release classification, reconciliation,
 and exact-head approval discipline; it does not inherit general repair authority.
+Seraphim Evaluation Harness owns observable routing, injection-resistance,
+capability-truthfulness, and operational-status regression gates.
+
+### Engineering and Security
+
+Software Architect owns system structure; AI Solutions Engineer owns detailed
+AI-system design; Technical Lead owns engineering execution; Technical Project
+Manager owns delivery governance; and Cybersecurity Specialist owns authorized
+defensive security judgment. Cross-functional work retains one primary owner
+and gives each supporting specialist a bounded deliverable.
 
 ### Editorial Quality
 

@@ -40,6 +40,18 @@
       "validation": "tests/skills/test_public_orchestration_skills.py"
     },
     {
+      "id": "seraphim-mission-intake",
+      "name": "Seraphim Mission Intake",
+      "category": "orchestration",
+      "status": "packaged",
+      "owner_role": "router",
+      "public_package": true,
+      "package_path": "skills/orchestration/seraphim-mission-intake",
+      "provenance": "authoritative-live-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_operational_skills.py"
+    },
+    {
       "id": "chief-of-staff",
       "name": "Chief of Staff",
       "category": "orchestration",
@@ -220,6 +232,78 @@
       "provenance": "reconstructed-public-edition",
       "version": "1.0.0",
       "validation": "tests/skills/test_public_specialized_skills.py"
+    },
+    {
+      "id": "seraphim-evaluation-harness",
+      "name": "Seraphim Evaluation Harness",
+      "category": "maintenance",
+      "status": "packaged",
+      "owner_role": "auditor",
+      "public_package": true,
+      "package_path": "skills/maintenance/seraphim-evaluation-harness",
+      "provenance": "authoritative-live-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_operational_skills.py"
+    },
+    {
+      "id": "software-architect",
+      "name": "Software Architect",
+      "category": "engineering",
+      "status": "packaged",
+      "owner_role": "primary",
+      "public_package": true,
+      "package_path": "skills/engineering/software-architect",
+      "provenance": "authoritative-live-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_operational_skills.py"
+    },
+    {
+      "id": "technical-project-manager",
+      "name": "Technical Project Manager",
+      "category": "engineering",
+      "status": "packaged",
+      "owner_role": "primary",
+      "public_package": true,
+      "package_path": "skills/engineering/technical-project-manager",
+      "provenance": "authoritative-live-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_operational_skills.py"
+    },
+    {
+      "id": "ai-solutions-engineer",
+      "name": "AI Solutions Engineer",
+      "category": "engineering",
+      "status": "packaged",
+      "owner_role": "primary",
+      "public_package": true,
+      "package_path": "skills/engineering/ai-solutions-engineer",
+      "provenance": "authoritative-live-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_operational_skills.py"
+    },
+    {
+      "id": "technical-lead",
+      "name": "Technical Lead",
+      "category": "engineering",
+      "status": "packaged",
+      "owner_role": "primary",
+      "public_package": true,
+      "package_path": "skills/engineering/technical-lead",
+      "provenance": "authoritative-live-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_operational_skills.py"
+    },
+    {
+      "id": "cybersecurity-specialist",
+      "name": "Cybersecurity Specialist",
+      "category": "security",
+      "status": "packaged",
+      "owner_role": "primary",
+      "public_package": true,
+      "package_path": "skills/security/cybersecurity-specialist",
+      "provenance": "authoritative-live-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_public_operational_skills.py"
     },
     {
       "id": "personal-writing-style",

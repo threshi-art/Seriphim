@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Solutions Engineer"
+  short_description: "Design scalable, responsible AI integrations and pipelines"
+  default_prompt: "Use $ai-solutions-engineer to evaluate and design this AI integration."

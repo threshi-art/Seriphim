@@ -1,0 +1,4 @@
+interface:
+  display_name: "Software Architect"
+  short_description: "Design scalable, secure, maintainable software systems"
+  default_prompt: "Use $software-architect to design a scalable architecture for this system."
