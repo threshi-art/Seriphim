@@ -84,6 +84,8 @@ GOVERNANCE_LEDGER_BASELINE_ENV = "SERAPHIM_GOVERNANCE_LEDGER_BASELINE"
 SAFE_GIT_BASELINE_REF = re.compile(
     r"^[A-Za-z0-9][A-Za-z0-9._/-]*(?:\^[0-9]*)?$"
 )
+GITHUB_EVENT_SHA = re.compile(r"^[0-9a-fA-F]{40}$")
+GITHUB_INITIAL_PUSH_BEFORE_SHA = "0" * 40
 
 
 def build_public_projection(snapshot: Mapping[str, object]) -> dict[str, object]:
@@ -205,6 +207,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     check_ledger = commands.add_parser("check-ledger")
     check_ledger.add_argument("--root", type=Path, default=Path("."))
     check_ledger.add_argument("--baseline")
+    check_ledger.add_argument("--event-name")
+    check_ledger.add_argument("--push-before")
+    check_ledger.add_argument("--pull-request-base")
 
     compare = commands.add_parser("compare")
     compare.add_argument("--approved", type=Path, required=True)
@@ -232,17 +237,40 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 0
     if args.command == "check-ledger":
         root = _resolved_root(args.root)
-        baseline = args.baseline or os.environ.get(
-            GOVERNANCE_LEDGER_BASELINE_ENV
-        )
-        if not baseline:
+        baseline = args.baseline
+        empty_history = False
+        if args.event_name:
+            if baseline:
+                print(
+                    "governance ledger baseline must not be combined with "
+                    "event baseline options",
+                    file=sys.stderr,
+                )
+                return 2
+            try:
+                baseline = select_governance_ledger_baseline(
+                    args.event_name,
+                    push_before=args.push_before,
+                    pull_request_base=args.pull_request_base,
+                )
+            except ValueError as error:
+                print(
+                    f"governance ledger baseline selection failed: {error}",
+                    file=sys.stderr,
+                )
+                return 2
+            empty_history = baseline is None
+        elif not baseline:
+            baseline = os.environ.get(GOVERNANCE_LEDGER_BASELINE_ENV)
+        if not baseline and not empty_history:
             print(
                 "governance ledger baseline is required via --baseline or "
                 + GOVERNANCE_LEDGER_BASELINE_ENV,
                 file=sys.stderr,
             )
             return 2
-        _validate_git_baseline_ref(baseline)
+        if baseline is not None:
+            _validate_git_baseline_ref(baseline)
         try:
             _check_governance_ledger_against_git(root, baseline)
         except (RegistryValidationError, ValueError) as error:
@@ -473,14 +501,43 @@ def _governance_decisions_path(root: Path) -> Path:
 
 
 def _check_governance_ledger_against_git(
-    root: Path, baseline_ref: str
+    root: Path, baseline_ref: Optional[str]
 ) -> None:
-    previous_payload = _governance_ledger_from_git(root, baseline_ref)
+    previous_payload = (
+        _governance_ledger_from_git(root, baseline_ref)
+        if baseline_ref is not None
+        else {"schema_version": 1, "decisions": []}
+    )
     current_payload = _read_json(_governance_decisions_path(root))
     capability_ids = validate_manifest(_read_json(_manifest_path(root)))
     validate_governance_ledger(
         previous_payload, current_payload, capability_ids
     )
+
+
+def select_governance_ledger_baseline(
+    event_name: str,
+    *,
+    push_before: Optional[str],
+    pull_request_base: Optional[str],
+) -> Optional[str]:
+    """Select the immutable ledger baseline represented by a GitHub event."""
+    if event_name == "push":
+        before = _validate_github_event_sha(push_before, "push before")
+        if before == GITHUB_INITIAL_PUSH_BEFORE_SHA:
+            return None
+        return before
+    if event_name == "pull_request":
+        return _validate_github_event_sha(
+            pull_request_base, "pull request base"
+        )
+    raise ValueError(f"unsupported GitHub event: {event_name}")
+
+
+def _validate_github_event_sha(value: object, label: str) -> str:
+    if not isinstance(value, str) or not GITHUB_EVENT_SHA.fullmatch(value):
+        raise ValueError(f"{label} must be a 40-character hexadecimal SHA")
+    return value
 
 
 def _governance_ledger_from_git(root: Path, baseline_ref: str) -> object:

@@ -2320,3 +2320,181 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                         "HEAD:../../untrusted-path",
                     ]
                 )
+
+    def test_push_event_ledger_check_uses_state_before_multi_commit_push(
+        self,
+    ) -> None:
+        invalid_changes = {}
+        baseline_payload = json.loads(
+            GOVERNANCE_DECISIONS.read_text(encoding="utf-8")
+        )
+        removed = deepcopy(baseline_payload)
+        del removed["decisions"][0]
+        invalid_changes["missing prior decision"] = removed
+
+        rewritten = deepcopy(baseline_payload)
+        rewritten["decisions"][0]["reason"] = "rewritten history"
+        invalid_changes["rewritten prior decision"] = rewritten
+
+        reordered = deepcopy(baseline_payload)
+        reordered["decisions"].reverse()
+        invalid_changes["prior decision order changed"] = reordered
+
+        for expected_error, changed_payload in invalid_changes.items():
+            with self.subTest(
+                expected_error=expected_error
+            ), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                registry = self.copy_registry_fixture(root)
+                self._initialize_registry_git_fixture(root)
+                baseline = self._commit_registry_fixture(root, "baseline")
+
+                ledger_path = registry / "governance-decisions.json"
+                ledger_path.write_text(
+                    json.dumps(changed_payload, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                self._commit_registry_fixture(root, "rewrite ledger")
+                (root / "later-change.txt").write_text(
+                    "later commit does not touch the ledger\n",
+                    encoding="utf-8",
+                )
+                self._commit_registry_fixture(root, "later unrelated change")
+
+                stderr = io.StringIO()
+                with redirect_stderr(stderr):
+                    result = self._event_ledger_check(
+                        root,
+                        event_name="push",
+                        push_before=baseline,
+                    )
+                self.assertEqual(1, result)
+                self.assertIn(expected_error, stderr.getvalue())
+
+    def test_push_event_ledger_check_accepts_pre_ledger_baseline_as_empty(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            ledger_path = registry / "governance-decisions.json"
+            ledger_bytes = ledger_path.read_bytes()
+            ledger_path.unlink()
+            self._initialize_registry_git_fixture(root)
+            baseline = self._commit_registry_fixture(root, "pre-ledger baseline")
+            ledger_path.write_bytes(ledger_bytes)
+            self._commit_registry_fixture(root, "introduce ledger")
+
+            self.assertEqual(
+                0,
+                self._event_ledger_check(
+                    root,
+                    event_name="push",
+                    push_before=baseline,
+                ),
+            )
+
+    def test_initial_push_zero_sha_checks_against_empty_history(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.copy_registry_fixture(root)
+
+            self.assertEqual(
+                0,
+                self._event_ledger_check(
+                    root,
+                    event_name="push",
+                    push_before="0" * 40,
+                ),
+            )
+
+    def test_push_event_ledger_check_fails_when_nonzero_baseline_unavailable(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.copy_registry_fixture(root)
+            self._initialize_registry_git_fixture(root)
+            self._commit_registry_fixture(root, "current")
+            stderr = io.StringIO()
+
+            with redirect_stderr(stderr):
+                result = self._event_ledger_check(
+                    root,
+                    event_name="push",
+                    push_before="f" * 40,
+                )
+
+            self.assertEqual(1, result)
+            self.assertIn("could not be inspected", stderr.getvalue())
+
+    def test_ci_wires_event_baselines_without_head_parent_fallback(self) -> None:
+        workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("fetch-depth: 0", workflow)
+        self.assertIn("PUSH_BEFORE_SHA: ${{ github.event.before }}", workflow)
+        self.assertIn(
+            "PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}", workflow
+        )
+        self.assertIn('--event-name "$GITHUB_EVENT_NAME"', workflow)
+        self.assertIn('--push-before "$PUSH_BEFORE_SHA"', workflow)
+        self.assertIn('--pull-request-base "$PR_BASE_SHA"', workflow)
+        self.assertNotIn("HEAD^", workflow)
+
+    def _initialize_registry_git_fixture(self, root: Path) -> None:
+        subprocess.run(["git", "init", "--quiet"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "config", "user.name", "Registry Test"],
+            cwd=root,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.email", "registry@example.invalid"],
+            cwd=root,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "core.autocrlf", "false"],
+            cwd=root,
+            check=True,
+        )
+
+    def _commit_registry_fixture(self, root: Path, message: str) -> str:
+        subprocess.run(["git", "add", "."], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "--quiet", "-m", message],
+            cwd=root,
+            check=True,
+        )
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
+    def _event_ledger_check(
+        self,
+        root: Path,
+        *,
+        event_name: str,
+        push_before: str = "",
+        pull_request_base: str = "",
+    ) -> int:
+        arguments = [
+            "check-ledger",
+            "--root",
+            str(root),
+            "--event-name",
+            event_name,
+            "--push-before",
+            push_before,
+            "--pull-request-base",
+            pull_request_base,
+        ]
+        try:
+            return projection_main(arguments)
+        except SystemExit as error:
+            return int(error.code)

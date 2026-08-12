@@ -31,22 +31,15 @@ jobs:
           tests.skills.test_public_operational_skills
       - name: Verify generated capability projection
         run: python -m skills.registry.projection check --root .
-      - name: Select governance ledger baseline
-        id: governance-baseline
-        shell: bash
-        env:
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
-            printf 'ref=%s\n' "$PR_BASE_SHA" >> "$GITHUB_OUTPUT"
-          elif git rev-parse --verify HEAD^ >/dev/null 2>&1; then
-            printf 'ref=HEAD^\n' >> "$GITHUB_OUTPUT"
-          fi
       - name: Verify append-only governance ledger
-        if: steps.governance-baseline.outputs.ref != ''
         env:
-          SERAPHIM_GOVERNANCE_LEDGER_BASELINE: ${{ steps.governance-baseline.outputs.ref }}
-        run: python -m skills.registry.projection check-ledger --root .
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: >-
+          python -m skills.registry.projection check-ledger --root .
+          --event-name "$GITHUB_EVENT_NAME"
+          --push-before "$PUSH_BEFORE_SHA"
+          --pull-request-base "$PR_BASE_SHA"
 
   registry-windows:
     name: Capability registry (Windows)
