@@ -1,8 +1,12 @@
+from contextlib import redirect_stderr, redirect_stdout
 from copy import deepcopy
 from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
+import io
 import json
 from pathlib import Path
+import shutil
+import tempfile
 import unittest
 
 from skills.registry.contracts import (
@@ -17,6 +21,11 @@ from skills.registry.contracts import (
     validate_observations,
 )
 from skills.registry.resolver import resolve_registry, serializable_snapshot
+from skills.registry.projection import (
+    build_public_projection,
+    compare_snapshots,
+    main as projection_main,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -819,3 +828,189 @@ class CapabilityRegistryResolverTests(unittest.TestCase):
             "Public Projection Name",
             capability(matching, "seraphim-action-controller")["display_name"],
         )
+
+
+class CapabilityRegistryProjectionTests(unittest.TestCase):
+    def setUp(self) -> None:
+        manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        sources = json.loads(DISCOVERY_SOURCES.read_text(encoding="utf-8"))
+        decisions = json.loads(GOVERNANCE_DECISIONS.read_text(encoding="utf-8"))
+        self.snapshot = resolve_registry(
+            manifest,
+            sources,
+            decisions,
+            [],
+            AS_OF,
+            scope="public-capabilities",
+        )
+
+    def test_public_projection_is_sanitized_and_informational(self) -> None:
+        projection = build_public_projection(self.snapshot)
+        ids = {row["capability_id"] for row in projection["capabilities"]}
+        self.assertNotIn("seraphim-life-operations", ids)
+        self.assertNotIn("personal-writing-style", ids)
+        self.assertEqual("informational_projection", projection["authority"])
+        self.assertTrue(
+            projection["not_authoritative_for_runtime_or_authorization"]
+        )
+        serialized = canonical_json(projection).lower()
+        for prohibited in (
+            "authorization_scope",
+            "approval_requirement",
+            "data_boundary",
+            "credential",
+            "conversation",
+        ):
+            self.assertNotIn(prohibited, serialized)
+        self.assertEqual(
+            {
+                "capability_id",
+                "display_name",
+                "category",
+                "version",
+                "package_status",
+                "lifecycle_state",
+                "provenance",
+                "license_status",
+                "publisher",
+                "maintainer",
+                "source_ids",
+            },
+            set(projection["capabilities"][0]),
+        )
+
+    def test_projection_uses_public_scope_and_omits_internal_entries(self) -> None:
+        canonical = serializable_snapshot(self.snapshot)
+        canonical["scope"] = "canonical"
+        with self.assertRaisesRegex(ValueError, "public-capabilities"):
+            build_public_projection(canonical)
+
+        internal = serializable_snapshot(self.snapshot)
+        internal_id = internal["capabilities"][0]["capability_id"]
+        internal["capabilities"][0]["publication_class"] = "internal"
+        projection = build_public_projection(internal)
+        self.assertNotIn(
+            internal_id,
+            {row["capability_id"] for row in projection["capabilities"]},
+        )
+
+    def test_projection_divergence_changes_content_digest(self) -> None:
+        expected = build_public_projection(self.snapshot)
+        changed = deepcopy(expected)
+        changed["capabilities"][0]["display_name"] = "hand edited"
+        self.assertNotEqual(content_digest(expected), content_digest(changed))
+
+    def test_drift_report_is_structured_and_does_not_remediate(self) -> None:
+        approved = serializable_snapshot(self.snapshot)
+        changed = deepcopy(approved)
+        changed["capabilities"][0]["lifecycle_state"] = "deprecated"
+        report = compare_snapshots(approved, changed)
+        capability_id = changed["capabilities"][0]["capability_id"]
+        self.assertEqual("material_drift", report["state"])
+        self.assertEqual([], report["actions_executed"])
+        self.assertEqual([], report["added_capability_ids"])
+        self.assertEqual([], report["removed_capability_ids"])
+        self.assertEqual(
+            {
+                "capability_id": capability_id,
+                "fields": {
+                    "lifecycle_state": {
+                        "old": "experimental",
+                        "new": "deprecated",
+                    }
+                },
+            },
+            report["changed_capabilities"][0],
+        )
+
+    def test_drift_report_identifies_added_and_removed_capability_ids(self) -> None:
+        approved = {
+            "capabilities": [{"capability_id": "cap-a", "version": "1.0.0"}]
+        }
+        observed = {
+            "capabilities": [{"capability_id": "cap-b", "version": "1.0.0"}]
+        }
+        report = compare_snapshots(approved, observed)
+        self.assertEqual(["cap-b"], report["added_capability_ids"])
+        self.assertEqual(["cap-a"], report["removed_capability_ids"])
+        self.assertEqual([], report["changed_capabilities"])
+        self.assertEqual(content_digest(approved), report["approved_digest"])
+        self.assertEqual(content_digest(observed), report["observed_digest"])
+
+    def test_cli_generate_check_and_compare_are_deterministic_and_non_mutating(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = root / "skills" / "registry"
+            registry.mkdir(parents=True)
+            shutil.copyfile(
+                MANIFEST, root / "skills" / "capability-manifest.json"
+            )
+            shutil.copyfile(
+                DISCOVERY_SOURCES, registry / "discovery-sources.json"
+            )
+            shutil.copyfile(
+                GOVERNANCE_DECISIONS, registry / "governance-decisions.json"
+            )
+
+            self.assertEqual(
+                0,
+                projection_main(
+                    ["generate", "--root", str(root), "--as-of", AS_OF]
+                ),
+            )
+            generated = registry / "public-capabilities.json"
+            first_bytes = generated.read_bytes()
+            self.assertEqual(
+                0, projection_main(["check", "--root", str(root)])
+            )
+            self.assertEqual(first_bytes, generated.read_bytes())
+
+            hand_edited = json.loads(first_bytes)
+            hand_edited["capabilities"][0]["display_name"] = "hand edited"
+            generated.write_text(
+                canonical_json(hand_edited) + "\n", encoding="utf-8"
+            )
+            edited_bytes = generated.read_bytes()
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                self.assertEqual(
+                    1, projection_main(["check", "--root", str(root)])
+                )
+            self.assertIn("projection differs", stderr.getvalue())
+            self.assertIn(
+                hand_edited["capabilities"][0]["capability_id"],
+                stderr.getvalue(),
+            )
+            self.assertEqual(edited_bytes, generated.read_bytes())
+
+            approved = root / "approved.json"
+            observed = root / "observed.json"
+            approved.write_text(
+                canonical_json({"capabilities": []}), encoding="utf-8"
+            )
+            observed.write_text(
+                canonical_json({"capabilities": []}), encoding="utf-8"
+            )
+            before = (approved.read_bytes(), observed.read_bytes())
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                self.assertEqual(
+                    0,
+                    projection_main(
+                        [
+                            "compare",
+                            "--approved",
+                            str(approved),
+                            "--observed",
+                            str(observed),
+                        ]
+                    ),
+                )
+            self.assertEqual(
+                "no_material_difference", json.loads(stdout.getvalue())["state"]
+            )
+            self.assertEqual(
+                before, (approved.read_bytes(), observed.read_bytes())
+            )

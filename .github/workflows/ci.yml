@@ -20,12 +20,15 @@ jobs:
       - name: Verify architecture, repository hygiene, and public Skills
         run: >-
           python -m unittest
+          tests.architecture.test_capability_registry_hardening
           tests.architecture.test_public_architecture
           tests.architecture.test_repository_hygiene
           tests.skills.test_public_skill_packages
           tests.skills.test_public_orchestration_skills
           tests.skills.test_public_specialized_skills
           tests.skills.test_public_operational_skills
+      - name: Verify generated capability projection
+        run: python -m skills.registry.projection check --root .
 
   seraphim-platform:
     name: Seraphim platform
