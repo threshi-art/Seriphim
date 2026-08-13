@@ -34,12 +34,13 @@ publish an explicitly timed projection and
 remediation. CI additionally runs
 `python -m skills.registry.projection check-ledger --root . --baseline <git-ref> --event-head HEAD`
 locally, while GitHub CI supplies the push `github.event.before` or pull-request
-base SHA plus the explicit event-head SHA. The checker validates every commit
-in that range oldest-first and then the working tree, so a temporary append,
-rewrite, removal, restoration, or reorder cannot be hidden by a later commit.
-Initial pushes validate all reachable commits; pre-ledger commits are treated
-as empty history. Push checks cover every branch and pull-request checks remain
-enabled.
+base SHA plus the explicit event-head SHA. The checker validates every newly
+reachable commit against each of its parent ledger states, then validates the
+event-head ledger against the working tree, so a temporary append, rewrite,
+removal, restoration, or reorder cannot be hidden by a later commit. Parents
+outside the newly reachable set are still inspected. Initial pushes validate
+all reachable parent edges, with root and pre-ledger states treated as empty
+history. Push checks cover every branch and pull-request checks remain enabled.
 Matching include/exclude decisions resolve to explicit scope eligibility;
 projection still requires declaration-public, publication, and privacy gates.
 Only source IDs explicitly declared `public_projection: true` and validated as

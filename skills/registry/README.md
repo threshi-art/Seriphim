@@ -139,18 +139,19 @@ vectors. For a local `--baseline`, the event head is the validated literal
 `HEAD` unless `--event-head` supplies a 40-character SHA. In CI, pushes use
 `github.event.before`, pull requests use `github.event.pull_request.base.sha`,
 and both use the explicit `github.sha` event head. The checker enumerates every
-commit in `baseline..event-head` in reverse topological (oldest-first) order,
-loads the ledger at each commit, and requires each successive ledger to retain
-the prior canonical decisions as an identical ordered prefix. It then compares
-the event-head ledger with the working tree. For an all-zero initial-push
-baseline it enumerates all commits reachable from the event head oldest-first.
-Commits from before ledger introduction represent an empty ledger. Removal,
-rewriting, temporary append-then-remove, rewrite-then-restore, insertion before
-prior history, and reordering all fail even when the final ledger matches the
-baseline. Missing nonzero revisions, uninspectable commits, or a baseline that
-is not an ancestor of the event head fail closed. Push checks run on every
-branch; pull-request checks remain enabled. The ordinary projection `check`
-remains usable locally without a Git baseline.
+commit newly reachable from the event head relative to the baseline and
+requires its ledger to retain each parent ledger as an identical ordered
+prefix. Parent commits outside the newly reachable set are inspected directly.
+It then compares the event-head ledger with the working tree. For an all-zero
+initial-push baseline it validates every reachable parent edge, using an empty
+ledger for root commits. Commits from before ledger introduction also represent
+an empty ledger. Removal, rewriting, temporary append-then-remove,
+rewrite-then-restore, insertion before prior history, and reordering all fail
+even when the final ledger matches the baseline. Missing nonzero revisions,
+uninspectable commits or parents, or a baseline that is not an ancestor of the
+event head fail closed. Push checks run on every branch; pull-request checks
+remain enabled. The ordinary projection `check` remains usable locally without
+a Git baseline.
 
 ## Privacy and publication boundary
 

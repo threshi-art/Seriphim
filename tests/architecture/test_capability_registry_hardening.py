@@ -2696,7 +2696,7 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                 ),
             )
 
-    def test_initial_push_checks_every_reachable_commit_oldest_first(self) -> None:
+    def test_initial_push_checks_every_reachable_parent_edge(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             registry = self.copy_registry_fixture(root)
