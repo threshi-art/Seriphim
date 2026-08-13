@@ -3323,6 +3323,25 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
                     ]
                 )
 
+    def test_public_projection_checkout_preserves_canonical_lf_bytes(self) -> None:
+        result = subprocess.run(
+            [
+                "git",
+                "check-attr",
+                "eol",
+                "--",
+                "skills/registry/public-capabilities.json",
+            ],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(
+            "skills/registry/public-capabilities.json: eol: lf",
+            result.stdout.strip(),
+        )
+
     def test_ci_wires_event_baselines_without_head_parent_fallback(self) -> None:
         workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(
             encoding="utf-8"
