@@ -3180,6 +3180,31 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
             with patch.dict(os.environ, {"GITHUB_SHA": current_head}):
                 self.assertEqual(0, projection_main(arguments))
 
+    def test_local_ledger_check_ignores_ambient_github_event_head(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.copy_registry_fixture(root)
+            self._initialize_registry_git_fixture(root)
+            baseline = self._commit_registry_fixture(root, "baseline")
+            (root / "local-change.txt").write_text(
+                "current local checkout\n", encoding="utf-8"
+            )
+            self._commit_registry_fixture(root, "current local HEAD")
+
+            with patch.dict(os.environ, {"GITHUB_SHA": baseline}):
+                self.assertEqual(
+                    0,
+                    projection_main(
+                        [
+                            "check-ledger",
+                            "--root",
+                            str(root),
+                            "--baseline",
+                            baseline,
+                        ]
+                    ),
+                )
+
     def test_initial_push_without_explicit_event_head_selects_head(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

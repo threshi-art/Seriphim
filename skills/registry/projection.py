@@ -284,8 +284,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if baseline is not None:
             _validate_git_baseline_ref(baseline)
         if not event_head:
-            event_head = os.environ.get(GOVERNANCE_LEDGER_EVENT_HEAD_ENV)
-        if not event_head:
             event_head = "HEAD"
         _validate_git_event_head(event_head)
         try:
