@@ -42,6 +42,29 @@ URLs. It does not authenticate to social platforms, bypass access controls,
 retrieve private content, establish identity, or infer personal traits.
 Results require human verification.
 
+## Governed Seraphim proof mission
+
+`POST /proof-missions` executes one deterministic architecture proof: Seraphim
+opens a governed EiRAM case, runs two synthetic collectors, evaluates competing
+hypotheses, permits one Red Team-requested supplemental collection, audits
+claim-level APA/exhibit citations, and returns one structured assessment.
+
+```bash
+curl -X POST http://127.0.0.1:8000/proof-missions \
+  -H "Content-Type: application/json" \
+  -d '{"original_request":"What does this fictional slogan mean, and is the repetition coordinated?","operator_designated_significance":true}'
+```
+
+The bundled evidence is entirely fictional and synthetic. The proof performs
+no live collection, monitoring, network access, account identification, or
+external write. Its SQLite Shared Case Ledger is local and inspectable at
+`data/proof-mission.sqlite3` by default; set `EIRAM_PROOF_DB` to use another
+local path. A successful result demonstrates the v0.1 architecture—it does not
+authorize external action, public release, or broader surveillance.
+
+The normative boundary is
+[`SERAPHIM_ARCHITECTURE_CONTRACT_V0_1.md`](../../../docs/architecture/SERAPHIM_ARCHITECTURE_CONTRACT_V0_1.md).
+
 ## Desktop command deck
 
 EiRAM now also includes a PearlFuel-inspired desktop shell that drives the
@@ -103,7 +126,7 @@ folder.
 - Phase-1 deterministic prototype
 - FastAPI and direct-engine paths implemented
 - Desktop shell implemented but not validated across clean machines
-- Two focused unit tests imported from the source workspace
+- Governed deterministic proof mission and persistent case ledger implemented
 - Predictive validity, calibration, fairness, and domain suitability unvalidated
 - input length and public-handle syntax are bounded at the API schema
 - search failures are reported without exposing internal exception details
