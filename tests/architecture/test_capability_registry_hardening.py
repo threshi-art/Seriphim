@@ -2798,6 +2798,262 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
             self.assertEqual(1, result)
             self.assertIn("missing prior decision", stderr.getvalue())
 
+    def test_parent_edges_accept_valid_merge_with_append_and_unrelated_sibling(
+        self,
+    ) -> None:
+        for append_is_first_parent in (True, False):
+            with self.subTest(
+                append_is_first_parent=append_is_first_parent
+            ), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                registry = self.copy_registry_fixture(root)
+                self._initialize_registry_git_fixture(root)
+                baseline = self._commit_registry_fixture(root, "baseline")
+                ledger_path = registry / "governance-decisions.json"
+                original = json.loads(ledger_path.read_text(encoding="utf-8"))
+
+                self._run_fixture_git(root, "switch", "-c", "append-parent")
+                appended = self._with_appended_decision(
+                    original, "valid-merge-appended-decision"
+                )
+                self._write_ledger_fixture(ledger_path, appended)
+                self._commit_registry_fixture(root, "append ledger decision")
+
+                self._run_fixture_git(
+                    root, "switch", "-c", "sibling-parent", baseline
+                )
+                (root / "sibling-change.txt").write_text(
+                    "unrelated sibling change\n", encoding="utf-8"
+                )
+                self._commit_registry_fixture(root, "unrelated sibling")
+
+                if append_is_first_parent:
+                    self._run_fixture_git(root, "switch", "append-parent")
+                    merge_target = "sibling-parent"
+                else:
+                    self.assertEqual(
+                        "sibling-parent", self._current_fixture_branch(root)
+                    )
+                    merge_target = "append-parent"
+                self._run_fixture_git(
+                    root,
+                    "merge",
+                    "--quiet",
+                    "--no-ff",
+                    "-m",
+                    "merge valid ledger parents",
+                    merge_target,
+                )
+                event_head = self._fixture_git_output(root, "rev-parse", "HEAD")
+
+                self.assertEqual(
+                    0,
+                    self._event_ledger_check(
+                        root,
+                        event_name="push",
+                        push_before=baseline,
+                        event_head=event_head,
+                    ),
+                )
+
+    def test_parent_edges_include_side_branch_forked_before_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = self.copy_registry_fixture(root)
+            self._initialize_registry_git_fixture(root)
+            fork_point = self._commit_registry_fixture(root, "fork point")
+            base_branch = self._current_fixture_branch(root)
+            ledger_path = registry / "governance-decisions.json"
+            original = json.loads(ledger_path.read_text(encoding="utf-8"))
+
+            self._run_fixture_git(root, "switch", "-c", "early-side", fork_point)
+            self._write_ledger_fixture(
+                ledger_path,
+                self._with_appended_decision(
+                    original, "pre-baseline-side-decision"
+                ),
+            )
+            self._commit_registry_fixture(root, "append on early side branch")
+
+            self._run_fixture_git(root, "switch", base_branch)
+            (root / "baseline-change.txt").write_text(
+                "baseline advanced after side fork\n", encoding="utf-8"
+            )
+            baseline = self._commit_registry_fixture(root, "event baseline")
+            self._run_fixture_git(
+                root,
+                "merge",
+                "--quiet",
+                "--no-ff",
+                "-m",
+                "merge early side branch",
+                "early-side",
+            )
+            event_head = self._fixture_git_output(root, "rev-parse", "HEAD")
+
+            self.assertEqual(
+                0,
+                self._event_ledger_check(
+                    root,
+                    event_name="push",
+                    push_before=baseline,
+                    event_head=event_head,
+                ),
+            )
+
+    def test_parent_edges_reject_restore_on_a_merged_side_branch(self) -> None:
+        for mutation, expected_error in (
+            ("append_remove", "missing prior decision"),
+            ("rewrite_restore", "rewritten prior decision"),
+        ):
+            with self.subTest(
+                mutation=mutation
+            ), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                registry = self.copy_registry_fixture(root)
+                self._initialize_registry_git_fixture(root)
+                fork_point = self._commit_registry_fixture(root, "fork point")
+                base_branch = self._current_fixture_branch(root)
+                ledger_path = registry / "governance-decisions.json"
+                original = json.loads(ledger_path.read_text(encoding="utf-8"))
+
+                self._run_fixture_git(
+                    root, "switch", "-c", "invalid-side", fork_point
+                )
+                if mutation == "append_remove":
+                    invalid = self._with_appended_decision(
+                        original, "removed-side-decision"
+                    )
+                else:
+                    invalid = deepcopy(original)
+                    invalid["decisions"][0]["reason"] = "temporary side rewrite"
+                self._write_ledger_fixture(ledger_path, invalid)
+                self._commit_registry_fixture(root, f"{mutation} first half")
+                self._write_ledger_fixture(ledger_path, original)
+                self._commit_registry_fixture(root, f"{mutation} restore")
+
+                self._run_fixture_git(root, "switch", base_branch)
+                (root / "baseline-change.txt").write_text(
+                    "baseline advances independently\n", encoding="utf-8"
+                )
+                baseline = self._commit_registry_fixture(root, "event baseline")
+                self._run_fixture_git(
+                    root,
+                    "merge",
+                    "--quiet",
+                    "--no-ff",
+                    "-m",
+                    "merge invalid side history",
+                    "invalid-side",
+                )
+                event_head = self._fixture_git_output(root, "rev-parse", "HEAD")
+                stderr = io.StringIO()
+
+                with redirect_stderr(stderr):
+                    result = self._event_ledger_check(
+                        root,
+                        event_name="push",
+                        push_before=baseline,
+                        event_head=event_head,
+                    )
+
+                self.assertEqual(1, result)
+                self.assertIn(expected_error, stderr.getvalue())
+
+    def test_merge_requires_every_incompatible_parent_ledger_history(self) -> None:
+        for resolution in ("omit_second_parent", "include_both_reordered"):
+            with self.subTest(
+                resolution=resolution
+            ), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                registry = self.copy_registry_fixture(root)
+                self._initialize_registry_git_fixture(root)
+                baseline = self._commit_registry_fixture(root, "baseline")
+                ledger_path = registry / "governance-decisions.json"
+                original = json.loads(ledger_path.read_text(encoding="utf-8"))
+
+                self._run_fixture_git(root, "switch", "-c", "ledger-parent-a")
+                parent_a = self._with_appended_decision(
+                    original, "parent-a-decision"
+                )
+                self._write_ledger_fixture(ledger_path, parent_a)
+                self._commit_registry_fixture(root, "parent A append")
+
+                self._run_fixture_git(
+                    root, "switch", "-c", "ledger-parent-b", baseline
+                )
+                parent_b = self._with_appended_decision(
+                    original, "parent-b-decision"
+                )
+                self._write_ledger_fixture(ledger_path, parent_b)
+                self._commit_registry_fixture(root, "parent B append")
+
+                self._run_fixture_git(root, "switch", "ledger-parent-a")
+                merge = self._run_fixture_git(
+                    root,
+                    "merge",
+                    "--quiet",
+                    "--no-ff",
+                    "--no-commit",
+                    "ledger-parent-b",
+                    check=False,
+                )
+                self.assertNotEqual(0, merge.returncode)
+                resolved = deepcopy(parent_a)
+                if resolution == "include_both_reordered":
+                    resolved["decisions"].append(
+                        deepcopy(parent_b["decisions"][-1])
+                    )
+                self._write_ledger_fixture(ledger_path, resolved)
+                self._run_fixture_git(root, "add", ".")
+                self._run_fixture_git(
+                    root, "commit", "--quiet", "-m", f"resolve {resolution}"
+                )
+                event_head = self._fixture_git_output(root, "rev-parse", "HEAD")
+                stderr = io.StringIO()
+
+                with redirect_stderr(stderr):
+                    result = self._event_ledger_check(
+                        root,
+                        event_name="push",
+                        push_before=baseline,
+                        event_head=event_head,
+                    )
+
+                self.assertEqual(1, result)
+                self.assertIn("governance ledger check failed", stderr.getvalue())
+
+    def test_ledger_event_head_must_descend_from_inspectable_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.copy_registry_fixture(root)
+            self._initialize_registry_git_fixture(root)
+            fork_point = self._commit_registry_fixture(root, "fork point")
+            (root / "baseline-only.txt").write_text(
+                "baseline history\n", encoding="utf-8"
+            )
+            baseline = self._commit_registry_fixture(root, "baseline")
+
+            self._run_fixture_git(
+                root, "switch", "-c", "replacement-history", fork_point
+            )
+            (root / "replacement-only.txt").write_text(
+                "replacement history\n", encoding="utf-8"
+            )
+            event_head = self._commit_registry_fixture(root, "replacement head")
+            stderr = io.StringIO()
+
+            with redirect_stderr(stderr):
+                result = self._event_ledger_check(
+                    root,
+                    event_name="push",
+                    push_before=baseline,
+                    event_head=event_head,
+                )
+
+            self.assertEqual(1, result)
+            self.assertIn("baseline is not an ancestor", stderr.getvalue())
+
     def test_pull_request_event_ledger_check_uses_base_sha(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -2942,6 +3198,36 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
             capture_output=True,
             text=True,
         ).stdout.strip()
+
+    def _run_fixture_git(
+        self, root: Path, *arguments: str, check: bool = True
+    ) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            ["git", *arguments],
+            cwd=root,
+            check=check,
+            capture_output=True,
+            text=True,
+        )
+
+    def _fixture_git_output(self, root: Path, *arguments: str) -> str:
+        return self._run_fixture_git(root, *arguments).stdout.strip()
+
+    def _current_fixture_branch(self, root: Path) -> str:
+        return self._fixture_git_output(root, "branch", "--show-current")
+
+    def _with_appended_decision(self, payload: dict, decision_id: str) -> dict:
+        appended = deepcopy(payload)
+        appended["decisions"].append(
+            {
+                **valid_decision(decision_id, "exclude_projection"),
+                "target_capability_id": "seraphim-action-controller",
+            }
+        )
+        return appended
+
+    def _write_ledger_fixture(self, path: Path, payload: dict) -> None:
+        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
     def _event_ledger_check(
         self,

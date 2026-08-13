@@ -1,3 +1,4 @@
+import importlib.util
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,7 +21,120 @@ from app.casework.models import (
 from app.casework.state_machine import InvalidCaseTransition, validate_transition
 
 
-MANIFEST = Path(__file__).parents[4] / "skills" / "capability-manifest.json"
+REPOSITORY_ROOT = Path(__file__).parents[4]
+MANIFEST = REPOSITORY_ROOT / "skills" / "capability-manifest.json"
+
+
+def load_canonical_contracts():
+    path = REPOSITORY_ROOT / "skills" / "registry" / "contracts.py"
+    spec = importlib.util.spec_from_file_location(
+        "seraphim_canonical_registry_contracts", path
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError("canonical registry contracts could not be loaded")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+CANONICAL_CONTRACTS = load_canonical_contracts()
+
+
+DECLARATION_PARITY_MUTATIONS = (
+    "packaged_public_false",
+    "implemented_public_false",
+    "packaged_package_path_null",
+    "packaged_package_path_wrong_type",
+    "specified_public_true",
+    "specified_lifecycle_experimental",
+    "specified_package_path_present",
+    "private_public_true",
+    "private_lifecycle_proposed",
+    "private_package_path_present",
+    "packaged_license_status_not_packaged",
+    "packaged_spdx_wrong",
+    "packaged_spdx_missing",
+    "packaged_license_status_missing",
+    "specified_license_status_project_original",
+    "specified_spdx_present",
+    "private_license_status_project_original",
+    "private_spdx_present",
+    "publisher_wrong",
+    "maintainer_wrong",
+    "technical_owner_wrong",
+    "governance_owner_wrong",
+    "provenance_missing",
+    "provenance_wrong_type",
+    "validation_missing",
+    "validation_wrong_type",
+    "package_path_missing",
+)
+
+
+def mutate_declaration_for_parity(payload: dict, mutation: str) -> None:
+    packaged = next(
+        item for item in payload["capabilities"] if item["status"] == "packaged"
+    )
+    specified = next(
+        item for item in payload["capabilities"] if item["status"] == "specified"
+    )
+    private = next(
+        item for item in payload["capabilities"] if item["status"] == "private"
+    )
+
+    if mutation == "packaged_public_false":
+        packaged["public_package"] = False
+    elif mutation == "implemented_public_false":
+        packaged["status"] = "implemented"
+        packaged["runtime_contract"]["current_status"] = "implemented"
+        packaged["public_package"] = False
+    elif mutation == "packaged_package_path_null":
+        packaged["package_path"] = None
+    elif mutation == "packaged_package_path_wrong_type":
+        packaged["package_path"] = []
+    elif mutation == "specified_public_true":
+        specified["public_package"] = True
+    elif mutation == "specified_lifecycle_experimental":
+        specified["lifecycle_state"] = "experimental"
+    elif mutation == "specified_package_path_present":
+        specified["package_path"] = "skills/synthetic-specified"
+    elif mutation == "private_public_true":
+        private["public_package"] = True
+    elif mutation == "private_lifecycle_proposed":
+        private["lifecycle_state"] = "proposed"
+    elif mutation == "private_package_path_present":
+        private["package_path"] = "skills/synthetic-private"
+    elif mutation == "packaged_license_status_not_packaged":
+        packaged["license"]["status"] = "not_packaged"
+    elif mutation == "packaged_spdx_wrong":
+        packaged["license"]["spdx_id"] = "Apache-2.0"
+    elif mutation == "packaged_spdx_missing":
+        del packaged["license"]["spdx_id"]
+    elif mutation == "packaged_license_status_missing":
+        del packaged["license"]["status"]
+    elif mutation == "specified_license_status_project_original":
+        specified["license"]["status"] = "project_original"
+    elif mutation == "specified_spdx_present":
+        specified["license"]["spdx_id"] = "MIT"
+    elif mutation == "private_license_status_project_original":
+        private["license"]["status"] = "project_original"
+    elif mutation == "private_spdx_present":
+        private["license"]["spdx_id"] = "MIT"
+    elif mutation.endswith("_wrong"):
+        field = mutation.removesuffix("_wrong")
+        packaged["stewardship"][field] = "Forged owner"
+    elif mutation == "provenance_missing":
+        del packaged["provenance"]
+    elif mutation == "provenance_wrong_type":
+        packaged["provenance"] = []
+    elif mutation == "validation_missing":
+        del packaged["validation"]
+    elif mutation == "validation_wrong_type":
+        packaged["validation"] = False
+    elif mutation == "package_path_missing":
+        del packaged["package_path"]
+    else:
+        raise AssertionError(f"unknown declaration parity mutation: {mutation}")
 
 
 def write_manifest(tmp_path: Path, payload: object) -> Path:
@@ -158,6 +272,29 @@ def test_capability_registry_rejects_old_or_unknown_manifest_schema(
 
     with pytest.raises(ValueError, match="schema_version"):
         CapabilityRegistry.load(path)
+
+
+def test_capability_registry_accepts_the_canonical_real_manifest() -> None:
+    payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
+
+    canonical_records = CANONICAL_CONTRACTS.validate_manifest(payload)
+    local_registry = CapabilityRegistry.load(MANIFEST)
+
+    assert len(canonical_records) == len(payload["capabilities"])
+    assert isinstance(local_registry, CapabilityRegistry)
+
+
+@pytest.mark.parametrize("mutation", DECLARATION_PARITY_MUTATIONS)
+def test_capability_registry_matches_canonical_cross_field_rejections(
+    tmp_path: Path, mutation: str
+) -> None:
+    payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    mutate_declaration_for_parity(payload, mutation)
+
+    with pytest.raises(CANONICAL_CONTRACTS.RegistryValidationError):
+        CANONICAL_CONTRACTS.validate_manifest(payload)
+    with pytest.raises(ValueError):
+        CapabilityRegistry.load(write_manifest(tmp_path, payload))
 
 
 def test_capability_registry_rejects_duplicate_forged_contract_before_overwrite(
