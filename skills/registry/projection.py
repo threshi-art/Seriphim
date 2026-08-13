@@ -530,30 +530,79 @@ def _check_governance_ledger_against_git(
     if baseline_ref is not None:
         _require_git_commit(root, baseline_ref, "baseline")
         _require_git_ancestor(root, baseline_ref, event_head_ref)
-    previous_payload = (
-        _governance_ledger_from_git(root, baseline_ref)
-        if baseline_ref is not None
-        else {"schema_version": 1, "decisions": []}
-    )
     capability_ids = validate_manifest(_read_json(_manifest_path(root)))
-    for commit in _governance_ledger_commit_range(
+    ledger_payloads: dict[str, object] = {}
+
+    def ledger_at(revision: str) -> object:
+        if revision not in ledger_payloads:
+            ledger_payloads[revision] = _governance_ledger_from_git(
+                root, revision
+            )
+        return ledger_payloads[revision]
+
+    for commit in _governance_ledger_new_commits(
         root, baseline_ref, event_head_ref
     ):
-        commit_payload = _governance_ledger_from_git(root, commit)
-        try:
-            validate_governance_ledger(
-                previous_payload, commit_payload, capability_ids
-            )
-        except RegistryValidationError as error:
-            raise RegistryValidationError(
-                f"{error} at commit {commit}"
-            ) from error
-        previous_payload = commit_payload
+        commit_payload = ledger_at(commit)
+        parents = _git_commit_parents(root, commit)
+        parent_edges = (
+            [(parent, ledger_at(parent)) for parent in parents]
+            if parents
+            else [("<empty-root>", {"schema_version": 1, "decisions": []})]
+        )
+        for parent, parent_payload in parent_edges:
+            try:
+                validate_governance_ledger(
+                    parent_payload, commit_payload, capability_ids
+                )
+            except RegistryValidationError as error:
+                raise RegistryValidationError(
+                    f"{error} on edge {parent} -> {commit}"
+                ) from error
 
+    event_head_payload = ledger_at(event_head_ref)
     current_payload = _read_json(_governance_decisions_path(root))
-    validate_governance_ledger(
-        previous_payload, current_payload, capability_ids
-    )
+    try:
+        validate_governance_ledger(
+            event_head_payload, current_payload, capability_ids
+        )
+    except RegistryValidationError as error:
+        raise RegistryValidationError(
+            f"{error} between event head {event_head_ref} and working tree"
+        ) from error
+
+
+def _git_commit_parents(root: Path, commit: str) -> list[str]:
+    inspected = _run_git(root, ["cat-file", "-p", commit])
+    if inspected.returncode != 0:
+        raise ValueError(
+            "governance ledger commit parents could not be inspected: "
+            + _git_error_text(inspected)
+        )
+    header, separator, _message = inspected.stdout.partition(b"\n\n")
+    if not separator:
+        raise ValueError("governance ledger commit has malformed headers")
+    header_lines = header.splitlines()
+    if not header_lines or not header_lines[0].startswith(b"tree "):
+        raise ValueError("governance ledger commit has malformed headers")
+
+    parents: list[str] = []
+    for line in header_lines:
+        if not line.startswith(b"parent "):
+            continue
+        try:
+            parent = line.removeprefix(b"parent ").decode("ascii")
+        except UnicodeDecodeError as error:
+            raise ValueError(
+                "governance ledger commit returned an invalid parent SHA"
+            ) from error
+        if GITHUB_EVENT_SHA.fullmatch(parent) is None:
+            raise ValueError(
+                "governance ledger commit returned an invalid parent SHA"
+            )
+        _require_git_commit(root, parent, "parent commit")
+        parents.append(parent)
+    return parents
 
 
 def select_governance_ledger_baseline(
@@ -627,19 +676,17 @@ def _governance_ledger_from_git(root: Path, baseline_ref: str) -> object:
         raise ValueError("Git revision ledger is not valid UTF-8 JSON") from error
 
 
-def _governance_ledger_commit_range(
+def _governance_ledger_new_commits(
     root: Path,
     baseline_ref: Optional[str],
     event_head_ref: str,
 ) -> list[str]:
-    revision_range = (
-        f"{baseline_ref}..{event_head_ref}"
-        if baseline_ref is not None
-        else event_head_ref
-    )
+    arguments = ["rev-list", event_head_ref]
+    if baseline_ref is not None:
+        arguments.extend(["--not", baseline_ref])
     listed = _run_git(
         root,
-        ["rev-list", "--reverse", "--topo-order", revision_range],
+        arguments,
     )
     if listed.returncode != 0:
         raise ValueError(

@@ -37,12 +37,13 @@ LIFECYCLE_STATES = {
 }
 LICENSE_FIELDS = {"status", "spdx_id"}
 LICENSE_STATUSES = {"project_original", "not_packaged"}
-STEWARDSHIP_FIELDS = {
-    "publisher",
-    "maintainer",
-    "technical_owner",
-    "governance_owner",
+CANONICAL_STEWARDSHIP = {
+    "publisher": "Seraphim project",
+    "maintainer": "Seraphim project",
+    "technical_owner": "Seraphim engineering",
+    "governance_owner": "Seraphim governance",
 }
+STEWARDSHIP_FIELDS = set(CANONICAL_STEWARDSHIP)
 REQUIRED_RUNTIME_FIELDS = {
     "capability_id",
     "version",
@@ -156,34 +157,43 @@ def _validate_status_definitions(value: object) -> None:
 
 
 def _validate_capability(capability: dict, capability_id: str) -> dict:
-    for field in (
-        "name",
-        "category",
-        "owner_role",
-        "provenance",
-        "version",
-        "validation",
-    ):
+    for field in ("name", "category", "owner_role"):
         _require_nonempty_string(capability[field], f"{capability_id} {field}")
     status = _require_allowed_string(
         capability["status"], f"{capability_id} status", PACKAGE_STATES
     )
-    _require_bool(capability["public_package"], f"{capability_id} public_package")
-    package_path = capability["package_path"]
-    if package_path is not None:
-        _require_nonempty_string(package_path, f"{capability_id} package_path")
-    _require_allowed_string(
+    public_package = _require_bool(
+        capability["public_package"], f"{capability_id} public_package"
+    )
+    version = _require_nonempty_string(
+        capability["version"], f"{capability_id} version"
+    )
+    lifecycle_state = _require_allowed_string(
         capability["lifecycle_state"],
         f"{capability_id} lifecycle_state",
         LIFECYCLE_STATES,
     )
+    _validate_license(capability["license"], capability_id, status)
+    _validate_stewardship(capability["stewardship"], capability_id)
     for field in OPTIONAL_CAPABILITY_FIELDS:
         if field in capability and capability[field] is not None:
             _require_nonempty_string(
                 capability[field], f"{capability_id} {field}"
             )
-    _validate_license(capability["license"], capability_id)
-    _validate_stewardship(capability["stewardship"], capability_id)
+    package_path = capability["package_path"]
+    _require_nonempty_string(
+        capability["provenance"], f"{capability_id} provenance"
+    )
+    _require_nonempty_string(
+        capability["validation"], f"{capability_id} validation"
+    )
+    _validate_package_evidence(
+        capability_id,
+        status,
+        public_package,
+        lifecycle_state,
+        package_path,
+    )
 
     runtime = _require_object(
         capability["runtime_contract"], f"{capability_id} runtime_contract"
@@ -199,7 +209,7 @@ def _validate_capability(capability: dict, capability_id: str) -> dict:
     runtime_version = _require_nonempty_string(
         runtime["version"], f"{capability_id} runtime version"
     )
-    if runtime_version != capability["version"]:
+    if runtime_version != version:
         raise ValueError(f"{capability_id} runtime version does not match")
     _require_allowed_string(
         runtime["architectural_type"],
@@ -240,19 +250,58 @@ def _validate_capability(capability: dict, capability_id: str) -> dict:
     return runtime
 
 
-def _validate_license(value: object, capability_id: str) -> None:
+def _validate_package_evidence(
+    capability_id: str,
+    status: str,
+    public_package: bool,
+    lifecycle_state: str,
+    package_path: object,
+) -> None:
+    if status == "specified":
+        if public_package or lifecycle_state != "proposed":
+            raise ValueError(
+                f"{capability_id} specified declarations must be proposed and unpublished"
+            )
+        if package_path is not None:
+            raise ValueError(
+                f"{capability_id} unpackaged declarations must not have a package_path"
+            )
+    elif status == "private":
+        if public_package or lifecycle_state != "experimental":
+            raise ValueError(
+                f"{capability_id} private declarations must be experimental and unpublished"
+            )
+        if package_path is not None:
+            raise ValueError(
+                f"{capability_id} unpackaged declarations must not have a package_path"
+            )
+    else:
+        if not public_package:
+            raise ValueError(
+                f"{capability_id} packaged declarations must be publicly packaged"
+            )
+        _require_nonempty_string(package_path, f"{capability_id} package_path")
+
+
+def _validate_license(value: object, capability_id: str, status: str) -> None:
     license_record = _require_object(value, f"{capability_id} license")
     _require_exact_fields(
         license_record, LICENSE_FIELDS, f"{capability_id} license"
     )
-    _require_allowed_string(
+    license_status = _require_allowed_string(
         license_record["status"],
         f"{capability_id} license status",
         LICENSE_STATUSES,
     )
-    if license_record["spdx_id"] is not None:
-        _require_nonempty_string(
-            license_record["spdx_id"], f"{capability_id} license spdx_id"
+    spdx_id = license_record["spdx_id"]
+    if status in {"specified", "private"}:
+        if license_status != "not_packaged" or spdx_id is not None:
+            raise ValueError(
+                f"{capability_id} unpackaged declarations require not_packaged licensing"
+            )
+    elif license_status != "project_original" or spdx_id != "MIT":
+        raise ValueError(
+            f"{capability_id} packaged declarations require project_original MIT licensing"
         )
 
 
@@ -262,9 +311,13 @@ def _validate_stewardship(value: object, capability_id: str) -> None:
         stewardship, STEWARDSHIP_FIELDS, f"{capability_id} stewardship"
     )
     for field in STEWARDSHIP_FIELDS:
-        _require_nonempty_string(
+        field_value = _require_nonempty_string(
             stewardship[field], f"{capability_id} stewardship {field}"
         )
+        if field_value != CANONICAL_STEWARDSHIP[field]:
+            raise ValueError(
+                f"{capability_id} stewardship {field} must match the canonical owner"
+            )
 
 
 def _require_object(value: object, label: str) -> dict:
