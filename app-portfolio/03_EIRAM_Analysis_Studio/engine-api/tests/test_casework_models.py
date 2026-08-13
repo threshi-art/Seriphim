@@ -57,8 +57,10 @@ DECLARATION_PARITY_MUTATIONS = (
     "packaged_license_status_missing",
     "specified_license_status_project_original",
     "specified_spdx_present",
+    "specified_spdx_missing",
     "private_license_status_project_original",
     "private_spdx_present",
+    "private_spdx_missing",
     "publisher_wrong",
     "maintainer_wrong",
     "technical_owner_wrong",
@@ -116,10 +118,14 @@ def mutate_declaration_for_parity(payload: dict, mutation: str) -> None:
         specified["license"]["status"] = "project_original"
     elif mutation == "specified_spdx_present":
         specified["license"]["spdx_id"] = "MIT"
+    elif mutation == "specified_spdx_missing":
+        del specified["license"]["spdx_id"]
     elif mutation == "private_license_status_project_original":
         private["license"]["status"] = "project_original"
     elif mutation == "private_spdx_present":
         private["license"]["spdx_id"] = "MIT"
+    elif mutation == "private_spdx_missing":
+        del private["license"]["spdx_id"]
     elif mutation.endswith("_wrong"):
         field = mutation.removesuffix("_wrong")
         packaged["stewardship"][field] = "Forged owner"
@@ -282,6 +288,30 @@ def test_capability_registry_accepts_the_canonical_real_manifest() -> None:
 
     assert len(canonical_records) == len(payload["capabilities"])
     assert isinstance(local_registry, CapabilityRegistry)
+
+
+@pytest.mark.parametrize(
+    ("status", "license_record"),
+    [
+        ("specified", {"status": "not_packaged", "spdx_id": None}),
+        ("private", {"status": "not_packaged", "spdx_id": None}),
+        ("packaged", {"status": "project_original", "spdx_id": "MIT"}),
+    ],
+)
+def test_capability_registry_accepts_every_canonical_license_contract(
+    tmp_path: Path, status: str, license_record: dict
+) -> None:
+    payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    declaration = next(
+        item for item in payload["capabilities"] if item["status"] == status
+    )
+    declaration["license"] = license_record
+
+    CANONICAL_CONTRACTS.validate_manifest(payload)
+    assert isinstance(
+        CapabilityRegistry.load(write_manifest(tmp_path, payload)),
+        CapabilityRegistry,
+    )
 
 
 @pytest.mark.parametrize("mutation", DECLARATION_PARITY_MUTATIONS)

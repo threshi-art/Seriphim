@@ -571,12 +571,17 @@ def _validate_package_evidence(
 def _validate_license(license_record: object, capability_id: str, status: str) -> None:
     license_data = _require_dict(license_record, f"{capability_id} license")
     _reject_unknown_fields(license_data, f"{capability_id} license", LICENSE_FIELDS)
+    missing_fields = LICENSE_FIELDS - license_data.keys()
+    if missing_fields:
+        raise RegistryValidationError(
+            f"{capability_id} license missing fields: {sorted(missing_fields)}"
+        )
     license_status = _require_nonempty_string(
-        license_data.get("status"), f"{capability_id} license status"
+        license_data["status"], f"{capability_id} license status"
     )
     if license_status not in LICENSE_STATUSES:
         raise RegistryValidationError(f"{capability_id} has invalid license status")
-    spdx_id = license_data.get("spdx_id")
+    spdx_id = license_data["spdx_id"]
     if status in {"specified", "private"}:
         if license_status != "not_packaged" or spdx_id is not None:
             raise RegistryValidationError(

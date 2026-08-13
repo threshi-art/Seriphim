@@ -183,6 +183,19 @@ class CapabilityDeclarationTests(unittest.TestCase):
             ):
                 validate_manifest(payload)
 
+    def test_license_requires_exact_fields_for_every_declaration_status(self) -> None:
+        for status in ("specified", "private", "packaged"):
+            payload = deepcopy(self.payload)
+            declaration = next(
+                item for item in payload["capabilities"] if item["status"] == status
+            )
+            del declaration["license"]["spdx_id"]
+
+            with self.subTest(status=status), self.assertRaisesRegex(
+                RegistryValidationError, "license missing fields:.*spdx_id"
+            ):
+                validate_manifest(payload)
+
     def test_stewardship_values_must_match_the_canonical_owners(self) -> None:
         for field in (
             "publisher",
@@ -3053,6 +3066,142 @@ class CapabilityRegistryProjectionTests(unittest.TestCase):
 
             self.assertEqual(1, result)
             self.assertIn("baseline is not an ancestor", stderr.getvalue())
+
+    def test_ledger_check_requires_explicit_event_head_to_match_checkout(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.copy_registry_fixture(root)
+            self._initialize_registry_git_fixture(root)
+            baseline = self._commit_registry_fixture(root, "baseline")
+            (root / "event-marker.txt").write_text(
+                "older event\n", encoding="utf-8"
+            )
+            older_event = self._commit_registry_fixture(root, "older event")
+            (root / "event-marker.txt").write_text(
+                "older event\nappended later\n", encoding="utf-8"
+            )
+            self._commit_registry_fixture(root, "append after event")
+            (root / "event-marker.txt").write_text(
+                "older event\n", encoding="utf-8"
+            )
+            current_head = self._commit_registry_fixture(root, "restore at current HEAD")
+
+            invocations = {
+                "push": [
+                    "check-ledger",
+                    "--root",
+                    str(root),
+                    "--event-name",
+                    "push",
+                    "--push-before",
+                    baseline,
+                ],
+                "pull_request": [
+                    "check-ledger",
+                    "--root",
+                    str(root),
+                    "--event-name",
+                    "pull_request",
+                    "--pull-request-base",
+                    baseline,
+                ],
+                "local": [
+                    "check-ledger",
+                    "--root",
+                    str(root),
+                    "--baseline",
+                    baseline,
+                ],
+            }
+            for mode, arguments in invocations.items():
+                stderr = io.StringIO()
+                with self.subTest(mode=mode, event="stale"), redirect_stderr(stderr):
+                    self.assertEqual(
+                        1,
+                        projection_main(
+                            [*arguments, "--event-head", older_event]
+                        ),
+                    )
+                self.assertIn("event head does not match HEAD", stderr.getvalue())
+
+                with self.subTest(mode=mode, event="current"):
+                    self.assertEqual(
+                        0,
+                        projection_main(
+                            [*arguments, "--event-head", current_head]
+                        ),
+                    )
+
+            self._run_fixture_git(root, "checkout", "--detach", current_head)
+            local_arguments = invocations["local"]
+            for event_head in (current_head, "HEAD"):
+                with self.subTest(checkout="detached", event_head=event_head):
+                    self.assertEqual(
+                        0,
+                        projection_main(
+                            [*local_arguments, "--event-head", event_head]
+                        ),
+                    )
+
+    def test_ledger_check_requires_environment_event_head_to_match_checkout(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.copy_registry_fixture(root)
+            self._initialize_registry_git_fixture(root)
+            baseline = self._commit_registry_fixture(root, "baseline")
+            (root / "event-marker.txt").write_text(
+                "older event\n", encoding="utf-8"
+            )
+            older_event = self._commit_registry_fixture(root, "older event")
+            (root / "event-marker.txt").write_text(
+                "current event\n", encoding="utf-8"
+            )
+            current_head = self._commit_registry_fixture(root, "current event")
+            arguments = [
+                "check-ledger",
+                "--root",
+                str(root),
+                "--event-name",
+                "push",
+                "--push-before",
+                baseline,
+            ]
+            stderr = io.StringIO()
+
+            with patch.dict(
+                os.environ,
+                {"GITHUB_SHA": older_event},
+            ), redirect_stderr(stderr):
+                self.assertEqual(1, projection_main(arguments))
+            self.assertIn("event head does not match HEAD", stderr.getvalue())
+
+            with patch.dict(os.environ, {"GITHUB_SHA": current_head}):
+                self.assertEqual(0, projection_main(arguments))
+
+    def test_initial_push_without_explicit_event_head_selects_head(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.copy_registry_fixture(root)
+            self._initialize_registry_git_fixture(root)
+            self._commit_registry_fixture(root, "initial history")
+
+            with patch.dict(os.environ, {"GITHUB_SHA": ""}):
+                self.assertEqual(
+                    0,
+                    projection_main(
+                        [
+                            "check-ledger",
+                            "--root",
+                            str(root),
+                            "--event-name",
+                            "push",
+                            "--push-before",
+                            "0" * 40,
+                        ]
+                    ),
+                )
 
     def test_pull_request_event_ledger_check_uses_base_sha(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

@@ -265,7 +265,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             empty_history = baseline is None
             if not event_head:
                 event_head = os.environ.get(GOVERNANCE_LEDGER_EVENT_HEAD_ENV)
-            if not event_head:
+            if not event_head and not empty_history:
                 print(
                     "governance ledger event head is required via "
                     "--event-head or GITHUB_SHA",
@@ -283,6 +283,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return 2
         if baseline is not None:
             _validate_git_baseline_ref(baseline)
+        if not event_head:
+            event_head = os.environ.get(GOVERNANCE_LEDGER_EVENT_HEAD_ENV)
         if not event_head:
             event_head = "HEAD"
         _validate_git_event_head(event_head)
@@ -526,10 +528,16 @@ def _check_governance_ledger_against_git(
     baseline_ref: Optional[str],
     event_head_ref: str,
 ) -> None:
-    _require_git_commit(root, event_head_ref, "event head")
+    event_head_commit = _resolve_git_commit(root, event_head_ref, "event head")
+    checked_out_commit = _resolve_git_commit(root, "HEAD", "HEAD")
+    if event_head_commit != checked_out_commit:
+        raise ValueError(
+            "event head does not match HEAD: "
+            f"{event_head_commit} != {checked_out_commit}"
+        )
     if baseline_ref is not None:
         _require_git_commit(root, baseline_ref, "baseline")
-        _require_git_ancestor(root, baseline_ref, event_head_ref)
+        _require_git_ancestor(root, baseline_ref, event_head_commit)
     capability_ids = validate_manifest(_read_json(_manifest_path(root)))
     ledger_payloads: dict[str, object] = {}
 
@@ -541,7 +549,7 @@ def _check_governance_ledger_against_git(
         return ledger_payloads[revision]
 
     for commit in _governance_ledger_new_commits(
-        root, baseline_ref, event_head_ref
+        root, baseline_ref, event_head_commit
     ):
         commit_payload = ledger_at(commit)
         parents = _git_commit_parents(root, commit)
@@ -560,7 +568,7 @@ def _check_governance_ledger_against_git(
                     f"{error} on edge {parent} -> {commit}"
                 ) from error
 
-    event_head_payload = ledger_at(event_head_ref)
+    event_head_payload = ledger_at(event_head_commit)
     current_payload = _read_json(_governance_decisions_path(root))
     try:
         validate_governance_ledger(
@@ -568,7 +576,7 @@ def _check_governance_ledger_against_git(
         )
     except RegistryValidationError as error:
         raise RegistryValidationError(
-            f"{error} between event head {event_head_ref} and working tree"
+            f"{error} between event head {event_head_commit} and working tree"
         ) from error
 
 
@@ -700,6 +708,10 @@ def _governance_ledger_new_commits(
 
 
 def _require_git_commit(root: Path, revision: str, label: str) -> None:
+    _resolve_git_commit(root, revision, label)
+
+
+def _resolve_git_commit(root: Path, revision: str, label: str) -> str:
     inspected = _run_git(
         root,
         ["rev-parse", "--verify", "--quiet", f"{revision}^{{commit}}"],
@@ -708,6 +720,13 @@ def _require_git_commit(root: Path, revision: str, label: str) -> None:
         raise ValueError(
             f"{label} could not be inspected: " + _git_error_text(inspected)
         )
+    try:
+        commit = inspected.stdout.decode("ascii").strip()
+    except UnicodeDecodeError as error:
+        raise ValueError(f"{label} resolved to an invalid commit SHA") from error
+    if GITHUB_EVENT_SHA.fullmatch(commit) is None:
+        raise ValueError(f"{label} resolved to an invalid commit SHA")
+    return commit.lower()
 
 
 def _require_git_ancestor(
