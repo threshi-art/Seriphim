@@ -17,8 +17,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Verify architecture and repository hygiene
-        run: python -m unittest tests.architecture.test_public_architecture tests.architecture.test_repository_hygiene
+      - name: Verify architecture, repository hygiene, and public Skills
+        run: >-
+          python -m unittest
+          tests.architecture.test_public_architecture
+          tests.architecture.test_repository_hygiene
+          tests.skills.test_public_skill_packages
+          tests.skills.test_public_orchestration_skills
+          tests.skills.test_public_specialized_skills
+          tests.skills.test_public_operational_skills
 
   seraphim-platform:
     name: Seraphim platform

@@ -25,6 +25,22 @@ FORBIDDEN_PATTERNS = {
 TEXT_SUFFIXES = {".json", ".md", ".py", ".svg", ".yaml", ".yml"}
 
 
+def parse_openai_yaml(path: Path) -> dict[str, str]:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0].strip() != "interface:":
+        raise ValueError("openai.yaml must begin with an interface mapping")
+    interface: dict[str, str] = {}
+    for line in lines[1:]:
+        if not line.strip():
+            continue
+        if not line.startswith("  "):
+            break
+        key, separator, value = line.strip().partition(":")
+        if separator:
+            interface[key] = value.strip().strip('"').strip("'")
+    return interface
+
+
 def parse_frontmatter(skill_file: Path) -> tuple[dict[str, str], str]:
     text = skill_file.read_text(encoding="utf-8")
     lines = text.splitlines()
@@ -67,11 +83,23 @@ def assert_valid_skill(
     testcase.assertLessEqual(len(metadata["description"]), 500)
     testcase.assertTrue(skill_text.split("---", 2)[2].strip())
 
+    interface_file = package / "agents" / "openai.yaml"
+    testcase.assertTrue(
+        interface_file.is_file(), f"missing {interface_file.relative_to(ROOT)}"
+    )
+    interface = parse_openai_yaml(interface_file)
+    testcase.assertTrue(interface.get("display_name"))
+    testcase.assertTrue(interface.get("short_description"))
+    if "default_prompt" in interface:
+        testcase.assertIn(f"${expected_name}", interface["default_prompt"])
+
     for relative in referenced_paths(skill_text):
         testcase.assertTrue((package / relative).is_file(), f"missing package link: {relative}")
 
     offenders: list[str] = []
     for path in package.rglob("*"):
+        testcase.assertNotIn("__pycache__", path.parts)
+        testcase.assertNotEqual(".pyc", path.suffix.lower())
         if not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
             continue
         text = path.read_text(encoding="utf-8", errors="strict")

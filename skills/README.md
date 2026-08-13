@@ -10,9 +10,9 @@ tested is design evidence—not a substitute for reviewing the package body.
 
 ## Published packages
 
-Fifteen reviewed public packages are currently available. Four are normalized
-authoritative exports; the remaining eleven are explicitly labeled reconstructed
-public editions.
+Twenty-two reviewed public packages are currently available. Four are normalized
+archive exports, seven are reviewed live-agent exports, and eleven are explicitly
+labeled reconstructed public editions.
 
 | Skill | Role | Package |
 |---|---|---|
@@ -22,6 +22,7 @@ public editions.
 | YouTube Ei R@M Ingest | Media evidence supplier | `media-ingest/youtube-eiram-ingest/` |
 | Context Sentinel | Context resolver | `orchestration/context-sentinel/` |
 | Semantic Priority Router | Intent router | `orchestration/semantic-priority-router/` |
+| Seraphim Mission Intake | Silent intake router | `orchestration/seraphim-mission-intake/` |
 | Seraphim Operator Routing | Role orchestrator | `orchestration/seraphim-operator-routing/` |
 | Seraphim Action Controller | External-effect controller | `orchestration/seraphim-action-controller/` |
 | Skill Ecosystem Governor | Routing auditor | `orchestration/skill-ecosystem-governor/` |
@@ -31,6 +32,12 @@ public editions.
 | Repo Surgeon | Repository repair owner | `maintenance/repo-surgeon/` |
 | Workspace Auditor | Read-only workspace auditor | `maintenance/workspace-auditor/` |
 | Seraphim Publication Curator | Public-release curator | `maintenance/seraphim-publication-curator/` |
+| Seraphim Evaluation Harness | Regression evaluator | `maintenance/seraphim-evaluation-harness/` |
+| Software Architect | System architecture owner | `engineering/software-architect/` |
+| Technical Project Manager | Technical delivery owner | `engineering/technical-project-manager/` |
+| AI Solutions Engineer | AI-system design owner | `engineering/ai-solutions-engineer/` |
+| Technical Lead | Engineering execution owner | `engineering/technical-lead/` |
+| Cybersecurity Specialist | Defensive security owner | `security/cybersecurity-specialist/` |
 
 Each directory is the installable package root. Copy only the selected package
 directory into a compatible Skills location; do not copy the category wrapper.
@@ -64,6 +71,8 @@ skills/
   decision-support/
   legal/
   maintenance/
+  engineering/
+  security/
   provenance/
 ```
 

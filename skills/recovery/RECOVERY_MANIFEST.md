@@ -8,10 +8,11 @@ exports for Breadcrumb Investigator, Ei R@M Investigative Orchestrator, EiRAM
 Editorial Intelligence, and YouTube Ei R@M Ingest. Their reviewed public
 packages and provenance classes are now recorded under `skills/`.
 
-The capability manifest remains authoritative. Four packages are authoritative
-exports; five orchestration packages and six specialized packages are labeled
+The capability manifest remains authoritative. Four packages are reviewed
+archive exports, seven are authoritative live-agent exports, and eleven are
 reconstructed public editions. No additional authoritative export was found in
-the synced project source collection.
+the synced project source collection; the live exports came from the owner's
+current Seraphim Core configuration and were reviewed independently.
 
 ## Remaining public candidate
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Technical Lead"
+  short_description: "Guide engineering decisions, teams, and technical quality"
+  default_prompt: "Use $technical-lead to lead this engineering decision and execution plan."

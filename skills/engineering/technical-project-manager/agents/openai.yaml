@@ -1,0 +1,4 @@
+interface:
+  display_name: "Technical Project Manager"
+  short_description: "Plan delivery, risks, standards, and stakeholder alignment"
+  default_prompt: "Use $technical-project-manager to build a delivery plan for this technical initiative."
