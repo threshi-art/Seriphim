@@ -146,5 +146,7 @@
 - [x] Execute the approved non-destructive OneDrive reorganization ledger after Windows desktop connectivity was restored; verified six moves with matching 53,777 file count, matching 2,554,535,135-byte aggregate size, and SHA-256 execution log
 - [x] Validate Manus Forge active-provider fallback and mock external-provider behavior; mark live OpenAI/Anthropic validation PENDING CREDENTIALS
 - [x] Review and approve the low-risk OneDrive taxonomy batch: AGI Training, Backmatter, App_Portfolio, Landing Pad, and two root screenshots
-- [ ] Obtain explicit taxonomy approval or revisions for GitHub, Loki Profile, Archive, EiRAM-only material, and retaining Seraphim/ as the canonical active source root
+- [x] Approve remaining taxonomy: move GitHub and Loki Profile; retain Seraphim/ as the canonical active source root; leave Archive and EiRAM-only material untouched
+- [x] Move approved GitHub and Loki Profile folders with repository-aware preflight and SHA-256 integrity verification; retain Seraphim/ and leave Archive and EiRAM-only material untouched
+- [x] Retain the remaining root GitHub/Seriphim Windows reparse point unchanged as an approved compatibility placeholder; canonical verified repository is Development/GitHub/Seriphim
 - [x] Execute approved low-risk OneDrive batch: AGI Training, Backmatter, App_Portfolio, Landing Pad, and two root screenshots with preflight and matching count/size/SHA-256 manifests

@@ -1,7 +1,7 @@
 # SERAPHIMGPT REORGANIZATION PLAN (PROPOSED)
 
 **Target Directory:** `C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT`  
-**Status:** The approved document/script ledger and low-risk taxonomy batch completed on August 14, 2026. Both batches passed count, aggregate-size, and SHA-256 manifest verification. GitHub, Loki Profile, the active Seraphim source tree, Archive, and EiRAM-only material remain deliberately out of scope.  
+**Status:** The approved document/script ledger, low-risk taxonomy batch, and GitHub/Loki Profile relocation completed on August 14, 2026. All moved content passed count, aggregate-size, and SHA-256 manifest verification. `Seraphim/` remains fixed as the active source root; Archive and EiRAM-only material remain untouched.  
 
 ---
 
@@ -68,6 +68,12 @@ SeraphimGPT/
 | `App_Portfolio/` | Root | `Projects/App_Portfolio/` | Sub-Project | **Moved and manifest-verified** as a separate application portfolio |
 | `AGI Training/` | Root | `Research/AGI/` | Research | **Moved and manifest-verified** training notes and research |
 | `Loki Profile/` | Root | `Personal/Loki_Profile/` | Personal | Deferred pending a dedicated content/sensitivity review |
+| `GitHub/` | Root | `Development/GitHub/` | Development Workspace | **Moved and manifest-verified**; the contained `Seriphim` Git repository remains clean |
+| `Loki Profile/` | Root | `Personal/Loki_Profile/` | Personal | **Moved and manifest-verified** |
+
+### Post-Move Note: Root GitHub Reparse Point
+
+The moved `Development/GitHub/Seriphim` repository is clean and content-identical to the captured source manifest. A root `GitHub/Seriphim` **read-only Windows reparse point** remains after the move. Chris approved retaining it unchanged as a compatibility placeholder on August 14, 2026. It is not the canonical working repository and no deletion or re-linking was performed.
 
 ---
 
