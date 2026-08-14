@@ -143,5 +143,5 @@
 - [x] Bug fix: Geo widget — added ip-api.com fallback when ipapi.co fails (CORS in some environments)
 - [x] Mission 03: Implement local disk, S3-compatible, and Manus Forge storage provider adapters while preserving existing upload behavior
 - [x] Configure SERAPHIM_LLM_PROVIDER selection plumbing and validate credential-free Manus fallback; external live validation remains pending credentials
-- [ ] Execute the approved non-destructive OneDrive reorganization ledger after Windows desktop connectivity is restored; verify counts, sizes, and hashes
+- [ ] PENDING — DESKTOP SIDECAR UNAVAILABLE: Execute the approved non-destructive OneDrive reorganization ledger after Windows desktop connectivity is restored; verify counts, sizes, and hashes
 - [x] Validate Manus Forge active-provider fallback and mock external-provider behavior; mark live OpenAI/Anthropic validation PENDING CREDENTIALS

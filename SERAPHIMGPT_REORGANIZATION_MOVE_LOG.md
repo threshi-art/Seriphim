@@ -1,7 +1,7 @@
 # SERAPHIMGPT REORGANIZATION MOVE LOG
 
 **Target Directory:** `C:\Users\cyber\OneDrive\Documents\Projects\Projects\Programs\SeraphimGPT`  
-**Status:** Windows desktop mount (`/mnt/desktop/`) is currently unmounted/disconnected. As a result, live file moves on the remote OneDrive path could not be executed physically. However, the exact move ledger, hash verification protocols, and verification manifest have been generated for execution as soon as the desktop reconnects.  
+**Status:** **PENDING — DESKTOP SIDECAR UNAVAILABLE.** Windows desktop access remains unavailable, so no live OneDrive file moves have been executed. The approved move ledger, inventory plan, and hash-verification protocol remain preserved for execution after a verified desktop reconnection.  
 
 ---
 
