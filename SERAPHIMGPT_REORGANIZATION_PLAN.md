@@ -1,7 +1,7 @@
 # SERAPHIMGPT REORGANIZATION PLAN (PROPOSED)
 
 **Target Directory:** `C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT`  
-**Status:** Partially executed on August 14, 2026. The approved six-file ledger completed with count, size, and SHA-256 verification. Broader taxonomy moves remain deliberately out of scope.  
+**Status:** The approved document/script ledger and low-risk taxonomy batch completed on August 14, 2026. Both batches passed count, aggregate-size, and SHA-256 manifest verification. GitHub, Loki Profile, the active Seraphim source tree, Archive, and EiRAM-only material remain deliberately out of scope.  
 
 ---
 
@@ -65,9 +65,9 @@ SeraphimGPT/
 | `HANDOFF_SETUP.md` | Root | `Seraphim/Documentation/` | Guide | Setup instructions |
 | `*.pdf` (DSM-5, MMPI, clinical docs) | Root / Misc | `Research/Backmatter/` | Reference Material | Research papers and clinical reference documents |
 | `*.png` / Screenshots | Root / Misc | `Media/Screenshots/` | Visual Artifacts | UI validation captures |
-| `App_Portfolio/` | Root | `Projects/App_Portfolio/` | Sub-Project | Separate application portfolio |
-| `AGI Training/` | Root | `Research/AGI/` | Research | Training notes and research |
-| `Loki Profile/` | Root | `Personal/Loki_Profile/` | Personal | Operator profile data |
+| `App_Portfolio/` | Root | `Projects/App_Portfolio/` | Sub-Project | **Moved and manifest-verified** as a separate application portfolio |
+| `AGI Training/` | Root | `Research/AGI/` | Research | **Moved and manifest-verified** training notes and research |
+| `Loki Profile/` | Root | `Personal/Loki_Profile/` | Personal | Deferred pending a dedicated content/sensitivity review |
 
 ---
 

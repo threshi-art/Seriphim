@@ -145,3 +145,6 @@
 - [x] Configure SERAPHIM_LLM_PROVIDER selection plumbing and validate credential-free Manus fallback; external live validation remains pending credentials
 - [x] Execute the approved non-destructive OneDrive reorganization ledger after Windows desktop connectivity was restored; verified six moves with matching 53,777 file count, matching 2,554,535,135-byte aggregate size, and SHA-256 execution log
 - [x] Validate Manus Forge active-provider fallback and mock external-provider behavior; mark live OpenAI/Anthropic validation PENDING CREDENTIALS
+- [x] Review and approve the low-risk OneDrive taxonomy batch: AGI Training, Backmatter, App_Portfolio, Landing Pad, and two root screenshots
+- [ ] Obtain explicit taxonomy approval or revisions for GitHub, Loki Profile, Archive, EiRAM-only material, and retaining Seraphim/ as the canonical active source root
+- [x] Execute approved low-risk OneDrive batch: AGI Training, Backmatter, App_Portfolio, Landing Pad, and two root screenshots with preflight and matching count/size/SHA-256 manifests
