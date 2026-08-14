@@ -31,4 +31,27 @@ describe("LLM Provider Abstraction & Router", () => {
 
     vi.unstubAllGlobals();
   });
+
+  it("falls back to Manus Forge when an external provider is selected without credentials", async () => {
+    const previousProvider = process.env.SERAPHIM_LLM_PROVIDER;
+    process.env.SERAPHIM_LLM_PROVIDER = "openai";
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: "chatcmpl-fallback",
+        created: Date.now(),
+        model: "gemini-2.5-flash",
+        choices: [{ index: 0, message: { role: "assistant", content: "Manus fallback" }, finish_reason: "stop" }],
+      }),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    await expect(invokeLLM({ messages: [{ role: "user", content: "Fallback verification" }] }))
+      .resolves.toMatchObject({ choices: [{ message: { content: "Manus fallback" } }] });
+
+    expect(mockFetch.mock.calls[0][0]).toContain("/v1/chat/completions");
+    if (previousProvider === undefined) delete process.env.SERAPHIM_LLM_PROVIDER;
+    else process.env.SERAPHIM_LLM_PROVIDER = previousProvider;
+    vi.unstubAllGlobals();
+  });
 });
