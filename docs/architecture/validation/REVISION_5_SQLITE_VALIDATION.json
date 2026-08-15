@@ -1,0 +1,17 @@
+{
+  "ddl_creation_succeeded": true,
+  "execution_seconds": 0.018611,
+  "foreign_key_check_rows": 0,
+  "harness_sha256": "1a672c74add3b198042591d12b9212dbfcf96017bb00e5d73f0f077baf6852a6",
+  "integrity_check": "ok",
+  "negative_tests": 26,
+  "packet": "/home/ubuntu/seraphim/SERAPHIM_RUNTIME_V0_1_FINAL_APPROVAL_PACKET_2026-08-15.md",
+  "packet_sha256": "3145a3f60aa7e12ebe85fa12bc44755c556b2a75b621025c4b425733008c893d",
+  "positive_tests": 11,
+  "python_version": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "result_sha256": "a6c47e440ac08bf66155088bc8421da5c1d17127c93f40b11ecda9a6cf533f53",
+  "sqlite_version": "3.45.1",
+  "structural_failures": [],
+  "unexpected_acceptances": [],
+  "unexpected_rejections": []
+}
