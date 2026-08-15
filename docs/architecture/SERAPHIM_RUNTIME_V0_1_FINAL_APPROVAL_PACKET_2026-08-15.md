@@ -1,164 +1,101 @@
-# Seraphim Runtime v0.1 — Final Approval Packet
+# Seraphim Runtime v0.1 — Final Approval Packet, Revision 2
 
-**Status:** Design-only approval packet. **No Runtime code, implementation branch, migration, database, API, user interface, commit, or remote change has been created.**  
-**Prepared for:** Chris Richardson (Architect)  
-**Purpose:** Authorize or revise the first implementation increment: local persistence, append-only audit events, migrations, and tests only.  
+**Status:** Corrected design-only review packet. **No Runtime code, implementation branch, live database, migration, reachable API, user interface, worker, executor, or external action has been created.**
 
-## 1. Approval Decision Requested
+## 1. Review Disposition and Approval Requested
 
-> **Requested decision:** Approve the foundation, branch, local database boundary, complete target schema, first-increment scope, policy matrix, migration/rollback procedure, and test gates below. Approval of this packet authorizes only the first persistence-and-audit increment; it does not authorize workers, autonomous tool execution, remote gateway deployment, client-interface implementation, external actions, or Git push.
+The prior review packet was rejected because its proposed SQL contained an invalid task-priority index and relied on relationships SQLite would not enforce. This revision corrects the schema, turns the stated integrity rules into constraints or triggers, and records successful disposable-SQLite validation. It does not authorize implementation.
 
 | Decision | Proposed value |
 |---|---|
 | Verified foundation commit | `72a3e5cc5cd5e93f5c0e1a24be45acad5d3cb295` |
-| Foundation branch | `agent/seraphim-institutional-hardening-design` |
+| Verified foundation branch | `agent/seraphim-institutional-hardening-design` |
 | Proposed implementation branch | `agent/runtime-v0.1-foundation` |
-| Runtime database | `%LOCALAPPDATA%\Seraphim\runtime\seraphim.db` |
-| Runtime database owner | Desktop Hub / local Runtime host only |
-| Client access | Versioned authenticated API and event channel only; no client accesses SQLite directly |
-| First increment | Migrations, local persistence, audit events, local API contracts, and tests |
-| Explicit exclusions | Workers, scheduler, recurrence, executor actions, remote gateway, website/iOS/desktop UI, external provider changes, Git push |
+| Review branch | `agent/runtime-v0.1-review-packet` |
+| Database path | `%LOCALAPPDATA%\Seraphim\runtime\seraphim.db` |
+| Sole database owner | `seraphim-platform/seraphim_local_bridge` Runtime host process, launched by Desktop Hub |
+| First increment | Migrations, inert persistence, append-only audit, internal trusted-process boundary, and tests only |
+| Hard exclusions | Reachable API, UI, authentication, pairing, workers, leases, scheduler, executors, tools, network effects, Git actions, remote gateway, Runtime memory |
 
-## 2. Foundation and Client Architecture
+## 2. Headless Runtime and Client Boundary
 
-The approved design keeps the Runtime headless and client-independent. The **Desktop Hub** is the authoritative mission, memory, approval, and audit host. It is the sole process allowed to open the local Runtime database and guarded local execution boundary. The Website Command Center, native iOS client, and desktop administration client are all consumers of the same versioned Runtime contract.
+Website Command Center, native iOS, and Desktop Hub are required future client surfaces. They must consume a future versioned authenticated API and event channel. They must never access SQLite directly.
 
 ```text
-Website Command Center       Native iOS Client       Desktop Administration Client
-          |                       |                         |
-          +-----------------------+-------------------------+
-                                  |
-                  Versioned authenticated Runtime API and event channel
-                       HTTPS /v1/* + WSS /v1/events
-                                  |
-                        Headless Runtime domain services
-                                  |
-                                  v
-                 Authoritative Desktop Hub and loopback Runtime host
-                                  |
-                                  v
-       %LOCALAPPDATA%\Seraphim\runtime\seraphim.db (SQLite; private to Hub)
+Website Command Center     Native iOS     Desktop Client
+               \              |              /
+                \  future HTTPS /v1/* + WSS /v1/events
+                         Headless Runtime
+                               |
+                  Desktop Hub Runtime host (only DB owner)
+                               |
+      %LOCALAPPDATA%\Seraphim\runtime\seraphim.db
 ```
 
-The first increment creates the local persistence and audit substrate needed by every later client. It does not expose a network listener, create a website page, create an iOS project, or enable remote control.
+The first increment exposes **no listener at all**: no TCP, named pipe, HTTP, WebSocket, tRPC, browser, mobile, or desktop-renderer endpoint. It uses only an internal `desktop-hub-runtime` process identity created by bootstrap. Caller-supplied identities, devices, database paths, raw SQL, and migration locations are rejected.
 
-## 3. Local Storage Boundary
+Runtime memory is outside v0.1 first increment. The architecture reserves no `runtime_memory_*` schema until a separate retention, encryption, search, export, and authorization design is approved.
 
-| Item | Required rule |
+## 3. Storage Ownership and Migration Boundary
+
+| Control | Requirement |
 |---|---|
-| Database path | `%LOCALAPPDATA%\Seraphim\runtime\seraphim.db` |
-| Database directory | Created with user-only permissions where supported by Windows ACLs |
-| SQLite mode | WAL enabled, foreign keys enabled, busy timeout enabled, `synchronous=NORMAL` for ordinary local durability; configurable `FULL` mode for high-assurance operation |
-| Prohibited locations | OneDrive, Git working tree, `%TEMP%`, browser storage, deployed web filesystem, and managed MySQL/TiDB application database |
-| SQLite access | Desktop Hub local Runtime host only; no browser, iOS app, web server, or desktop renderer opens the database directly |
-| Backups | Local application-data backup directory; never automatically copied to OneDrive in v0.1 |
-| Sensitive values | No API keys, refresh tokens, unredacted secrets, or raw local path credentials in checkpoints, audit payloads, or file-reference metadata |
+| Production database | `%LOCALAPPDATA%\Seraphim\runtime\seraphim.db` |
+| Prohibited locations | OneDrive, Git working tree, `%TEMP%`, browser storage, web deployment filesystem, MySQL/TiDB |
+| SQLite owner | Only `seraphim-platform/seraphim_local_bridge` Runtime host |
+| SQLite settings | `foreign_keys=ON`, WAL, bounded busy timeout, explicit transactions |
+| Backup location | `%LOCALAPPDATA%\Seraphim\runtime\backups\`; never automatically synchronized to OneDrive |
+| Client data | Future clients receive validated DTOs and opaque file/report references only; never a DB path, handle, raw query, or local locator |
 
-The Runtime database is separate from the existing web application database. Its records are operator-local runtime state. Cross-client access occurs through the Runtime API after authentication and authorization, not by replicating or mounting the SQLite file.
+## 4. Corrected Core SQLite Schema
 
-## 4. Complete Runtime SQLite Schema
+All IDs are UUID strings, timestamps are UTC ISO-8601, JSON is validated before persistence, and hashes are lowercase 64-character SHA-256 hex. Domain services own state transitions.
 
-The following is the complete target v0.1 schema contract. The first increment implements the **Core Persistence subset** marked in the final column. Later increments may add the remaining tables only through numbered migrations, never by editing a deployed database manually.
-
-### 4.1 Schema Conventions
-
-- IDs are UUID strings generated by the Runtime host.
-- Timestamps are UTC ISO-8601 strings with millisecond precision.
-- JSON values are stored as validated UTF-8 `TEXT`; the Runtime contract owns validation.
-- Hashes are lowercase SHA-256 hex strings.
-- State transitions are validated by domain services rather than inferred from client input.
-- `created_at` values are immutable. Update fields are changed only inside transactions that also emit an audit event.
-
-### 4.2 Migration and Metadata Tables
+### 4.1 DDL
 
 ```sql
+PRAGMA foreign_keys = ON;
+
 CREATE TABLE runtime_migrations (
   version INTEGER PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
-  checksum_sha256 TEXT NOT NULL,
+  checksum_sha256 TEXT NOT NULL CHECK(length(checksum_sha256)=64),
   applied_at TEXT NOT NULL,
   runtime_build TEXT NOT NULL
 );
-
 CREATE TABLE runtime_meta (
   key TEXT PRIMARY KEY,
   value_json TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
-```
 
-**Core Persistence subset:** Yes.
-
-### 4.3 Identity, Device, and Session Tables
-
-```sql
 CREATE TABLE runtime_identities (
   id TEXT PRIMARY KEY,
   display_name TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('ACTIVE','SUSPENDED','REVOKED')),
+  status TEXT NOT NULL CHECK(status IN ('ACTIVE','SUSPENDED','REVOKED')),
   roles_json TEXT NOT NULL,
   created_at TEXT NOT NULL,
   revoked_at TEXT
 );
-
 CREATE TABLE runtime_devices (
   id TEXT PRIMARY KEY,
   identity_id TEXT NOT NULL REFERENCES runtime_identities(id),
-  platform TEXT NOT NULL CHECK (platform IN ('WEB','IOS','DESKTOP_HUB')),
+  platform TEXT NOT NULL CHECK(platform IN ('WEB','IOS','DESKTOP_HUB')),
   display_name TEXT NOT NULL,
   public_key_fingerprint TEXT NOT NULL UNIQUE,
-  trust_state TEXT NOT NULL CHECK (trust_state IN ('PENDING','TRUSTED','REVOKED')),
+  trust_state TEXT NOT NULL CHECK(trust_state IN ('PENDING','TRUSTED','REVOKED')),
   enrolled_at TEXT NOT NULL,
   last_seen_at TEXT,
   revoked_at TEXT,
   revoke_reason TEXT
 );
 
-CREATE TABLE runtime_sessions (
-  id TEXT PRIMARY KEY,
-  identity_id TEXT NOT NULL REFERENCES runtime_identities(id),
-  device_id TEXT NOT NULL REFERENCES runtime_devices(id),
-  token_family_id TEXT NOT NULL,
-  scope_json TEXT NOT NULL,
-  issued_at TEXT NOT NULL,
-  expires_at TEXT NOT NULL,
-  last_used_at TEXT,
-  revoked_at TEXT,
-  revoke_reason TEXT
-);
-
-CREATE TABLE runtime_pairing_challenges (
-  id TEXT PRIMARY KEY,
-  requested_identity_id TEXT REFERENCES runtime_identities(id),
-  requested_platform TEXT NOT NULL,
-  challenge_hash TEXT NOT NULL UNIQUE,
-  requested_scopes_json TEXT NOT NULL,
-  expires_at TEXT NOT NULL,
-  approved_by_identity_id TEXT REFERENCES runtime_identities(id),
-  approved_at TEXT,
-  consumed_at TEXT,
-  revoked_at TEXT,
-  created_at TEXT NOT NULL
-);
-
-CREATE INDEX idx_runtime_sessions_device ON runtime_sessions(device_id, revoked_at, expires_at);
-CREATE INDEX idx_runtime_devices_identity ON runtime_devices(identity_id, trust_state);
-```
-
-**Core Persistence subset:** Schema reserved only; no token issuance, pairing, remote access, or client login implementation in the first increment.
-
-### 4.4 Mission and Task Tables
-
-```sql
 CREATE TABLE runtime_missions (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   objective TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN (
-    'DRAFT','AWAITING_APPROVAL','QUEUED','RUNNING','PAUSED',
-    'RECOVERING','COMPLETED','FAILED','CANCELED'
-  )),
-  priority INTEGER NOT NULL DEFAULT 100 CHECK (priority BETWEEN 0 AND 1000),
+  status TEXT NOT NULL CHECK(status IN ('DRAFT','AWAITING_APPROVAL','QUEUED','RUNNING','PAUSED','RECOVERING','COMPLETED','FAILED','CANCELED')),
+  priority INTEGER NOT NULL DEFAULT 100 CHECK(priority BETWEEN 0 AND 1000),
   input_json TEXT NOT NULL,
   context_json TEXT NOT NULL,
   policy_snapshot_json TEXT NOT NULL,
@@ -169,63 +106,59 @@ CREATE TABLE runtime_missions (
   started_at TEXT,
   finished_at TEXT,
   updated_at TEXT NOT NULL,
-  version INTEGER NOT NULL DEFAULT 1
+  version INTEGER NOT NULL DEFAULT 1 CHECK(version > 0)
 );
-
 CREATE TABLE runtime_tasks (
   id TEXT PRIMARY KEY,
   mission_id TEXT NOT NULL REFERENCES runtime_missions(id) ON DELETE RESTRICT,
-  sequence_no INTEGER NOT NULL,
+  sequence_no INTEGER NOT NULL CHECK(sequence_no >= 0),
   task_type TEXT NOT NULL,
-  state TEXT NOT NULL CHECK (state IN (
-    'PENDING','BLOCKED_APPROVAL','READY','LEASED','RUNNING','RETRY_WAIT',
-    'INTERRUPTED','RECOVERING','SUCCEEDED','FAILED','FAILED_UNKNOWN_EFFECT','CANCELED'
-  )),
+  state TEXT NOT NULL CHECK(state IN ('PENDING','BLOCKED_APPROVAL','READY','LEASED','RUNNING','RETRY_WAIT','INTERRUPTED','RECOVERING','SUCCEEDED','FAILED','FAILED_UNKNOWN_EFFECT','CANCELED')),
+  priority INTEGER NOT NULL DEFAULT 100 CHECK(priority BETWEEN 0 AND 1000),
   payload_json TEXT NOT NULL,
-  payload_hash TEXT NOT NULL,
-  depends_on_task_id TEXT REFERENCES runtime_tasks(id) ON DELETE RESTRICT,
-  risk_level TEXT NOT NULL CHECK (risk_level IN ('READ_ONLY','LOCAL_WRITE','PROCESS','NETWORK','SENSITIVE')),
-  requires_approval INTEGER NOT NULL DEFAULT 0 CHECK (requires_approval IN (0,1)),
+  payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64),
+  risk_level TEXT NOT NULL CHECK(risk_level IN ('READ_ONLY','LOCAL_WRITE','PROCESS','NETWORK','SENSITIVE')),
+  requires_approval INTEGER NOT NULL DEFAULT 0 CHECK(requires_approval IN (0,1)),
   idempotency_key TEXT NOT NULL UNIQUE,
-  resume_policy TEXT NOT NULL CHECK (resume_policy IN ('NEVER','SAFE_RETRY','REQUIRE_REVIEW')),
-  retry_limit INTEGER NOT NULL DEFAULT 0 CHECK (retry_limit BETWEEN 0 AND 10),
+  resume_policy TEXT NOT NULL CHECK(resume_policy IN ('NEVER','SAFE_RETRY','REQUIRE_REVIEW')),
+  retry_limit INTEGER NOT NULL DEFAULT 0 CHECK(retry_limit BETWEEN 0 AND 10),
   available_at TEXT NOT NULL,
   deadline_at TEXT,
-  latest_attempt_no INTEGER NOT NULL DEFAULT 0,
+  latest_attempt_no INTEGER NOT NULL DEFAULT 0 CHECK(latest_attempt_no >= 0),
   last_checkpoint_id TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
-  UNIQUE (mission_id, sequence_no)
+  UNIQUE(mission_id, sequence_no)
 );
-
 CREATE INDEX idx_runtime_missions_status_priority ON runtime_missions(status, priority, created_at);
 CREATE INDEX idx_runtime_tasks_ready ON runtime_tasks(state, available_at, priority);
 CREATE INDEX idx_runtime_tasks_mission ON runtime_tasks(mission_id, sequence_no);
-```
 
-**Core Persistence subset:** Yes. The first increment creates and validates missions and inert tasks, but does not execute them.
+CREATE TABLE runtime_task_dependencies (
+  mission_id TEXT NOT NULL REFERENCES runtime_missions(id) ON DELETE RESTRICT,
+  task_id TEXT NOT NULL REFERENCES runtime_tasks(id) ON DELETE RESTRICT,
+  depends_on_task_id TEXT NOT NULL REFERENCES runtime_tasks(id) ON DELETE RESTRICT,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY(task_id, depends_on_task_id),
+  CHECK(task_id <> depends_on_task_id)
+);
 
-### 4.5 Attempts, Workers, and Checkpoints
-
-```sql
 CREATE TABLE runtime_workers (
   id TEXT PRIMARY KEY,
   boot_id TEXT NOT NULL,
   display_name TEXT NOT NULL,
   capabilities_json TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('STARTING','ACTIVE','DRAINING','STOPPED')),
+  status TEXT NOT NULL CHECK(status IN ('STARTING','ACTIVE','DRAINING','STOPPED')),
   started_at TEXT NOT NULL,
   last_heartbeat_at TEXT NOT NULL,
   stopped_at TEXT
 );
-
 CREATE TABLE runtime_task_attempts (
   id TEXT PRIMARY KEY,
+  mission_id TEXT NOT NULL REFERENCES runtime_missions(id) ON DELETE RESTRICT,
   task_id TEXT NOT NULL REFERENCES runtime_tasks(id) ON DELETE RESTRICT,
-  attempt_no INTEGER NOT NULL,
-  state TEXT NOT NULL CHECK (state IN (
-    'LEASED','RUNNING','SUCCEEDED','RETRY_WAIT','FAILED','CANCELED','INTERRUPTED','FAILED_UNKNOWN_EFFECT'
-  )),
+  attempt_no INTEGER NOT NULL CHECK(attempt_no > 0),
+  state TEXT NOT NULL CHECK(state IN ('LEASED','RUNNING','SUCCEEDED','RETRY_WAIT','FAILED','CANCELED','INTERRUPTED','FAILED_UNKNOWN_EFFECT')),
   worker_id TEXT REFERENCES runtime_workers(id),
   boot_id TEXT,
   lease_expires_at TEXT,
@@ -235,282 +168,210 @@ CREATE TABLE runtime_task_attempts (
   result_json TEXT,
   error_json TEXT,
   effect_receipt_json TEXT,
-  UNIQUE (task_id, attempt_no)
+  UNIQUE(task_id, attempt_no)
 );
-
 CREATE TABLE runtime_checkpoints (
   id TEXT PRIMARY KEY,
   mission_id TEXT NOT NULL REFERENCES runtime_missions(id) ON DELETE RESTRICT,
   task_id TEXT NOT NULL REFERENCES runtime_tasks(id) ON DELETE RESTRICT,
   attempt_id TEXT REFERENCES runtime_task_attempts(id) ON DELETE RESTRICT,
-  sequence_no INTEGER NOT NULL,
-  kind TEXT NOT NULL CHECK (kind IN ('MISSION','TASK','RECOVERY','MANUAL')),
+  sequence_no INTEGER NOT NULL CHECK(sequence_no > 0),
+  kind TEXT NOT NULL CHECK(kind IN ('MISSION','TASK','RECOVERY','MANUAL')),
   state_json TEXT NOT NULL,
-  integrity_hash TEXT NOT NULL,
+  integrity_hash TEXT NOT NULL CHECK(length(integrity_hash)=64),
   created_at TEXT NOT NULL,
-  UNIQUE (task_id, sequence_no)
+  UNIQUE(task_id, sequence_no)
 );
-
 CREATE INDEX idx_runtime_attempts_task ON runtime_task_attempts(task_id, attempt_no);
 CREATE INDEX idx_runtime_attempts_lease ON runtime_task_attempts(state, lease_expires_at);
 CREATE INDEX idx_runtime_checkpoints_task ON runtime_checkpoints(task_id, sequence_no DESC);
-```
 
-**Core Persistence subset:** Tables and validation only. No worker process, lease claim, retry, recovery, or executor is enabled in the first increment.
-
-### 4.6 Approval, Idempotency, and Audit Tables
-
-```sql
 CREATE TABLE runtime_approvals (
   id TEXT PRIMARY KEY,
-  mission_id TEXT REFERENCES runtime_missions(id) ON DELETE RESTRICT,
+  mission_id TEXT NOT NULL REFERENCES runtime_missions(id) ON DELETE RESTRICT,
   task_id TEXT NOT NULL REFERENCES runtime_tasks(id) ON DELETE RESTRICT,
   requested_by_identity_id TEXT REFERENCES runtime_identities(id),
   decision_by_identity_id TEXT REFERENCES runtime_identities(id),
-  requested_payload_hash TEXT NOT NULL,
+  decision_device_id TEXT REFERENCES runtime_devices(id),
+  requested_payload_hash TEXT NOT NULL CHECK(length(requested_payload_hash)=64),
   policy_version TEXT NOT NULL,
   requested_scope_json TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('PENDING','APPROVED','DENIED','EXPIRED','REVOKED')),
+  status TEXT NOT NULL CHECK(status IN ('PENDING','APPROVED','DENIED','EXPIRED','REVOKED')),
   requested_at TEXT NOT NULL,
   expires_at TEXT NOT NULL,
   decided_at TEXT,
   decision_reason TEXT,
-  decision_device_id TEXT REFERENCES runtime_devices(id),
   revoked_at TEXT,
-  revoke_reason TEXT
+  revoke_reason TEXT,
+  CHECK(requested_at <= expires_at)
 );
+CREATE UNIQUE INDEX uq_runtime_approvals_live ON runtime_approvals(task_id, requested_payload_hash)
+  WHERE status IN ('PENDING','APPROVED') AND revoked_at IS NULL;
 
 CREATE TABLE runtime_idempotency (
   key TEXT PRIMARY KEY,
   task_id TEXT REFERENCES runtime_tasks(id) ON DELETE RESTRICT,
-  request_hash TEXT NOT NULL,
+  request_hash TEXT NOT NULL CHECK(length(request_hash)=64),
   effect_receipt_json TEXT,
-  status TEXT NOT NULL CHECK (status IN ('IN_PROGRESS','COMPLETED','UNKNOWN_EFFECT','REVOKED')),
+  status TEXT NOT NULL CHECK(status IN ('IN_PROGRESS','COMPLETED','UNKNOWN_EFFECT','REVOKED')),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   expires_at TEXT
 );
-
 CREATE TABLE runtime_audit_events (
-  id TEXT PRIMARY KEY,
-  sequence_no INTEGER NOT NULL UNIQUE,
+  sequence_no INTEGER PRIMARY KEY AUTOINCREMENT,
+  id TEXT NOT NULL UNIQUE,
   occurred_at TEXT NOT NULL,
   event_type TEXT NOT NULL,
-  actor_type TEXT NOT NULL CHECK (actor_type IN ('IDENTITY','DEVICE','WORKER','SYSTEM')),
+  actor_type TEXT NOT NULL CHECK(actor_type IN ('IDENTITY','DEVICE','WORKER','SYSTEM')),
   actor_id TEXT,
   correlation_id TEXT NOT NULL,
   mission_id TEXT REFERENCES runtime_missions(id) ON DELETE RESTRICT,
   task_id TEXT REFERENCES runtime_tasks(id) ON DELETE RESTRICT,
   attempt_id TEXT REFERENCES runtime_task_attempts(id) ON DELETE RESTRICT,
   payload_json TEXT NOT NULL,
-  payload_hash TEXT NOT NULL,
+  payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64),
   previous_event_hash TEXT,
-  event_hash TEXT NOT NULL UNIQUE
+  event_hash TEXT NOT NULL UNIQUE CHECK(length(event_hash)=64),
+  CHECK((actor_type='SYSTEM' AND actor_id IS NULL) OR (actor_type<>'SYSTEM' AND actor_id IS NOT NULL))
 );
-
 CREATE INDEX idx_runtime_approvals_task ON runtime_approvals(task_id, status, expires_at);
-CREATE INDEX idx_runtime_audit_entity ON runtime_audit_events(mission_id, task_id, occurred_at);
+CREATE INDEX idx_runtime_audit_entity ON runtime_audit_events(mission_id, task_id, sequence_no);
 CREATE INDEX idx_runtime_audit_correlation ON runtime_audit_events(correlation_id, sequence_no);
 ```
 
-**Core Persistence subset:** `runtime_approvals`, `runtime_idempotency`, and `runtime_audit_events` are created. The first increment writes audit events for all persistence actions and may create pending approval records, but it does not execute an approved effectful task.
-
-### 4.7 Files, Reports, Notifications, and Client Event Cursors
+### 4.2 Enforceable Relational and Lifecycle Triggers
 
 ```sql
-CREATE TABLE runtime_file_references (
-  id TEXT PRIMARY KEY,
-  owner_identity_id TEXT REFERENCES runtime_identities(id),
-  content_hash TEXT NOT NULL,
-  byte_size INTEGER NOT NULL CHECK (byte_size >= 0),
-  mime_type TEXT NOT NULL,
-  storage_locator TEXT NOT NULL,
-  scan_state TEXT NOT NULL CHECK (scan_state IN ('PENDING','CLEAN','REJECTED','UNAVAILABLE')),
-  retention_policy TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  deleted_at TEXT,
-  UNIQUE (content_hash, byte_size, mime_type)
-);
-
-CREATE TABLE runtime_reports (
-  id TEXT PRIMARY KEY,
-  report_type TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('DRAFT','QUEUED','GENERATING','READY','FAILED','REVOKED')),
-  source_refs_json TEXT NOT NULL,
-  file_reference_id TEXT REFERENCES runtime_file_references(id),
-  created_by_identity_id TEXT REFERENCES runtime_identities(id),
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
-  error_json TEXT
-);
-
-CREATE TABLE runtime_notifications (
-  id TEXT PRIMARY KEY,
-  identity_id TEXT REFERENCES runtime_identities(id),
-  device_id TEXT REFERENCES runtime_devices(id),
-  category TEXT NOT NULL,
-  severity TEXT NOT NULL CHECK (severity IN ('INFO','WARNING','CRITICAL')),
-  payload_json TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  acknowledged_at TEXT,
-  expires_at TEXT
-);
-
-CREATE TABLE runtime_event_cursors (
-  session_id TEXT NOT NULL REFERENCES runtime_sessions(id) ON DELETE CASCADE,
-  stream_name TEXT NOT NULL,
-  last_acknowledged_sequence INTEGER NOT NULL DEFAULT 0,
-  updated_at TEXT NOT NULL,
-  PRIMARY KEY (session_id, stream_name)
-);
+CREATE TRIGGER task_dependency_scope_insert BEFORE INSERT ON runtime_task_dependencies BEGIN
+  SELECT CASE WHEN (SELECT mission_id FROM runtime_tasks WHERE id=NEW.task_id) <> NEW.mission_id
+                    OR (SELECT mission_id FROM runtime_tasks WHERE id=NEW.depends_on_task_id) <> NEW.mission_id
+    THEN RAISE(ABORT,'dependency tasks must belong to declared mission') END;
+  SELECT CASE WHEN EXISTS(
+    WITH RECURSIVE upstream(id) AS (
+      SELECT depends_on_task_id FROM runtime_task_dependencies WHERE task_id=NEW.depends_on_task_id
+      UNION ALL
+      SELECT d.depends_on_task_id FROM runtime_task_dependencies d JOIN upstream u ON d.task_id=u.id
+    ) SELECT 1 FROM upstream WHERE id=NEW.task_id
+  ) THEN RAISE(ABORT,'dependency cycle') END;
+END;
+CREATE TRIGGER mission_current_task_scope_insert BEFORE INSERT ON runtime_missions WHEN NEW.current_task_id IS NOT NULL BEGIN
+  SELECT CASE WHEN (SELECT mission_id FROM runtime_tasks WHERE id=NEW.current_task_id) <> NEW.id
+    THEN RAISE(ABORT,'current task must belong to mission') END;
+END;
+CREATE TRIGGER mission_current_task_scope_update BEFORE UPDATE OF current_task_id ON runtime_missions WHEN NEW.current_task_id IS NOT NULL BEGIN
+  SELECT CASE WHEN (SELECT mission_id FROM runtime_tasks WHERE id=NEW.current_task_id) <> NEW.id
+    THEN RAISE(ABORT,'current task must belong to mission') END;
+END;
+CREATE TRIGGER attempt_scope_insert BEFORE INSERT ON runtime_task_attempts BEGIN
+  SELECT CASE WHEN (SELECT mission_id FROM runtime_tasks WHERE id=NEW.task_id) <> NEW.mission_id
+    THEN RAISE(ABORT,'attempt task must belong to mission') END;
+END;
+CREATE TRIGGER checkpoint_scope_insert BEFORE INSERT ON runtime_checkpoints BEGIN
+  SELECT CASE WHEN (SELECT mission_id FROM runtime_tasks WHERE id=NEW.task_id) <> NEW.mission_id
+    THEN RAISE(ABORT,'checkpoint task must belong to mission') END;
+  SELECT CASE WHEN NEW.attempt_id IS NOT NULL AND EXISTS(
+    SELECT 1 FROM runtime_task_attempts WHERE id=NEW.attempt_id AND (task_id<>NEW.task_id OR mission_id<>NEW.mission_id)
+  ) THEN RAISE(ABORT,'checkpoint attempt must match task and mission') END;
+END;
+CREATE TRIGGER approval_scope_insert BEFORE INSERT ON runtime_approvals BEGIN
+  SELECT CASE WHEN (SELECT mission_id FROM runtime_tasks WHERE id=NEW.task_id) <> NEW.mission_id
+    THEN RAISE(ABORT,'approval task must belong to mission') END;
+  SELECT CASE WHEN NEW.status='PENDING' AND (NEW.decision_by_identity_id IS NOT NULL OR NEW.decision_device_id IS NOT NULL OR NEW.decided_at IS NOT NULL OR NEW.revoked_at IS NOT NULL)
+    THEN RAISE(ABORT,'pending approval cannot contain decision or revocation') END;
+  SELECT CASE WHEN NEW.status IN ('APPROVED','DENIED') AND (NEW.decision_by_identity_id IS NULL OR NEW.decision_device_id IS NULL OR NEW.decided_at IS NULL)
+    THEN RAISE(ABORT,'decision requires identity device and timestamp') END;
+  SELECT CASE WHEN NEW.status='DENIED' AND (NEW.decision_reason IS NULL OR length(trim(NEW.decision_reason))=0)
+    THEN RAISE(ABORT,'denial requires reason') END;
+  SELECT CASE WHEN NEW.status='REVOKED' AND (NEW.revoked_at IS NULL OR NEW.revoke_reason IS NULL OR length(trim(NEW.revoke_reason))=0)
+    THEN RAISE(ABORT,'revocation requires timestamp and reason') END;
+  SELECT CASE WHEN NEW.decision_device_id IS NOT NULL AND NOT EXISTS(
+    SELECT 1 FROM runtime_devices WHERE id=NEW.decision_device_id AND identity_id=NEW.decision_by_identity_id AND trust_state='TRUSTED'
+  ) THEN RAISE(ABORT,'decision device must be trusted and owned by decision identity') END;
+END;
+CREATE TRIGGER audit_insert_chain BEFORE INSERT ON runtime_audit_events BEGIN
+  SELECT CASE WHEN (SELECT COUNT(*) FROM runtime_audit_events)=0
+                    AND (NEW.previous_event_hash IS NOT NULL OR NEW.event_type<>'RUNTIME_GENESIS' OR NEW.actor_type<>'SYSTEM')
+    THEN RAISE(ABORT,'first audit event must be SYSTEM RUNTIME_GENESIS with null previous hash') END;
+  SELECT CASE WHEN (SELECT COUNT(*) FROM runtime_audit_events)>0
+                    AND (NEW.previous_event_hash IS NULL OR NEW.previous_event_hash<>(SELECT event_hash FROM runtime_audit_events ORDER BY sequence_no DESC LIMIT 1) OR NEW.event_type='RUNTIME_GENESIS')
+    THEN RAISE(ABORT,'audit event must extend current single chain') END;
+  SELECT CASE WHEN NEW.actor_type='IDENTITY' AND NOT EXISTS(SELECT 1 FROM runtime_identities WHERE id=NEW.actor_id)
+    THEN RAISE(ABORT,'identity audit actor must exist') END;
+  SELECT CASE WHEN NEW.actor_type='DEVICE' AND NOT EXISTS(SELECT 1 FROM runtime_devices WHERE id=NEW.actor_id)
+    THEN RAISE(ABORT,'device audit actor must exist') END;
+  SELECT CASE WHEN NEW.actor_type='WORKER' AND NOT EXISTS(SELECT 1 FROM runtime_workers WHERE id=NEW.actor_id)
+    THEN RAISE(ABORT,'worker audit actor must exist') END;
+END;
+CREATE TRIGGER audit_no_update BEFORE UPDATE ON runtime_audit_events BEGIN SELECT RAISE(ABORT,'audit ledger is append only'); END;
+CREATE TRIGGER audit_no_delete BEFORE DELETE ON runtime_audit_events BEGIN SELECT RAISE(ABORT,'audit ledger is append only'); END;
 ```
 
-**Core Persistence subset:** Schema reserved only. File upload, report generation, notifications, WebSocket delivery, and remote clients are not implemented in the first increment.
+The Runtime persistence service must append the corresponding audit event in the same SQLite transaction as every durable mutation. No public caller may write an audit event directly.
 
-## 5. First Increment: Exact Scope and Approval Matrix
+## 5. Qualified Implementation Paths and First-Increment Scope
 
-### 5.1 Permitted Work
+All paths are relative to the canonical repository's `seraphim-platform/` directory:
 
-| Work item | Allowed | Notes |
-|---|---:|---|
-| Create implementation branch from the approved foundation | After packet approval | Branch creation only; no push unless separately approved |
-| Create local application-data SQLite database | Yes | Only during local test/runtime initialization |
-| Add numbered SQLite migration framework | Yes | Forward-only migrations and migration checksum verification |
-| Add runtime domain schemas and local persistence repository | Yes | No execution engine |
-| Persist mission, task, checkpoint, approval, idempotency, and audit records | Yes | Inert state only; no tool invocation |
-| Append audit events with hash-chain linkage | Yes | All mutation paths must be covered by tests |
-| Provide loopback-only local contract stubs | Yes | No public remote listener and no UI implementation |
-| Add test fixtures using disposable local databases | Yes | Must be outside OneDrive and source tree |
-
-### 5.2 Explicitly Blocked Work
-
-| Work item | Status | Reason |
-|---|---:|---|
-| Autonomous executor, shell, process, file-write, or network actions | Blocked | Requires worker and effect-approval increment |
-| Worker leasing, scheduler, recurrence, retry loop, or startup recovery execution | Blocked | Designed but not enabled until persistence substrate is proven |
-| Website, desktop, iOS, gateway, WebSocket, or authentication UI | Blocked | Contract exists only in design |
-| Remote access, tunnel, device pairing, token issuance, session revocation implementation | Blocked | Security design only |
-| File upload or camera/voice ingestion | Blocked | File-reference schema only |
-| Git commit, tag, push, merge, rebase, or checkout of a different branch | Blocked | Requires separate approval |
-| Managed MySQL/TiDB schema changes | Blocked | Runtime state remains local SQLite |
-| Provider, storage, or Manus dependency refactor | Blocked | Out of first increment scope |
-
-### 5.3 Approval Matrix for Later Runtime Operations
-
-| Operation class | Initial policy | Required authority | Automatic retry allowed? |
-|---|---|---|---|
-| Inert mission/task persistence | Allowed | Authenticated local Desktop Hub operator | Not applicable |
-| Read-only local analysis | Future increment | Authorized operator policy | Yes, bounded and idempotent |
-| Local file write | Future increment | Payload-bound explicit approval | Only with durable receipt |
-| Shell or process execution | Future increment | Explicit approval plus existing allowlist | Only with idempotency proof |
-| Network egress or external posting | Future increment | Explicit approval, device trust, effect receipt | No if outcome is unknown |
-| Credential, policy, or self-modification | Prohibited in v0.1 | None | No |
-
-## 6. Planned Affected Files
-
-The paths below are implementation targets only. This packet does not create them.
-
-| Planned path | First-increment responsibility |
+| Planned path | Responsibility |
 |---|---|
-| `shared/runtime.ts` | Runtime state enums, Zod payloads, persistence contracts, stable error codes |
-| `shared/runtime-api.ts` | Client-neutral request/response and event-envelope schemas; no client UI |
-| `seraphim_local_bridge/runtime/__init__.py` | Local Runtime package boundary |
-| `seraphim_local_bridge/runtime/config.py` | `%LOCALAPPDATA%` path derivation, non-OneDrive guard, SQLite pragma policy |
-| `seraphim_local_bridge/runtime/store.py` | SQLite connection lifecycle, transactions, migration entry point |
-| `seraphim_local_bridge/runtime/migrations/0001_runtime_core.sql` | Core schema migrations in source control |
-| `seraphim_local_bridge/runtime/migrations/0002_runtime_identity_contracts.sql` | Reserved identity/device tables if approved for schema inclusion |
-| `seraphim_local_bridge/runtime/audit.py` | Audit sequence and hash-chain append service |
-| `seraphim_local_bridge/runtime/missions.py` | Inert mission/task persistence service |
-| `seraphim_local_bridge/runtime/approvals.py` | Pending approval persistence and payload-hash validation only |
-| `seraphim_local_bridge/runtime/api.py` | Loopback-only local contract stubs; no remote binding |
-| `seraphim_local_bridge/tests/test_runtime_store.py` | Database, migration, path, transaction tests |
-| `seraphim_local_bridge/tests/test_runtime_audit.py` | Hash-chain, ordering, tamper-detection tests |
-| `seraphim_local_bridge/tests/test_runtime_missions.py` | State and idempotency persistence tests |
-| `seraphim_local_bridge/tests/test_runtime_approvals.py` | Approval payload and expiration persistence tests |
-| `server/runtime.contract.test.ts` | Cross-language contract fixture validation, if the JavaScript package consumes schemas |
+| `seraphim-platform/shared/runtime.ts` | States, DTOs, validation, error codes |
+| `seraphim-platform/seraphim_local_bridge/runtime/config.py` | `%LOCALAPPDATA%` path and non-OneDrive guard |
+| `seraphim-platform/seraphim_local_bridge/runtime/store.py` | Sole connection owner, transaction and migration runner |
+| `seraphim-platform/seraphim_local_bridge/runtime/migrations/0001_runtime_core.sql` | Corrected core schema |
+| `seraphim-platform/seraphim_local_bridge/runtime/audit.py` | Transaction-coupled append service |
+| `seraphim-platform/seraphim_local_bridge/runtime/missions.py` | Inert mission/task/dependency persistence |
+| `seraphim-platform/seraphim_local_bridge/runtime/approvals.py` | Pending approval persistence and validation |
+| `seraphim-platform/seraphim_local_bridge/runtime/internal.py` | Internal trusted-process boundary only; no listener |
+| `seraphim-platform/seraphim_local_bridge/tests/test_runtime_*.py` | Disposable SQLite tests |
 
-No existing client page, dashboard navigation, tRPC router, package manifest, lockfile, deployment configuration, or application MySQL schema is modified by the first increment unless a narrowly scoped integration test requires a nonfunctional type-only import.
+Permitted: local application-data test DBs, migrations, inert mission/task/dependency/checkpoint/approval/idempotency persistence, audit writes, internal trusted-process identity, and tests.
 
-## 7. Migration Strategy
+Blocked: reachable API, website/iOS/desktop UI, sessions, pairing, device authorization implementation, WebSocket, remote gateway, workers, leases, scheduler, retries, recovery execution, executor actions, shell/process/file/network/Git operations, external provider changes, MySQL/TiDB changes, Runtime memory, and push of implementation work.
 
-### 7.1 Forward Migration Procedure
+## 6. Planned Migration, Backup, and Rollback Commands
 
-1. Resolve the runtime root from `%LOCALAPPDATA%\Seraphim\runtime`; reject paths under OneDrive, the repository, or temporary storage.
-2. Create the runtime and local backup directories with restricted user access.
-3. Open SQLite, set `PRAGMA foreign_keys=ON`, `journal_mode=WAL`, and a bounded `busy_timeout`.
-4. Validate every recorded migration checksum against the source-controlled migration file. A mismatch is fatal and stops startup.
-5. Before any unapplied migration, create a consistent SQLite backup in `%LOCALAPPDATA%\Seraphim\runtime\backups\` using the SQLite backup API.
-6. Apply exactly one numbered migration at a time inside `BEGIN IMMEDIATE` / `COMMIT`.
-7. Insert the migration version, name, checksum, timestamp, and Runtime build identifier into `runtime_migrations` in the same transaction.
-8. Run `PRAGMA foreign_key_check` and `PRAGMA integrity_check` after migration. Mark the Runtime unavailable if either fails.
-9. Append a system audit event only after schema validation succeeds.
+These are planned administrative command contracts; they do not exist yet:
 
-Migration files are forward-only. No migration may silently rewrite mission state, delete audit events, or collapse approval history. A data transformation requires an explicit migration-specific approval and a before/after validation report.
+```text
+seraphim-runtime migrate --db "%LOCALAPPDATA%\Seraphim\runtime\seraphim.db"
+seraphim-runtime verify --db "%LOCALAPPDATA%\Seraphim\runtime\seraphim.db"
+seraphim-runtime backup --db "%LOCALAPPDATA%\Seraphim\runtime\seraphim.db"
+seraphim-runtime restore --backup "<verified-backup>" --db "%LOCALAPPDATA%\Seraphim\runtime\seraphim.db"
+```
 
-### 7.2 Development and Test Migration Procedure
+Migration procedure: reject OneDrive/repository/temp production paths; acquire single-instance migration lock; enable FKs and WAL; verify existing migration checksums; create a SQLite-backup-API backup with WAL checkpoint verification; apply one numbered migration inside `BEGIN IMMEDIATE`; write migration record in the same transaction; run `integrity_check`, `foreign_key_check`, and audit-chain verification.
 
-Tests use a unique disposable directory below the operating-system test temporary directory, never the live runtime database. Each test begins from migration zero, applies all migrations, validates expected schema version, and removes only its own disposable database. Migration test fixtures must not open or delete `%LOCALAPPDATA%\Seraphim\runtime\seraphim.db`.
+Rollback is operator-controlled: stop the sole owner; preserve DB, `-wal`, and `-shm` files in timestamped quarantine; verify backup checksum and migration version; restore via temporary replacement and atomic rename; rerun integrity, foreign-key, and audit-chain verification; record a system audit event. Windows restoration tests must cover locked files, DB/WAL/SHM companions, interrupted backup, concurrent startup, and restart after replacement.
 
-## 8. Rollback and Recovery Procedure
+## 7. Validation and Acceptance Gates
 
-The Runtime does not implement automatic schema downgrades. Rollback is an operator-controlled restoration procedure.
+The complete revised DDL and trigger set was executed against fresh disposable SQLite with foreign keys enabled. Negative tests passed for cross-mission dependency, dependency cycle, cross-mission checkpoint, duplicate live approval, incomplete approval decision, audit-chain branch, audit update, and audit delete.
 
-1. Stop the Desktop Hub Runtime host and confirm no worker or API process holds the database.
-2. Preserve the failed database and WAL/SHM companions in a timestamped quarantine directory; do not overwrite evidence.
-3. Identify the last backup created before the failed migration and verify its SQLite integrity and recorded migration version.
-4. Restore the verified backup atomically to `%LOCALAPPDATA%\Seraphim\runtime\seraphim.db` using a temporary replacement filename and atomic rename.
-5. Restart only the Runtime build compatible with that backup's latest migration version.
-6. Run `PRAGMA integrity_check`, `foreign_key_check`, and audit-chain verification.
-7. Emit a local system audit event describing the rollback and quarantine references; never erase the failed migration evidence.
-8. Mark affected missions as `PAUSED` or `RECOVERING` according to their last durable state. The first increment has no active executor, so no external effect replay is possible.
-
-A destructive schema repair, backup deletion, or live database move requires separate Architect approval. OneDrive remains excluded from automated backup/rollback operations.
-
-## 9. First-Increment Tests and Acceptance Gates
-
-### 9.1 Required Automated Tests
-
-| Test group | Required assertions |
+| Test group | Required proof |
 |---|---|
-| Path safety | Runtime DB resolves under `%LOCALAPPDATA%`; startup rejects OneDrive, repository, and temporary production paths |
-| Fresh migration | Empty database applies all migrations once, records checksums, and passes SQLite integrity checks |
-| Migration idempotence | Reopening an up-to-date database applies no migration and does not change migration records |
-| Migration checksum protection | Edited historical migration checksum stops startup before state mutation |
-| Transaction rollback | Simulated failed migration leaves no partial schema or migration record |
-| Mission persistence | Create/read/update inert mission records; legal state transitions succeed, illegal transitions fail |
-| Task persistence | Sequence uniqueness, dependency reference, state validation, and idempotency-key uniqueness are enforced |
-| Checkpoint persistence | Hash is deterministic; corrupted checkpoint is rejected; sequence is unique per task |
-| Approval persistence | Pending approval binds to payload hash and policy version; expiration and hash mismatch reject decisions |
-| Audit chain | Sequence is monotonic; every mutation emits one event; prior-hash and event-hash tampering are detected |
-| Client boundary | Contract tests prove external clients use API-shaped DTOs and never receive a SQLite path, database handle, or raw local file path |
-| No execution | Tests assert no subprocess, shell, network, file-write executor, scheduler, or worker lease is activated in the first increment |
+| Schema creation | All DDL and indexes execute against a blank SQLite database |
+| Index correctness | `runtime_tasks.priority` exists before `idx_runtime_tasks_ready` creation |
+| Cross-entity integrity | Mission/task/dependency/attempt/checkpoint/approval scope mismatches reject at write time |
+| Approval lifecycle | Duplicate live approval, missing identity/device/timestamp, untrusted device, bad reason, and bad payload hash reject |
+| Audit ledger | Single genesis, monotonic sequence, linear head extension, actor existence, and update/delete rejection |
+| Transaction coupling | Mutation or audit failure rolls back both records |
+| Migration safety | Fresh migration, repeat startup, checksum mismatch, partial failure, and concurrent-start lock behavior |
+| Backup/restore | Backup checksum, SQLite integrity, Windows DB/WAL/SHM restoration, and interruption behavior |
+| Client boundary | No reachable listener; no external client receives DB path, handle, raw query, or local locator |
+| Existing baseline | Frozen JavaScript install, tests, check, and production build remain green after future approved work |
 
-### 9.2 Mandatory Runtime Acceptance Tests — Retained for Later Increment
+The three termination/restart scenarios are mandatory later worker/executor acceptance tests, not this persistence-only increment: termination before effect, unknown effect before receipt, and termination after checkpoint must show no duplicate effect and correct audit ordering.
 
-The following three tests remain mandatory before a worker/executor increment can be accepted. They are designed now but cannot pass until an executor exists:
+## 8. Final Authorization Checklist
 
-| Scenario | Termination point | Required post-restart result |
-|---|---|---|
-| Before effect | After a lease claim, before executor start | Attempt becomes `INTERRUPTED`; task recovers and runs exactly once |
-| Unknown effect | After an effect-capable executor starts, before durable receipt | Task becomes `FAILED_UNKNOWN_EFFECT`; no automatic replay |
-| After checkpoint | After checkpoint persistence, before next transition | Recovery validates hash and resumes without duplicate prior work |
+- [ ] Approve foundation commit and later creation of `agent/runtime-v0.1-foundation`.
+- [ ] Approve `%LOCALAPPDATA%` database boundary and exact sole owner.
+- [ ] Approve many-to-many dependencies and cross-entity relational triggers.
+- [ ] Approve single-genesis, single-chain, append-only, transaction-coupled audit ledger.
+- [ ] Approve approval lifecycle and duplicate-live-approval constraints.
+- [ ] Approve first increment with no reachable API and only internal `desktop-hub-runtime` identity.
+- [ ] Approve forward-only migration, concurrent-startup lock, local backup, WAL/SHM-aware Windows restoration, and operator rollback controls.
+- [ ] Approve persistence/audit tests only; do not authorize workers, execution, UI, remote access, Runtime memory, or implementation Git operations until separately approved.
 
-### 9.3 First-Increment Exit Criteria
-
-The first increment is complete only if all local persistence/audit tests pass, the database is proven outside OneDrive, migrations are checksum-protected, failed migrations roll back cleanly, audit tampering is detectable, and no active execution capability exists. The canonical JavaScript application must continue to pass its frozen-install, test, check, and production-build baseline after any approved integration work.
-
-## 10. Final Authorization Checklist
-
-Approve each item explicitly before implementation begins:
-
-- [ ] Foundation commit `72a3e5cc5cd5e93f5c0e1a24be45acad5d3cb295`.
-- [ ] New branch `agent/runtime-v0.1-foundation` created from the foundation branch; no direct development on the design branch.
-- [ ] Local database `%LOCALAPPDATA%\Seraphim\runtime\seraphim.db`, owned only by the Desktop Hub Runtime host.
-- [ ] Complete schema contract and first-increment Core Persistence subset.
-- [ ] Forward-only migration, local backup, and operator-controlled rollback procedure.
-- [ ] Approval matrix and hard block on effectful work in the first increment.
-- [ ] Website, iOS, and desktop remain API clients only; no SQLite access by any interface.
-- [ ] Required test gates and later mandatory termination/restart scenarios.
-- [ ] No Git commit, push, merge, rebase, remote gateway, UI, worker, or autonomous execution unless separately authorized.
-
-Until this checklist is approved, Seraphim Runtime v0.1 remains a design package only.
+Until the checklist is explicitly approved, Runtime v0.1 remains design-only.
