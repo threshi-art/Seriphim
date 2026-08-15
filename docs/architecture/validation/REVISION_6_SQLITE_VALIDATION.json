@@ -1,0 +1,19 @@
+{
+  "database": ":memory:",
+  "ddl_creation_succeeded": true,
+  "execution_seconds": 0.065023,
+  "foreign_key_check_rows": 0,
+  "harness_path": "docs/architecture/validation/validate_revision6.py",
+  "integrity_check": "ok",
+  "negative_tests": 42,
+  "packet_path": "docs/architecture/SERAPHIM_RUNTIME_V0_1_FINAL_APPROVAL_PACKET_2026-08-15.md",
+  "persistent_database_created": false,
+  "positive_tests": 25,
+  "python_version": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "schema": "seraphim.runtime.revision6.validation.v1",
+  "sqlite_version": "3.45.1",
+  "structural_failures": [],
+  "success": true,
+  "unexpected_acceptances": [],
+  "unexpected_rejections": []
+}
