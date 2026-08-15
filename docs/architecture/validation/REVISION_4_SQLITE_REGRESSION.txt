@@ -1,0 +1,2 @@
+REVISION_4_SQLITE_REGRESSION=PASS
+Scope: blank SQLite database; complete packet DDL; negative tests for non-hex hashes, cross-mission links, approval update bypass, immutable completed decisions, approved-to-revoked transition, payload binding, audit scope, and append-only audit controls.
