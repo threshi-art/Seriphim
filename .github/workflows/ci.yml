@@ -3,7 +3,6 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
 
 permissions:
   contents: read
@@ -14,18 +13,47 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Verify architecture, repository hygiene, and public Skills
         run: >-
           python -m unittest
+          tests.architecture.test_capability_registry_hardening
           tests.architecture.test_public_architecture
           tests.architecture.test_repository_hygiene
           tests.skills.test_public_skill_packages
           tests.skills.test_public_orchestration_skills
           tests.skills.test_public_specialized_skills
           tests.skills.test_public_operational_skills
+      - name: Verify generated capability projection
+        run: python -m skills.registry.projection check --root .
+      - name: Verify append-only governance ledger
+        env:
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EVENT_HEAD_SHA: ${{ github.sha }}
+        run: >-
+          python -m skills.registry.projection check-ledger --root .
+          --event-name "$GITHUB_EVENT_NAME"
+          --push-before "$PUSH_BEFORE_SHA"
+          --pull-request-base "$PR_BASE_SHA"
+          --event-head "$EVENT_HEAD_SHA"
+
+  registry-windows:
+    name: Capability registry (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify registry and Windows projection boundaries
+        run: python -m unittest tests.architecture.test_capability_registry_hardening
+      - name: Verify generated capability projection
+        run: python -m skills.registry.projection check --root .
 
   seraphim-platform:
     name: Seraphim platform

@@ -2,11 +2,18 @@
 
 This directory is the public registry for Seraphim/EiRAM capabilities.
 
-`capability-manifest.json` is the canonical machine-readable inventory. Entries
-marked `packaged` have reviewed package contents in this directory; entries
-marked `specified` remain architecture records rather than installable Skills.
-A historical conversation saying that a Skill was created, installed, or
-tested is design evidence—not a substitute for reviewing the package body.
+`capability-manifest.json` is the canonical machine-readable declaration
+inventory. Entries marked `packaged` have reviewed package contents in this
+directory; entries marked `specified` remain architecture records rather than
+installable Skills. A historical conversation saying that a Skill was created,
+installed, or tested is design evidence—not a substitute for reviewing the
+package body.
+
+See the [canonical registry package](registry/README.md) for the authority flow,
+orthogonal state meanings, deterministic projection commands, drift behavior,
+and privacy and authorization boundaries. The generated public projection is an
+informational catalog only; it does not synchronize runtimes, grant access, or
+route work.
 
 ## Published packages
 
@@ -63,6 +70,7 @@ Before a package is added here:
 
 ```text
 skills/
+  registry/
   investigation/
   analysis/
   editorial/

@@ -2,6 +2,8 @@ import json
 import unittest
 from pathlib import Path
 
+from skills.registry.contracts import validate_manifest
+
 
 ROOT = Path(__file__).resolve().parents[2]
 ALLOWED_STATUSES = {"specified", "packaged", "implemented", "private"}
@@ -82,9 +84,11 @@ class PublicArchitectureTests(unittest.TestCase):
         manifest = load_json(ROOT / "skills" / "capability-manifest.json")
         capabilities = manifest["capabilities"]
         capability_ids = [item["id"] for item in capabilities]
+        records = validate_manifest(manifest)
 
         self.assertGreater(len(capabilities), 0)
         self.assertEqual(len(capability_ids), len(set(capability_ids)))
+        self.assertEqual(set(capability_ids), set(records))
         self.assertLessEqual(
             {item["status"] for item in capabilities}, ALLOWED_STATUSES
         )
