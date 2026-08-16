@@ -33,6 +33,7 @@ This package provides DO-178-style planning, requirements, design, verification,
 | DOC-01-05 | `01_plans/quality_assurance_plan.md` | Quality Assurance Plan |
 | DOC-01-06 | `01_plans/desktop_companion_mvp_plan.md` | Desktop Companion MVP Plan |
 | DOC-01-08 | `01_plans/phase4_read_only_implementation_plan.md` | Phase 4 Read-Only Implementation Plan |
+| DOC-01-09 | `tasks/SERAPHIM_PLATFORM_COMPLETION.md` | Seraphim Platform Completion Program (65 tasks / 6 gates) |
 | DOC-02-01 | `02_requirements/system_requirements.md` | System Requirements |
 | DOC-02-02 | `02_requirements/high_level_requirements.md` | High-Level Requirements |
 | DOC-02-03 | `02_requirements/low_level_requirements.md` | Low-Level Requirements |
@@ -75,8 +76,9 @@ This package provides DO-178-style planning, requirements, design, verification,
 1. Operator decisions and explicit approvals
 2. `AGENTS.md` safety and development rules
 3. This documentation package
-4. White Paper v8.0 baseline facts
-5. Implementation code
+4. `tasks/SERAPHIM_PLATFORM_COMPLETION.md` and its linked gate specifications for remaining implementation sequencing
+5. White Paper v8.0 baseline facts
+6. Implementation code
 
 ## Doctrine
 

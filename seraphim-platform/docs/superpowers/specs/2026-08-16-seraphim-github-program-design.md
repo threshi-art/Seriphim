@@ -36,4 +36,3 @@ The planning branch is verified and opened as a PR. Milestones and issues are cr
 ## Failure Handling
 
 If an issue cannot be completed without changing scope or weakening a control, Manus stops and reports the exact blocker. If GitHub CLI cannot mutate the repository, local work remains committed and the external-authority blocker is reported. Rollback uses ordinary revert commits; history is never rewritten.
-

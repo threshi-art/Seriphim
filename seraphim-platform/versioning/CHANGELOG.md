@@ -15,7 +15,7 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 | **Version** | `9.0.0-mvp` |
 | **Phase** | 0-4 (partial) + Runtime v0.1 Layer 1 |
 | **Last edit** | 2026-08-16 |
-| **Last edit summary** | Move Desktop WebView2 runtime data beneath LOCALAPPDATA |
+| **Last edit summary** | Publish the six-gate Seraphim Platform Completion Program |
 | **Verification** | 91/91 tests pass; desktop publish check pass |
 | **Operator launch** | `START_SERAPHIM_DESKTOP.bat` → `dist\desktop\SeraphimDesktopCompanion.exe` |
 | **Safety** | Desktop MVP permits Green read-only Files via :8768; no Yellow/Red execution; Red local-agent on :8767 not default |
@@ -27,6 +27,7 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 ## [Unreleased]
 
 ### Added
+- Authoritative 65-task engineering program across six gated milestones, including Manus execution instructions, acceptance matrix, risk register, and Codex gate report template
 - Runtime v0.1 Layer 1 durable missions, mission tasks, append-only checkpoints, protected persistence procedures, and mission/checkpoint audit provenance
 - Drizzle migration `0006_tiresome_dormammu.sql` and VC-RT-001/VC-RT-002 automated verification
 - Phase 4 workspace read API spec and implementation plan (M1)
