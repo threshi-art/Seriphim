@@ -23,11 +23,11 @@ GitHub is the durable authority for the remaining Seraphim engineering program. 
 
 ## State Model
 
-Task status is one of `complete`, `ready`, `blocked`, or `deferred`. Dependencies determine readiness; issue closure records completion; the gate report records evidence. A gate passes only when every task is closed and Codex issues a passing verdict.
+Task status is one of `complete`, `ready`, `blocked`, or `deferred`. Dependencies and strict gate order determine readiness; issue closure records completion; the gate report records evidence. A gate passes only when every task is closed, Codex issues a passing verdict, and the operator explicitly accepts the gate before the next gate begins.
 
 ## Safety Model
 
-Persistent runtime state defaults below Windows `LOCALAPPDATA`. Tests use memory databases or temporary directories. Consequential execution remains disabled by default. Yellow and Red actions require bound approval, immutable audit evidence, workspace enforcement, and recovery behavior. Mobile can request approval but cannot execute local tools directly.
+Persistent runtime state defaults below Windows `LOCALAPPDATA`. Existing bridge and legacy-agent state is migrated out of workspaces. Tests use memory databases or temporary directories. Consequential execution remains disabled by default. Yellow and Red actions require operator gate authorization, exact bound approval, tamper-evident hash-chained audit records with trusted external signed anchors, workspace enforcement, and recovery behavior. Mobile can request approval but cannot execute local tools directly.
 
 ## Publication Flow
 

@@ -7,6 +7,8 @@
 - Start commit:
 - End commit:
 - Pull request(s):
+- Operator gate-entry authorization link:
+- Operator gate-exit acceptance link:
 - Manus implementation period:
 - Codex review period:
 
@@ -38,6 +40,7 @@
 - Test database locations and cleanup result:
 - Repository/OneDrive database scan result:
 - Consequential execution default:
+- Production capability activation state:
 - Approval-binding evidence:
 - Audit-verification evidence:
 - Workspace-boundary evidence:

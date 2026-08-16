@@ -12,6 +12,8 @@ Do not merge `main`, rewrite history, delete unrelated content, overwrite user w
 
 Stop only when scope would materially change, safety requirements conflict irreconcilably, irreversible external action needs authorization, credentials are unavailable, user work cannot be preserved, or the gate cannot pass without violating a constraint.
 
+Do not begin a gate that introduces a new Yellow or Red capability until the operator's explicit gate-entry authorization is recorded on the gate-review issue. Keep that capability disabled in production until the gate has a passing Codex verdict and explicit operator gate acceptance.
+
 ## Required Loop
 
 1. Select the first open issue whose dependencies are closed.

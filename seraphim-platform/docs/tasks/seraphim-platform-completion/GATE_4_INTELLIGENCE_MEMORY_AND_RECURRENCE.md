@@ -2,6 +2,8 @@
 
 **Outcome:** A governed planning and verification loop routes capabilities deterministically, uses EiRAM and local memory safely, tracks open loops, and recurs only through bounded, recoverable schedules.
 
+**Gate dependency:** Every Gate 4 task implicitly depends on G3-10 plus the task-specific dependencies shown below.
+
 ### G4-01 — Implement deterministic capability routing
 
 **Status:** dependency-blocked. **Dependencies:** G3-10.
@@ -28,13 +30,13 @@ Wrap existing EiRAM analysis through explicit schemas, timeouts, provenance, con
 
 ### G4-05 — Implement local structured memory
 
-**Status:** dependency-blocked. **Dependencies:** G1-12.
+**Status:** dependency-blocked. **Dependencies:** G3-10, G1-12.
 
 Store operator-owned memories, sources, confidence, sensitivity, lifecycle, and mission links below `LOCALAPPDATA`; expose bounded create/read/update/archive operations with audit evidence. **Verify:** ownership, retention, schema migration, and path tests. **Accept:** secrets and cross-operator data are rejected or protected by explicit policy.
 
 ### G4-06 — Implement retrieval and memory privacy controls
 
-**Status:** dependency-blocked. **Dependencies:** G4-05.
+**Status:** dependency-blocked. **Dependencies:** G3-10, G4-05.
 
 Retrieve by deterministic filters and optional local index, enforce sensitivity and purpose boundaries, expose provenance, and allow operator correction and forgetting. **Verify:** isolation, stale index, deletion, poisoning, and prompt-injection tests. **Accept:** every retrieved item is attributable and policy-eligible.
 

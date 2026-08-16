@@ -2,6 +2,8 @@
 
 **Outcome:** Bounded external execution exists only through explicit adapters, exact Red approval, trusted executable resolution, enforced limits, cancellation, recovery, and complete audit evidence. Execution remains disabled by default.
 
+**Entry rule:** Manus may enter this gate only after a passing Gate 2 verdict and explicit operator authorization recorded on G2-10. All execution paths remain hard-disabled in production while Gate 3 is implemented and tested in bounded fixtures; activation requires a passing Gate 3 verdict and explicit operator acceptance on G3-10.
+
 ### G3-01 — Define adapter contracts and capability policy
 
 **Status:** dependency-blocked. **Dependencies:** G2-10.

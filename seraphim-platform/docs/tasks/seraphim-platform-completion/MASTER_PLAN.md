@@ -31,6 +31,9 @@ A gate is complete only when:
 3. The full relevant test suite passes independently.
 4. Storage, approval, audit, concurrency, and recovery invariants survive adversarial testing.
 5. Codex publishes `PASS` or `PASS WITH REPAIRS` using the gate report template.
+6. The operator explicitly accepts the gate on its gate-review issue before Manus begins the next gate.
+
+Before Manus enters any gate that introduces a new Yellow or Red capability, the operator must also explicitly authorize that gate entry after reviewing its scope and safety controls. A Codex verdict never substitutes for operator authority. Capability code remains disabled in production until the applicable gate-entry and gate-exit decisions are recorded.
 
 `RETURN TO MANUS` reopens the gate. `BLOCKED BY EXTERNAL AUTHORITY` records a genuine external dependency without weakening acceptance.
 

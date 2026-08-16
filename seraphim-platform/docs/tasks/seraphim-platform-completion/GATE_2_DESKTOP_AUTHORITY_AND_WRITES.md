@@ -2,6 +2,8 @@
 
 **Outcome:** The Desktop Hub displays live Runtime state and performs previewed, approved, atomic, recoverable workspace writes through a trusted local bridge.
 
+**Entry rule:** Manus may enter this gate only after a passing Gate 1 verdict and explicit operator authorization recorded on G1-15. Production file writes remain hard-disabled while Gate 2 is implemented and tested; activation requires a passing Gate 2 verdict and explicit operator acceptance on G2-10.
+
 ### G2-01 — Enforce the WebView2 runtime-data boundary
 
 **Status:** complete via PR #18. **Dependencies:** none.
@@ -36,19 +38,19 @@ Create a proposal containing approved root, normalized relative path, base hash,
 
 **Status:** dependency-blocked. **Dependencies:** G2-05, G1-11.
 
-After exact approval, revalidate workspace containment and base hash, write a same-volume temporary file, flush, atomically replace, and audit before/after hashes. Real deletion remains disabled. **Verify:** path swap, symlink race, stale file, disk-full, permission, and interruption tests. **Accept:** the target is wholly old or wholly new, never partial.
+Implement the exact-approved write path behind a hard-disabled production feature gate. Revalidate workspace containment and base hash, write a same-volume temporary file, flush, atomically replace, and audit before/after hashes. Exercise it only in temporary test workspaces until explicit operator Gate 2 entry authorization is recorded; real deletion remains disabled. **Verify:** disabled-default, path swap, symlink race, stale file, disk-full, permission, and interruption tests. **Accept:** the target is wholly old or wholly new, never partial, and production cannot activate the path without recorded operator authority.
 
 ### G2-07 — Implement backup and rollback
 
 **Status:** dependency-blocked. **Dependencies:** G2-06.
 
-Create bounded recovery copies outside the source tree, associate them with proposal and audit IDs, expose previewed rollback as a new approved operation, and enforce retention. **Verify:** rollback success, conflict, missing backup, tamper, and retention tests. **Accept:** successful writes can be restored without history rewriting or silent overwrite.
+Create bounded recovery copies beneath `%LOCALAPPDATA%\Seraphim\Recovery`, associate them with proposal and audit IDs, expose previewed rollback as a new approved operation, and enforce retention. **Verify:** location, rollback success, conflict, missing backup, tamper, and retention tests. **Accept:** successful writes can be restored without history rewriting, silent overwrite, or durable recovery data in the source tree/OneDrive.
 
 ### G2-08 — Implement write recovery journals
 
 **Status:** dependency-blocked. **Dependencies:** G2-06, G2-07.
 
-Persist a transaction journal outside OneDrive before mutation and reconcile prepared, replaced, audited, and rolled-back states on restart. **Verify:** process termination at each boundary. **Accept:** restart reports and safely resolves every incomplete write.
+Persist a transaction journal beneath `%LOCALAPPDATA%\Seraphim\Recovery` before mutation and reconcile prepared, replaced, audited, and rolled-back states on restart. **Verify:** location checks and process termination at each boundary. **Accept:** restart reports and safely resolves every incomplete write without source-tree/OneDrive state.
 
 ### G2-09 — Enforce idempotency and write concurrency
 

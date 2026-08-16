@@ -16,9 +16,9 @@ Document the existing operator-owned missions, tasks, append-only checkpoints, a
 
 **Status:** ready. **Dependencies:** G1-01.
 
-Create a focused Python package for configuration, database access, domain services, and reporting. Resolve production storage beneath `LOCALAPPDATA`, reject repository/OneDrive paths, and allow explicit memory/temp test databases.
+Create a focused Python package for configuration, database access, domain services, and reporting. Resolve all production persistence beneath `LOCALAPPDATA`, reject repository/OneDrive paths, and allow explicit memory/temp test databases. Inventory and migrate the existing bridge audit log and legacy local-agent mission, audit, and report defaults out of the workspace, preserving evidence and updating their governing design documents.
 
-**Verify:** unit tests cover default, override, missing environment, repository, OneDrive, memory, and temp paths. **Accept:** no production code can silently create a database in the source tree.
+**Verify:** unit tests cover default, override, missing environment, repository, OneDrive, memory, temp, bridge-audit migration, and legacy-agent migration paths. **Accept:** no production component can silently create durable state in Git, the repository, a configured workspace, or OneDrive.
 
 ### G1-03 — Implement versioned SQLite migrations
 
@@ -96,9 +96,9 @@ Consume an approved Yellow/Red request in the same transaction that creates its 
 
 **Status:** dependency-blocked. **Dependencies:** G1-03.
 
-Append audit events with sequence, previous hash, canonical payload hash, event hash, actor, mission/task/attempt provenance, timestamp, and outcome. Prevent update/delete APIs.
+Append audit events with sequence, previous hash, canonical payload hash, event hash, actor, mission/task/attempt provenance, timestamp, and outcome. Prevent update/delete APIs. Periodically sign chain heads with a non-exportable or Windows-protected key and persist redundant anchor records outside the SQLite database beneath `LOCALAPPDATA`; exportable gate evidence records the verified anchor digest.
 
-**Verify:** deterministic hash, concurrent append, mutation detection, deletion detection, and ordering tests. **Accept:** an offline verifier locates the first broken link.
+**Verify:** deterministic hash, concurrent append, mutation, deletion, reordering, suffix-rewrite, anchor-loss, and wrong-key tests. **Accept:** an offline verifier locates the first broken link and rejects a recomputed chain that does not match a trusted anchor.
 
 ### G1-13 — Complete or fail attempts transactionally
 
