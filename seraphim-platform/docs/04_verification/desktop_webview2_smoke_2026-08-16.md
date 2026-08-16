@@ -6,14 +6,14 @@ This record preserves the operator attestation supplied in the verified Seraphim
 
 ## Tested Artifact
 
-`C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT\Seraphim\dist\desktop\SeraphimDesktopCompanion.exe`
+`%OneDrive%\Documents\Projects\Programs\SeraphimGPT\Seraphim\dist\desktop\SeraphimDesktopCompanion.exe`
 
 ## Operator-Attested Procedure and Observations
 
 The rebuilt operator executable was launched as a hidden smoke test after PR #18 was merged. The operator reported that:
 
 1. The executable remained running after launch.
-2. WebView2 used `C:\Users\cyber\AppData\Local\Seraphim\DesktopCompanion\WebView2`.
+2. WebView2 used `%LOCALAPPDATA%\Seraphim\DesktopCompanion\WebView2`.
 3. No `.WebView2` directory was recreated beside the executable in the OneDrive application mirror.
 4. The existing WebView2 profile had been moved to the LOCALAPPDATA location without deletion.
 
