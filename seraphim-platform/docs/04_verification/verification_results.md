@@ -21,6 +21,7 @@
 | VC-BRG-WS-006 | pass (smoke) | 2026-07-05 | Audit lines in `logs/bridge_audit.jsonl` |
 | VC-RT-001 | pass (automated) | 2026-08-16 | `runtime.schema.test.ts` — 4 schema, provenance, and no-execution-field checks |
 | VC-RT-002 | pass (automated) | 2026-08-16 | `runtime.router.test.ts` — 4 procedure, provenance, and ownership checks |
+| VC-DESK-UDF-001 | pass (automated + build) | 2026-08-16 | `desktop-host-policy.test.ts` plus Release C# build — WebView2 user data bound to `%LOCALAPPDATA%` |
 
 Runtime Layer 1 regression evidence on 2026-08-16: root TypeScript pass, Desktop Companion TypeScript pass, 90/90 Vitest tests pass, and 8/8 bridge unit tests pass.
 

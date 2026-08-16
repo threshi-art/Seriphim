@@ -58,7 +58,14 @@ internal sealed class CompanionForm : Form
                 return;
             }
 
-            await webView.EnsureCoreWebView2Async();
+            var userDataFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Seraphim", "DesktopCompanion", "WebView2");
+            Directory.CreateDirectory(userDataFolder);
+            var environment = await Microsoft.Web.WebView2.Core.CoreWebView2Environment.CreateAsync(
+                browserExecutableFolder: null,
+                userDataFolder: userDataFolder);
+            await webView.EnsureCoreWebView2Async(environment);
 
             webView.CoreWebView2.Settings.AreDevToolsEnabled = false;
             webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;

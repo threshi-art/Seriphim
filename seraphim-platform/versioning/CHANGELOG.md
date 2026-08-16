@@ -15,8 +15,8 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 | **Version** | `9.0.0-mvp` |
 | **Phase** | 0-4 (partial) + Runtime v0.1 Layer 1 |
 | **Last edit** | 2026-08-16 |
-| **Last edit summary** | Runtime v0.1 Layer 1 durable mission, task, checkpoint persistence and audit provenance |
-| **Verification** | 90/90 tests pass; desktop publish check pass |
+| **Last edit summary** | Move Desktop WebView2 runtime data beneath LOCALAPPDATA |
+| **Verification** | 91/91 tests pass; desktop publish check pass |
 | **Operator launch** | `START_SERAPHIM_DESKTOP.bat` → `dist\desktop\SeraphimDesktopCompanion.exe` |
 | **Safety** | Desktop MVP permits Green read-only Files via :8768; no Yellow/Red execution; Red local-agent on :8767 not default |
 
@@ -35,6 +35,7 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 - Root workspace map and archive index for faster operator orientation
 
 ### Changed
+- Desktop Companion now stores WebView2 browser profiles, cache, and databases beneath Windows `LOCALAPPDATA` instead of beside the executable
 - Moved loose snapshots, temporary files, and inactive Codex/webdev artifacts into a reversible `archive/` structure
 - Expanded ignore rules for generated .NET, Java, Python, and local AI-tool artifacts
 

@@ -13,6 +13,7 @@
 | VC-DESK-PAIR-001 | Mock pairing | Request mock pairing in Local Bridge | Mock token preview only; no real auth |
 | VC-DESK-PUB-001 | Publish bundle | `pnpm verify:desktop-publish` after `desktop:build` | EXE + wwwroot + repo-docs + 12 nav labels in JS bundle |
 | VC-DESK-MANUAL-001 | Desktop walkthrough | `pnpm walkthrough:desktop` | HTTP dist integration + desktop unit tests; report in `manual_walkthrough_report.md` |
+| VC-DESK-UDF-001 | WebView2 runtime-data boundary | Run `vitest run server/desktop-host-policy.test.ts`, then build the Desktop Companion | Host creates `CoreWebView2Environment` with `%LOCALAPPDATA%\Seraphim\DesktopCompanion\WebView2`; C# build succeeds |
 | VC-BRG-WS-001 | Workspace config | Set `SERAPHIM_BRIDGE_WORKSPACE_ROOT`; `GET /workspace/config` | `workspaceReadEnabled: true`, root path returned |
 | VC-BRG-WS-002 | Workspace list root | `GET /workspace/list` | Entries for approved root only |
 | VC-BRG-WS-003 | Workspace read text | `GET /workspace/read?relativePath=docs/00_program/gap_analysis.md` | UTF-8 content, size ≤ maxReadBytes |

@@ -43,6 +43,7 @@
 | LLR-DESK-009 | API key placeholder only | Platform v9 | Desktop settings | security_architecture.md | `settingsPolicy.ts` | VC-DESK-SEC-001 | partial | critical | Stripped on save |
 | LLR-DESK-010 | Bridge health GET only | Platform v9 | Bridge client | interface_control_document.md | `bridgeClient.ts` | bridgeClient.test.ts | partial | moderate | |
 | LLR-DESK-011 | Desktop Files lists and previews approved workspace through Green GET routes only | Platform v9 | Desktop Files | phase4_workspace_read_api.md | `FilesView.tsx`, `bridgeClient.ts` | VC-DESK-FILES-001, bridgeClient.test.ts | implemented | moderate | Falls back to mock when bridge offline/unconfigured; no write/delete/execute routes |
+| LLR-DESK-012 | WebView2 runtime data beneath LOCALAPPDATA | Platform v9 | Desktop host | detailed_design.md | `desktop/SeraphimDesktopCompanion/Program.cs` | VC-DESK-UDF-001 | implemented | high | Prevents browser cache databases beside the EXE in Git/OneDrive |
 | LLR-WEB-001 | LLM via central helper | WP v8 | Web server | software_architecture.md | `server/_core/llm.ts` | review | implemented | moderate | |
 | LLR-WEB-002 | Mutations audit logged | WP v8 | Web server | security_architecture.md | `server/db.ts` | audit tests | partial | moderate | |
 | LLR-RT-001 | Operator-scoped Runtime records | Runtime v0.1 | Web Runtime | detailed_design.md | `server/db.ts`, runtime router | VC-RT-002 | implemented | high | Ownership predicates precede reads and mutations |
