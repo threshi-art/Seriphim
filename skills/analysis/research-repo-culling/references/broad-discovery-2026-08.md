@@ -21,6 +21,22 @@
 
 The strongest choices either reduce ambiguity in the evidence chain or permit small, reversible tests. Docling and Whisper.cpp address local evidence capture; MADR and Doorstop establish reviewable decisions and traceability; OSV-Scanner and Zoekt improve code and dependency awareness; and Workspace CLI demonstrates how to keep external integrations structured and dry-run-first. They complement the core RRC catalog rather than duplicate OPA, Promptfoo, LangGraph, Graphiti, OpenLineage, or Presidio.
 
+## Primary-Source Verification Record
+
+| Candidate | Evidence verified from its repository | Decision retained after verification | Boundary to preserve |
+|---|---|---|---|
+| [MADR][2] | Markdown decision templates; MIT or CC0-1.0 licensing; recent repository activity. | **Adopt pattern.** | It records rationale; it does not enforce approval, correctness, or compliance. |
+| [OSV-Scanner][3] | Apache-2.0; active releases; dependency, image, license, and offline scan modes. | **Adopt pattern.** | Default queries can send dependency metadata/hashes; avoid guided remediation on untrusted projects. |
+| [Zoekt][4] | Apache-2.0; recent primary-branch activity; local and server-based code indexing/search. | **Adopt pattern.** | Mirroring/indexing and HTTP APIs must not expose sensitive source or credentials. |
+| [Google Workspace CLI][5] | Apache-2.0; current releases/activity; dynamically generated Workspace command surface. | **Adopt pattern.** | OAuth tokens/scopes are high-impact; begin with a minimally scoped test account and read-only calls. |
+| [Whisper.cpp][6] | MIT; recent activity; local/offline transcription across major CPU, GPU, mobile, and web targets. | **Adopt pattern.** | Audio and model files remain sensitive/provenance-bound; do not connect transcription to actions. |
+| [LiteLLM][8] | Active gateway/SDK; unified multi-provider routing and proxy controls. | **Evaluate.** | GitHub reports license `NOASSERTION`; resolve legal terms and validate all logging/fallback/key behavior before use. |
+| [PrivateGPT][9] | Apache-2.0; recent activity/releases; local-model API layer with cited retrieval and optional tools/connectors. | **Adopt pattern.** | Keep web, code, MCP, database, and custom-tool capabilities disabled until independently reviewed. |
+| [SilverBullet][10] | MIT; current release/activity; local Markdown, query, authentication, scripting, and API surface. | **Adopt pattern.** | Server-side Lua and HTTP APIs are executable/networked boundaries; begin with localhost and synthetic content. |
+| [Doorstop][7] | LGPLv3; recent development activity; version-control-centered requirements-management scope. | **Evaluate.** | Prove its traceability behavior with a synthetic fixture and review LGPLv3 implications before embedding. |
+
+The primary-source pass confirms that the shortlist should remain **pattern-led and experiment-first**. It does not elevate any component to a default production dependency.
+
 ## Deliberately Bounded Candidates
 
 | Candidate | Culling disposition | Reason |
@@ -48,4 +64,3 @@ The strongest choices either reduce ambiguity in the evidence chain or permit sm
 [8]: https://github.com/BerriAI/litellm "LiteLLM repository"
 [9]: https://github.com/zylon-ai/private-gpt "PrivateGPT repository"
 [10]: https://github.com/silverbulletmd/silverbullet "SilverBullet repository"
-
