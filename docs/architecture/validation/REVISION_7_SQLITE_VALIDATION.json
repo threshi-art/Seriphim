@@ -1,0 +1,93 @@
+{
+  "database": ":memory:",
+  "ddl_creation_succeeded": true,
+  "execution_seconds": 0.196067,
+  "foreign_key_check_rows": 0,
+  "harness_path": "docs/architecture/validation/validate_revision7.py",
+  "integrity_check": "ok",
+  "mutation_tests": [
+    {
+      "name": "identity_update",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "device_insert",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "device_update",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "mission_insert",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "mission_update",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "task_insert",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "task_update",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "dep_insert",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "dep_update",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "attempt_insert",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "attempt_update",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "checkpoint_insert",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "checkpoint_update",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "approval_insert",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "approval_update",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "audit_insert",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "audit_update",
+      "result": "control removal detected by corresponding adversarial test"
+    },
+    {
+      "name": "audit_delete",
+      "result": "control removal detected by corresponding adversarial test"
+    }
+  ],
+  "negative_tests": 40,
+  "packet_path": "docs/architecture/SERAPHIM_RUNTIME_V0_1_FINAL_APPROVAL_PACKET_2026-08-15.md",
+  "persistent_database_created": false,
+  "positive_tests": 15,
+  "python_version": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "schema": "seraphim.runtime.revision7.validation.v1",
+  "sqlite_version": "3.45.1",
+  "structural_failures": [],
+  "success": true,
+  "unexpected_acceptances": [],
+  "unexpected_rejections": []
+}

@@ -1,0 +1,17 @@
+{
+  "artifacts": {
+    "evidence": {
+      "path": "docs/architecture/validation/REVISION_7_SQLITE_VALIDATION.json",
+      "sha256": "0a5b324d457ca5e2e0dc75d3fc5749ee8c7dfd62228486a08be1a8a2ad37c8a9"
+    },
+    "harness": {
+      "path": "docs/architecture/validation/validate_revision7.py",
+      "sha256": "246f1a95e7ca82a054c8f99d5ce43c68641d7419de4c18aba22d069c510dcf6c"
+    },
+    "packet": {
+      "path": "docs/architecture/SERAPHIM_RUNTIME_V0_1_FINAL_APPROVAL_PACKET_2026-08-15.md",
+      "sha256": "1c94a3e1134ad3c74df5ed08446b344a5712708c470d7b1a2e0f1292fceb2111"
+    }
+  },
+  "schema": "seraphim.runtime.revision7.artifact-manifest.v1"
+}
