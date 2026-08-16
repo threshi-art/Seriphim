@@ -13,10 +13,10 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 |-------|-------|
 | **Platform** | Seraphim Platform v9 |
 | **Version** | `9.0.0-mvp` |
-| **Phase** | 0-4 (partial) |
-| **Last edit** | 2026-07-27 |
-| **Last edit summary** | Reversible workspace cleanup and archive organization |
-| **Verification** | 74/74 tests pass; desktop publish check pass |
+| **Phase** | 0-4 (partial) + Runtime v0.1 Layer 1 |
+| **Last edit** | 2026-08-16 |
+| **Last edit summary** | Runtime v0.1 Layer 1 durable mission, task, checkpoint persistence and audit provenance |
+| **Verification** | 90/90 tests pass; desktop publish check pass |
 | **Operator launch** | `START_SERAPHIM_DESKTOP.bat` → `dist\desktop\SeraphimDesktopCompanion.exe` |
 | **Safety** | Desktop MVP permits Green read-only Files via :8768; no Yellow/Red execution; Red local-agent on :8767 not default |
 
@@ -27,6 +27,8 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 ## [Unreleased]
 
 ### Added
+- Runtime v0.1 Layer 1 durable missions, mission tasks, append-only checkpoints, protected persistence procedures, and mission/checkpoint audit provenance
+- Drizzle migration `0006_tiresome_dormammu.sql` and VC-RT-001/VC-RT-002 automated verification
 - Phase 4 workspace read API spec and implementation plan (M1)
 - Bridge M2 scaffold: `GET /workspace/config`, `/workspace/list`, `/workspace/read` + audit log
 - Phase 4 M3 Desktop Files live-read integration: typed workspace config/list/read client, LIVE READ (GREEN) UI state, text preview, mock fallback, and VC-DESK-FILES-001 coverage

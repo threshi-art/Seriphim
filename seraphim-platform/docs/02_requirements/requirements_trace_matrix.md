@@ -21,6 +21,7 @@
 | HLR-DESK-001 | Desktop dashboard cockpit | Platform v9 | Desktop shell | ui_design_specification.md | `AppShell.tsx` + views | VC-DESK-NAV-001 | implemented | low | 12 screens + tests |
 | HLR-MOB-001 | Mobile approval cockpit | Platform v9 | Mobile (future) | software_architecture.md | planned | deferred | deferred | high | Phase 13 |
 | HLR-DOC-001 | Documentation package | Platform v9 | docs/ | document_index.md | `docs/**` | review | implemented | low | First draft |
+| HLR-RT-001 | Durable governed Runtime Layer 1 persistence | Runtime v0.1 | Web Runtime | detailed_design.md | `drizzle/schema.ts`, `server/db.ts`, `server/routers.ts` | VC-RT-001, VC-RT-002 | implemented | moderate | Persistence only; no execution surface |
 | SYS-005 | Green/Yellow/Red classes | Platform v9 | Desktop + docs | tool_permission_matrix.md | types + RiskBadge | VC-DESK-SAFE-001 | partial | high | UI + docs |
 | SYS-008 | No API keys in localStorage | Platform v9 | Desktop Settings | security_architecture.md | `SeraphimState.tsx` strips apiKeyPlaceholder on save | VC-DESK-SEC-001 | partial | critical | Enforced in persistence |
 | SYS-009 | Mock labeling | Platform v9 | Desktop UI | ui_design_specification.md | views warning copy | VC-DESK-NAV-001 | partial | moderate | Explicit labels |
@@ -44,6 +45,10 @@
 | LLR-DESK-011 | Desktop Files lists and previews approved workspace through Green GET routes only | Platform v9 | Desktop Files | phase4_workspace_read_api.md | `FilesView.tsx`, `bridgeClient.ts` | VC-DESK-FILES-001, bridgeClient.test.ts | implemented | moderate | Falls back to mock when bridge offline/unconfigured; no write/delete/execute routes |
 | LLR-WEB-001 | LLM via central helper | WP v8 | Web server | software_architecture.md | `server/_core/llm.ts` | review | implemented | moderate | |
 | LLR-WEB-002 | Mutations audit logged | WP v8 | Web server | security_architecture.md | `server/db.ts` | audit tests | partial | moderate | |
+| LLR-RT-001 | Operator-scoped Runtime records | Runtime v0.1 | Web Runtime | detailed_design.md | `server/db.ts`, runtime router | VC-RT-002 | implemented | high | Ownership predicates precede reads and mutations |
+| LLR-RT-002 | Append-only checkpoints | Runtime v0.1 | Web Runtime | detailed_design.md | `missionCheckpoints`, `runtime.createCheckpoint` | VC-RT-001, VC-RT-002 | implemented | moderate | No checkpoint update/delete API in Layer 1 |
+| LLR-RT-003 | Mission/checkpoint audit provenance | Runtime v0.1 | Web Audit | security_architecture.md | `auditLogs.missionId`, `auditLogs.checkpointId`, `addAuditLog` | VC-RT-001, VC-RT-002 | implemented | high | Nullable for backward compatibility |
+| LLR-RT-004 | No Layer 1 execution surface | Runtime v0.1 | Web Runtime | tool_permission_matrix.md | runtime router | VC-RT-001 | implemented | critical | Task state is declarative only |
 | HAZ-001 | Unapproved shell | Platform v9 | Docs + legacy agent | tool_permission_matrix.md | AGENTS.md, LOCAL_AGENT.md | review | partial | critical | Red gated |
 | HAZ-002 | File deletion | Platform v9 | Bridge (future) | rollback_and_recovery_plan.md | not implemented | deferred | deferred | critical | |
 | HAZ-003 | Secret leakage localStorage | Platform v9 | Desktop | security_architecture.md | `settingsPolicy.ts` | settingsPolicy.test.ts | partial | critical | |
