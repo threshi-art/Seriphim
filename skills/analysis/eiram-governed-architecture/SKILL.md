@@ -13,6 +13,8 @@ Read `references/component-catalog.md` when selecting open-source components or 
 
 Read `references/gate-1-runtime-authority.md` only when planning, reviewing, or preparing the Seriphim project’s Gate 1 Runtime Authority work. It records a verified project-specific boundary and never authorizes implementation, external execution, branching, commits, pull requests, or merges by itself.
 
+Read `references/g1-02-readiness-checklist.md` when assessing whether G1-02 may receive separate implementation authorization. It is a planning-only traceability and blocker record; it grants no implementation, execution, branch, pull-request, or merge authority.
+
 ## Workflow
 
 1. **Classify the request.** Identify whether it involves sensitive personal data, cyber/threat intelligence, OSINT, high-impact decision support, causal claims, simulation, or external actions. Establish the operational boundary and relevant governance requirements before choosing technology.
