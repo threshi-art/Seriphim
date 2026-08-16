@@ -19,7 +19,7 @@ Automated tests under `seraphim_desktop_companion/src/**/*.test.ts` (**18 tests*
 | `services/bridgeClient.test.ts` | VC-DESK-BRG-001, VC-DESK-FILES-001 — health plus Phase 4 workspace config/list/read client |
 | `services/localStorageService.test.ts` | VC-DESK-WS-001 |
 
-Run: `pnpm verify`, `pnpm verify:full` (includes publish check), or `pnpm walkthrough:desktop` (VC-DESK-MANUAL-001). Runtime Layer 1 verification on 2026-08-16 passed the combined Vitest corpus at **90 tests**, plus **8 bridge Python tests**.
+Run: `pnpm verify`, `pnpm verify:full` (includes publish check), or `pnpm walkthrough:desktop` (VC-DESK-MANUAL-001). Runtime Layer 1 and WebView2 data-boundary verification on 2026-08-16 passed the combined Vitest corpus at **91 tests**, plus **8 bridge Python tests**.
 
 ## Local bridge (Phase 3/4)
 

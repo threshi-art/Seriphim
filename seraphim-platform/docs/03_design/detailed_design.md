@@ -26,3 +26,7 @@ The web data path owns the first durable Runtime layer. `missions` stores operat
 The protected `runtime` tRPC router exposes mission list/snapshot, mission creation/status update, task creation/status update, and checkpoint creation. Database helpers verify mission ownership through `userId` before returning or mutating mission-scoped state. A failed ownership check returns `NOT_FOUND` and does not emit a success audit event.
 
 `audit_logs.missionId` and `audit_logs.checkpointId` provide nullable first-class provenance for Runtime events while remaining backward compatible with existing audit writers. Task identifiers remain in audit metadata. Checkpoints are append-only in Layer 1 because no update or delete helper or router procedure exists.
+
+## Desktop WebView2 Runtime Data
+
+The WinForms host creates its WebView2 environment with an explicit user-data folder at `%LOCALAPPDATA%\Seraphim\DesktopCompanion\WebView2`. The executable and packaged `wwwroot` remain together under `dist\desktop`, while browser profiles, caches, and WebView2 database files remain outside Git and outside the OneDrive source tree.
