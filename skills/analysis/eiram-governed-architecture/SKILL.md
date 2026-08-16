@@ -11,6 +11,8 @@ Use this skill to turn an ambitious intelligence or decision-support concept int
 
 Read `references/component-catalog.md` when selecting open-source components or assessing architecture fit.
 
+Read `references/gate-1-runtime-authority.md` only when planning, reviewing, or preparing the Seriphim project’s Gate 1 Runtime Authority work. It records a verified project-specific boundary and never authorizes implementation, external execution, branching, commits, pull requests, or merges by itself.
+
 ## Workflow
 
 1. **Classify the request.** Identify whether it involves sensitive personal data, cyber/threat intelligence, OSINT, high-impact decision support, causal claims, simulation, or external actions. Establish the operational boundary and relevant governance requirements before choosing technology.
