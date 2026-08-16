@@ -8,7 +8,7 @@
 
 **Status:** complete via PR #18. **Dependencies:** none.
 
-Keep WebView2 user data beneath `%LOCALAPPDATA%\Seraphim\DesktopCompanion\WebView2`, never beside the executable or in OneDrive. **Verify:** host-policy test, C# build, and smoke launch. **Accept:** no `.WebView2` data appears in source paths.
+Keep WebView2 user data beneath `%LOCALAPPDATA%\Seraphim\DesktopCompanion\WebView2`, never beside the executable or in OneDrive. **Verify:** host-policy test, C# build, and the operator-attested smoke record in `docs/04_verification/desktop_webview2_smoke_2026-08-16.md`. **Accept:** no `.WebView2` data appears in source paths.
 
 ### G2-02 — Expose a bounded local Runtime API
 
