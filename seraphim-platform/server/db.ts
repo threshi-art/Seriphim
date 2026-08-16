@@ -3,7 +3,8 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, conversations, messages, memoryEntries,
   networkEvents, analysisResults, plugins, auditLogs, codeExecutions,
-  userSettings, instagramCache, sentinelChecks,
+  userSettings, instagramCache, sentinelChecks, missions, missionTasks,
+  missionCheckpoints,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -255,16 +256,124 @@ export async function deletePlugin(id: number, userId: number) {
 
 // ── Audit Logs ──
 
-export async function addAuditLog(userId: number, action: string, category: "chat" | "network" | "code" | "engineering" | "analysis" | "memory" | "plugin" | "system" | "discover" | "news" | "weather" | "flights" | "files" | "settings" | "instagram" | "sentinel", details?: string, metadata?: unknown) {
+export type AuditProvenance = {
+  missionId?: number;
+  checkpointId?: number;
+};
+
+export async function addAuditLog(userId: number, action: string, category: "chat" | "network" | "code" | "engineering" | "analysis" | "memory" | "plugin" | "system" | "discover" | "news" | "weather" | "flights" | "files" | "settings" | "instagram" | "sentinel", details?: string, metadata?: unknown, provenance?: AuditProvenance) {
   const db = await getDb();
   if (!db) return;
-  await db.insert(auditLogs).values({ userId, action, category, details: details ?? null, metadata: metadata ?? null });
+  await db.insert(auditLogs).values({
+    userId,
+    action,
+    category,
+    details: details ?? null,
+    metadata: metadata ?? null,
+    missionId: provenance?.missionId ?? null,
+    checkpointId: provenance?.checkpointId ?? null,
+  });
 }
 
 export async function getUserAuditLogs(userId: number, limit = 100) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(auditLogs).where(eq(auditLogs.userId, userId)).orderBy(desc(auditLogs.createdAt)).limit(limit);
+}
+
+// ── Runtime Layer 1 ──
+
+export type MissionStatus = "draft" | "active" | "paused" | "completed" | "failed" | "cancelled";
+export type MissionTaskStatus = "pending" | "blocked" | "ready" | "in_progress" | "completed" | "failed" | "cancelled";
+
+export async function createMission(userId: number, data: { title: string; objective: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(missions).values({ userId, ...data, status: "draft" });
+  return { id: Number(result[0].insertId), userId, ...data, status: "draft" as const };
+}
+
+export async function getUserMissions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(missions).where(eq(missions.userId, userId)).orderBy(desc(missions.updatedAt));
+}
+
+export async function getMissionForUser(missionId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(missions).where(
+    and(eq(missions.id, missionId), eq(missions.userId, userId)),
+  ).limit(1);
+  return result[0];
+}
+
+export async function getMissionSnapshot(missionId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const mission = await getMissionForUser(missionId, userId);
+  if (!mission) return undefined;
+  const [tasks, checkpoints] = await Promise.all([
+    db.select().from(missionTasks).where(eq(missionTasks.missionId, missionId)).orderBy(missionTasks.sequence, missionTasks.createdAt),
+    db.select().from(missionCheckpoints).where(eq(missionCheckpoints.missionId, missionId)).orderBy(missionCheckpoints.createdAt),
+  ]);
+  return { mission, tasks, checkpoints };
+}
+
+export async function updateMissionStatus(missionId: number, userId: number, status: MissionStatus) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const mission = await getMissionForUser(missionId, userId);
+  if (!mission) return false;
+  await db.update(missions).set({ status }).where(and(eq(missions.id, missionId), eq(missions.userId, userId)));
+  return true;
+}
+
+export async function createMissionTask(userId: number, data: {
+  missionId: number;
+  title: string;
+  description?: string;
+  sequence: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const mission = await getMissionForUser(data.missionId, userId);
+  if (!mission) return undefined;
+  const result = await db.insert(missionTasks).values({
+    missionId: data.missionId,
+    title: data.title,
+    description: data.description ?? null,
+    sequence: data.sequence,
+    status: "pending",
+  });
+  return { id: Number(result[0].insertId), ...data, description: data.description ?? null, status: "pending" as const };
+}
+
+export async function updateMissionTaskStatus(taskId: number, userId: number, status: MissionTaskStatus) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const owned = await db.select({ task: missionTasks }).from(missionTasks).innerJoin(
+    missions,
+    and(eq(missionTasks.missionId, missions.id), eq(missions.userId, userId)),
+  ).where(eq(missionTasks.id, taskId)).limit(1);
+  if (owned.length === 0) return undefined;
+  await db.update(missionTasks).set({ status }).where(eq(missionTasks.id, taskId));
+  return { missionId: owned[0].task.missionId };
+}
+
+export async function createMissionCheckpoint(userId: number, data: {
+  missionId: number;
+  label: string;
+  summary: string;
+  stateSnapshot?: Record<string, unknown>;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const mission = await getMissionForUser(data.missionId, userId);
+  if (!mission) return undefined;
+  const stateSnapshot = data.stateSnapshot ?? null;
+  const result = await db.insert(missionCheckpoints).values({ ...data, stateSnapshot });
+  return { id: Number(result[0].insertId), ...data, stateSnapshot };
 }
 
 // ── Code Executions ──

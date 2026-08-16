@@ -119,6 +119,46 @@ export const plugins = mysqlTable("plugins", {
 
 export type Plugin = typeof plugins.$inferSelect;
 
+// ── Runtime Layer 1: Governed Mission Persistence ──
+export const missions = mysqlTable("missions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  objective: text("objective").notNull(),
+  status: mysqlEnum("status", ["draft", "active", "paused", "completed", "failed", "cancelled"]).default("draft").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Mission = typeof missions.$inferSelect;
+export type InsertMission = typeof missions.$inferInsert;
+
+export const missionTasks = mysqlTable("mission_tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  missionId: int("missionId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["pending", "blocked", "ready", "in_progress", "completed", "failed", "cancelled"]).default("pending").notNull(),
+  sequence: int("sequence").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MissionTask = typeof missionTasks.$inferSelect;
+export type InsertMissionTask = typeof missionTasks.$inferInsert;
+
+export const missionCheckpoints = mysqlTable("mission_checkpoints", {
+  id: int("id").autoincrement().primaryKey(),
+  missionId: int("missionId").notNull(),
+  label: varchar("label", { length: 128 }).notNull(),
+  summary: text("summary").notNull(),
+  stateSnapshot: json("stateSnapshot"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MissionCheckpoint = typeof missionCheckpoints.$inferSelect;
+export type InsertMissionCheckpoint = typeof missionCheckpoints.$inferInsert;
+
 // ── Audit Log ──
 export const auditLogs = mysqlTable("audit_logs", {
   id: int("id").autoincrement().primaryKey(),
@@ -127,6 +167,8 @@ export const auditLogs = mysqlTable("audit_logs", {
   category: mysqlEnum("category", ["chat", "network", "code", "engineering", "analysis", "memory", "plugin", "system", "discover", "news", "weather", "flights", "files", "settings", "instagram", "sentinel"]).notNull(),
   details: text("details"),
   metadata: json("metadata"),
+  missionId: int("missionId"),
+  checkpointId: int("checkpointId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

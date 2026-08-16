@@ -2,7 +2,7 @@
 
 ## Web (root `pnpm test`)
 
-Vitest suite under `server/*.test.ts` — **56 tests** across router structure, EiRAM, features, anonymous access, local-agent planners (mock routing only), auth logout, and RSS parsing.
+Vitest suite under `server/*.test.ts` includes Runtime Layer 1 schema, ownership, router, and audit-provenance checks in addition to router structure, EiRAM, features, anonymous access, local-agent planners (mock routing only), auth logout, and RSS parsing.
 
 ## Desktop Companion
 
@@ -19,7 +19,7 @@ Automated tests under `seraphim_desktop_companion/src/**/*.test.ts` (**18 tests*
 | `services/bridgeClient.test.ts` | VC-DESK-BRG-001, VC-DESK-FILES-001 — health plus Phase 4 workspace config/list/read client |
 | `services/localStorageService.test.ts` | VC-DESK-WS-001 |
 
-Run: `pnpm verify`, `pnpm verify:full` (includes publish check), or `pnpm walkthrough:desktop` (VC-DESK-MANUAL-001). After VC-DESK-FILES-001, the combined Vitest corpus is verified at **74 tests** before bridge Python tests.
+Run: `pnpm verify`, `pnpm verify:full` (includes publish check), or `pnpm walkthrough:desktop` (VC-DESK-MANUAL-001). Runtime Layer 1 verification on 2026-08-16 passed the combined Vitest corpus at **90 tests**, plus **8 bridge Python tests**.
 
 ## Local bridge (Phase 3/4)
 

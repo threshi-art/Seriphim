@@ -21,3 +21,5 @@
 | VC-BRG-WS-006 | Audit trail | List + read any file | Lines appended to `logs/bridge_audit.jsonl` |
 | VC-BRG-HEALTH-001 | Bridge health | `pnpm bridge:dev`; `GET /health` | `executionEnabled: false` |
 | VC-WEB-REG-001 | Web regression | `pnpm verify` | Pass (70 tests) |
+| VC-RT-001 | Runtime Layer 1 schema and safety boundary | Run `vitest run server/runtime.schema.test.ts` | Mission/task/checkpoint tables and audit provenance exist; task schema contains no worker, command, or claim-token fields; checkpoints have no update timestamp |
+| VC-RT-002 | Runtime router ownership and provenance | Run `vitest run server/runtime.router.test.ts` | Seven protected persistence procedures exist; mission/checkpoint audits carry provenance; unauthorized mutation returns `NOT_FOUND` without success audit |

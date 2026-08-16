@@ -19,3 +19,4 @@
 | HLR-DESK-001 | Desktop Companion shall provide the MVP cockpit screens and layout. |
 | HLR-MOB-001 | Mobile Cockpit shall approve/reject only; no arbitrary local execution. |
 | HLR-DOC-001 | Documentation package shall exist under `docs/`. |
+| HLR-RT-001 | Runtime Layer 1 shall durably persist operator-owned missions, mission tasks, and append-only checkpoints without enabling worker execution. |

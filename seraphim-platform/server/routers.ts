@@ -1278,6 +1278,101 @@ Use tables for IP schemes and VLAN assignments. Be specific with IP addresses an
       return db.getUserAuditLogs(ctx.user.id, input?.limit ?? 100);
     }),
   }),
+
+  // ── Runtime Layer 1: persistence only; no worker or execution surface ──
+  runtime: router({
+    missions: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserMissions(ctx.user.id);
+    }),
+    mission: protectedProcedure.input(z.object({ missionId: z.number().int().positive() })).query(async ({ ctx, input }) => {
+      const snapshot = await db.getMissionSnapshot(input.missionId, ctx.user.id);
+      if (!snapshot) throw new TRPCError({ code: "NOT_FOUND", message: "Mission not found" });
+      return snapshot;
+    }),
+    createMission: protectedProcedure.input(z.object({
+      title: z.string().trim().min(1).max(255),
+      objective: z.string().trim().min(1).max(20_000),
+    })).mutation(async ({ ctx, input }) => {
+      const mission = await db.createMission(ctx.user.id, input);
+      await db.addAuditLog(
+        ctx.user.id,
+        "Runtime mission created",
+        "system",
+        `Mission ${mission.id}: ${mission.title}`,
+        undefined,
+        { missionId: mission.id },
+      );
+      return mission;
+    }),
+    updateMissionStatus: protectedProcedure.input(z.object({
+      missionId: z.number().int().positive(),
+      status: z.enum(["draft", "active", "paused", "completed", "failed", "cancelled"]),
+    })).mutation(async ({ ctx, input }) => {
+      const updated = await db.updateMissionStatus(input.missionId, ctx.user.id, input.status);
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Mission not found" });
+      await db.addAuditLog(
+        ctx.user.id,
+        "Runtime mission status updated",
+        "system",
+        `Mission ${input.missionId}: ${input.status}`,
+        undefined,
+        { missionId: input.missionId },
+      );
+      return { success: true } as const;
+    }),
+    createTask: protectedProcedure.input(z.object({
+      missionId: z.number().int().positive(),
+      title: z.string().trim().min(1).max(255),
+      description: z.string().trim().max(20_000).optional(),
+      sequence: z.number().int().nonnegative().default(0),
+    })).mutation(async ({ ctx, input }) => {
+      const task = await db.createMissionTask(ctx.user.id, input);
+      if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "Mission not found" });
+      await db.addAuditLog(
+        ctx.user.id,
+        "Runtime task created",
+        "system",
+        `Mission ${input.missionId} task ${task.id}: ${task.title}`,
+        { taskId: task.id },
+        { missionId: input.missionId },
+      );
+      return task;
+    }),
+    updateTaskStatus: protectedProcedure.input(z.object({
+      taskId: z.number().int().positive(),
+      status: z.enum(["pending", "blocked", "ready", "in_progress", "completed", "failed", "cancelled"]),
+    })).mutation(async ({ ctx, input }) => {
+      const updated = await db.updateMissionTaskStatus(input.taskId, ctx.user.id, input.status);
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Task not found" });
+      await db.addAuditLog(
+        ctx.user.id,
+        "Runtime task status updated",
+        "system",
+        `Mission ${updated.missionId} task ${input.taskId}: ${input.status}`,
+        { taskId: input.taskId },
+        { missionId: updated.missionId },
+      );
+      return { success: true } as const;
+    }),
+    createCheckpoint: protectedProcedure.input(z.object({
+      missionId: z.number().int().positive(),
+      label: z.string().trim().min(1).max(128),
+      summary: z.string().trim().min(1).max(20_000),
+      stateSnapshot: z.record(z.string(), z.unknown()).optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const checkpoint = await db.createMissionCheckpoint(ctx.user.id, input);
+      if (!checkpoint) throw new TRPCError({ code: "NOT_FOUND", message: "Mission not found" });
+      await db.addAuditLog(
+        ctx.user.id,
+        "Runtime checkpoint created",
+        "system",
+        `Mission ${input.missionId} checkpoint ${checkpoint.id}: ${checkpoint.label}`,
+        undefined,
+        { missionId: input.missionId, checkpointId: checkpoint.id },
+      );
+      return checkpoint;
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

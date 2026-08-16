@@ -19,5 +19,9 @@
 | VC-BRG-WS-002 | pass (smoke) | 2026-07-05 | `GET /workspace/list?relativePath=docs` |
 | VC-BRG-WS-004 | pass (unit) | 2026-07-05 | `pnpm bridge:test` — escape traversal rejected |
 | VC-BRG-WS-006 | pass (smoke) | 2026-07-05 | Audit lines in `logs/bridge_audit.jsonl` |
+| VC-RT-001 | pass (automated) | 2026-08-16 | `runtime.schema.test.ts` — 4 schema, provenance, and no-execution-field checks |
+| VC-RT-002 | pass (automated) | 2026-08-16 | `runtime.router.test.ts` — 4 procedure, provenance, and ownership checks |
+
+Runtime Layer 1 regression evidence on 2026-08-16: root TypeScript pass, Desktop Companion TypeScript pass, 90/90 Vitest tests pass, and 8/8 bridge unit tests pass.
 
 Phase 4 M3 Desktop Files implementation is complete. Full live bridge operator verification for VC-BRG-WS-* and end-to-end Files view remains open under M4.

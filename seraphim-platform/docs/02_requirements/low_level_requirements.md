@@ -14,3 +14,7 @@
 | LLR-DESK-010 | Bridge health client may GET `/health` only; failures yield offline/degraded. |
 | LLR-WEB-001 | Web LLM calls shall use `server/_core/llm.ts`. |
 | LLR-WEB-002 | Web mutating procedures should write audit logs via `server/db.ts` helpers. |
+| LLR-RT-001 | Runtime mission, task, and checkpoint reads and mutations shall be scoped to the authenticated operator. |
+| LLR-RT-002 | Runtime checkpoints shall be append-only in Layer 1 and shall preserve a structured state snapshot when supplied. |
+| LLR-RT-003 | Runtime audit records shall support first-class nullable mission and checkpoint provenance. |
+| LLR-RT-004 | Runtime Layer 1 shall expose no worker, scheduling, shell, file write/delete, or autonomous execution procedure. |
