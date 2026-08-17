@@ -33,15 +33,19 @@ class AttemptTests(unittest.TestCase):
         self.connection.close()
 
     def accepted_claim(self):
+        parameters = {"target": "local"}
         task = self.tasks.create("operator-a", self.mission.mission_id, "Task", 2, "analysis", "yellow")
-        request = self.approvals.create("operator-a", task.task_id, "yellow", {"target": "local"}, (datetime.now(UTC) + timedelta(hours=1)).isoformat(), "bounded", {"procedure": "revert"})
+        request = self.approvals.create("operator-a", task.task_id, "yellow", parameters, (datetime.now(UTC) + timedelta(hours=1)).isoformat(), "bounded", {"procedure": "revert"})
         self.decisions.decide("operator-b", request.approval_request_id, "approved", "approved")
         self.tasks.transition_status("operator-a", task.task_id, "ready")
-        return task, request, self.claims.claim_one("worker-a", 120)
+        return task, request, self.claims.claim_one("worker-a", 120), parameters
+
+    def create(self, task, request, claim, parameters, metadata=None):
+        return self.attempts.create_from_claim("worker-a", task.task_id, claim.claim_token, request.approval_request_id, "yellow", parameters, metadata or {"source": "operator"})
 
     def test_creates_one_attempt_bound_to_accepted_claim_and_audit(self) -> None:
-        task, request, claim = self.accepted_claim()
-        attempt = self.attempts.create_from_claim("worker-a", task.task_id, claim.claim_token, {"source": "operator", "input_length": 12})
+        task, request, claim, parameters = self.accepted_claim()
+        attempt = self.create(task, request, claim, parameters, {"source": "operator", "input_length": 12})
         self.assertEqual(attempt.task_id, task.task_id)
         self.assertEqual(attempt.approval_request_id, request.approval_request_id)
         self.assertEqual(attempt.claim_token, claim.claim_token)
@@ -49,37 +53,37 @@ class AttemptTests(unittest.TestCase):
         self.assertEqual(row[0:3], ("worker-a", claim.claim_token, claim.expires_at))
         self.assertEqual(row[3], '{"input_length":12,"source":"operator"}')
         audit = self.connection.execute("SELECT event_type, attempt_id FROM runtime_audit_events ORDER BY event_sequence DESC LIMIT 1").fetchone()
-        self.assertEqual(audit, ("attempt.created", attempt.attempt_id))
+        self.assertEqual(audit, ("approval.consumed", attempt.attempt_id))
 
     def test_replay_wrong_worker_and_stale_lease_are_non_disclosing(self) -> None:
-        task, _, claim = self.accepted_claim()
-        self.attempts.create_from_claim("worker-a", task.task_id, claim.claim_token, {})
+        task, request, claim, parameters = self.accepted_claim()
+        self.create(task, request, claim, parameters)
         with self.assertRaises(AttemptAccessError):
-            self.attempts.create_from_claim("worker-a", task.task_id, claim.claim_token, {})
+            self.create(task, request, claim, parameters)
+        task2, request2, claim2, parameters2 = self.accepted_claim()
         with self.assertRaises(AttemptAccessError):
-            self.attempts.create_from_claim("worker-b", task.task_id, claim.claim_token, {})
-        task2, _, claim2 = self.accepted_claim()
+            self.attempts.create_from_claim("worker-b", task2.task_id, claim2.claim_token, request2.approval_request_id, "yellow", parameters2, {})
         self.connection.execute("UPDATE runtime_tasks SET claim_expires_at = ? WHERE task_id = ?", ((datetime.now(UTC) - timedelta(seconds=1)).isoformat(), task2.task_id))
         self.connection.commit()
         with self.assertRaises(AttemptAccessError):
-            self.attempts.create_from_claim("worker-a", task2.task_id, claim2.claim_token, {})
+            self.create(task2, request2, claim2, parameters2)
 
     def test_secret_bearing_or_oversized_metadata_is_rejected(self) -> None:
-        task, _, claim = self.accepted_claim()
+        task, request, claim, parameters = self.accepted_claim()
         for metadata in ({"api_key": "never"}, {"nested": {"secret": "never"}}, {"text": "x" * 2049}):
             with self.assertRaises(AttemptMetadataError):
-                self.attempts.create_from_claim("worker-a", task.task_id, claim.claim_token, metadata)
+                self.create(task, request, claim, parameters, metadata)
         self.assertEqual(self.connection.execute("SELECT COUNT(*) FROM runtime_attempts").fetchone()[0], 0)
 
     def test_database_trigger_rejects_forged_attempt(self) -> None:
-        task, request, claim = self.accepted_claim()
+        task, request, claim, _ = self.accepted_claim()
         with self.assertRaises(sqlite3.IntegrityError):
             self.connection.execute("INSERT INTO runtime_attempts(attempt_id, task_id, approval_request_id, worker_id, claim_token, status, created_at, claim_expires_at, input_metadata_json, input_metadata_digest) VALUES (?, ?, ?, ?, ?, 'created', ?, ?, '{}', ?)", ("a" * 32, task.task_id, request.approval_request_id, "attacker", claim.claim_token, datetime.now(UTC).isoformat(), claim.expires_at, "0" * 64))
 
     def test_transaction_failure_rolls_back_attempt_and_audit(self) -> None:
-        task, _, claim = self.accepted_claim()
+        task, request, claim, parameters = self.accepted_claim()
         with self.assertRaises(RuntimeError):
-            self.attempts.create_from_claim("worker-a", task.task_id, claim.claim_token, {}, lambda stage: (_ for _ in ()).throw(RuntimeError(stage)))
+            self.attempts.create_from_claim("worker-a", task.task_id, claim.claim_token, request.approval_request_id, "yellow", parameters, {}, lambda stage: (_ for _ in ()).throw(RuntimeError(stage)))
         self.assertEqual(self.connection.execute("SELECT COUNT(*) FROM runtime_attempts").fetchone()[0], 0)
         self.assertEqual(self.connection.execute("SELECT COUNT(*) FROM runtime_audit_events WHERE event_type = 'attempt.created'").fetchone()[0], 0)
 
@@ -91,7 +95,8 @@ class AttemptTests(unittest.TestCase):
             apply_migrations(seed)
             mission = MissionRepository(seed).create("operator-a", "Alpha", "objective")
             task = TaskRepository(seed).create("operator-a", mission.mission_id, "Task", 2, "analysis", "yellow")
-            request = ApprovalRequestRepository(seed).create("operator-a", task.task_id, "yellow", {"target": "local"}, (datetime.now(UTC) + timedelta(hours=1)).isoformat(), "bounded", {"procedure": "revert"})
+            parameters = {"target": "local"}
+            request = ApprovalRequestRepository(seed).create("operator-a", task.task_id, "yellow", parameters, (datetime.now(UTC) + timedelta(hours=1)).isoformat(), "bounded", {"procedure": "revert"})
             ApprovalDecisionRepository(seed).decide("operator-b", request.approval_request_id, "approved", "approved")
             TaskRepository(seed).transition_status("operator-a", task.task_id, "ready")
             claim = TaskClaimRepository(seed).claim_one("worker-a")
@@ -104,7 +109,7 @@ class AttemptTests(unittest.TestCase):
                 apply_migrations(connection)
                 barrier.wait()
                 try:
-                    AttemptRepository(connection).create_from_claim("worker-a", task.task_id, claim.claim_token, {"source": "race"})
+                    AttemptRepository(connection).create_from_claim("worker-a", task.task_id, claim.claim_token, request.approval_request_id, "yellow", parameters, {"source": "race"})
                     results.append("success")
                 except AttemptAccessError:
                     results.append("replayed")
