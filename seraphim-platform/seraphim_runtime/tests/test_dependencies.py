@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import sqlite3
 import unittest
+from datetime import UTC, datetime, timedelta
 
+from seraphim_runtime.approvals import ApprovalRequestRepository
+from seraphim_runtime.claims import TaskClaimRepository
+from seraphim_runtime.decisions import ApprovalDecisionRepository
 from seraphim_runtime.dependencies import DependencyValidationError, TaskDependencyRepository
 from seraphim_runtime.missions import MissionRepository
 from seraphim_runtime.schema_migrations import apply_migrations
@@ -17,6 +21,9 @@ class ImmutableDependencyTests(unittest.TestCase):
         self.missions = MissionRepository(self.connection)
         self.tasks = TaskRepository(self.connection)
         self.dependencies = TaskDependencyRepository(self.connection)
+        self.approvals = ApprovalRequestRepository(self.connection)
+        self.decisions = ApprovalDecisionRepository(self.connection)
+        self.claims = TaskClaimRepository(self.connection)
         self.mission = self.missions.create("operator-a", "Alpha", "objective")
         self.other_mission = self.missions.create("operator-a", "Bravo", "other objective")
 
@@ -26,9 +33,15 @@ class ImmutableDependencyTests(unittest.TestCase):
     def task(self, title: str, mission_id: str | None = None):
         return self.tasks.create("operator-a", mission_id or self.mission.mission_id, title, 2, "analysis", "yellow")
 
+    def claim_ready(self, task_id: str) -> None:
+        request = self.approvals.create("operator-a", task_id, "yellow", {"target": "local"}, (datetime.now(UTC) + timedelta(hours=1)).isoformat(), "dependency test claim", {"procedure": "revert"})
+        self.decisions.decide("operator-b", request.approval_request_id, "approved", "approved")
+        claim = self.claims.claim_one("dependency-worker")
+        self.assertEqual(claim.task_id, task_id)
+
     def complete(self, task_id: str) -> None:
         self.tasks.transition_status("operator-a", task_id, "ready")
-        self.tasks.transition_status("operator-a", task_id, "claimed")
+        self.claim_ready(task_id)
         self.tasks.transition_status("operator-a", task_id, "completed")
 
     def test_adds_immutable_same_mission_pending_dependency_and_audits(self) -> None:
@@ -70,7 +83,7 @@ class ImmutableDependencyTests(unittest.TestCase):
             self.dependencies.add("operator-a", task.task_id, prerequisite.task_id)
         claimed = self.task("Claimed")
         self.tasks.transition_status("operator-a", claimed.task_id, "ready")
-        self.tasks.transition_status("operator-a", claimed.task_id, "claimed")
+        self.claim_ready(claimed.task_id)
         with self.assertRaises(sqlite3.IntegrityError):
             self.dependencies.add("operator-a", claimed.task_id, prerequisite.task_id)
 

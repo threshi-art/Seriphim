@@ -368,6 +368,57 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=8,
+        name="runtime_atomic_task_claims",
+        statements=(
+            "ALTER TABLE runtime_tasks ADD COLUMN claim_worker_id TEXT",
+            "ALTER TABLE runtime_tasks ADD COLUMN claim_token TEXT CHECK (claim_token IS NULL OR (length(claim_token) = 64 AND claim_token GLOB '[0-9a-f]*'))",
+            "ALTER TABLE runtime_tasks ADD COLUMN claim_expires_at TEXT",
+            "CREATE INDEX runtime_tasks_ready_claim_idx ON runtime_tasks(status, priority, created_at)",
+            "CREATE UNIQUE INDEX runtime_tasks_active_claim_token_idx ON runtime_tasks(claim_token) WHERE status = 'claimed'",
+            """
+            CREATE TRIGGER runtime_tasks_claim_guard
+            BEFORE UPDATE OF status ON runtime_tasks
+            WHEN OLD.status = 'ready' AND NEW.status = 'claimed'
+            BEGIN
+                SELECT CASE WHEN NEW.claim_worker_id IS NULL OR length(trim(NEW.claim_worker_id)) = 0 OR NEW.claim_token IS NULL OR NEW.claim_expires_at IS NULL
+                    THEN RAISE(ABORT, 'runtime task claim requires worker token and lease') END;
+                SELECT CASE WHEN julianday(NEW.claim_expires_at) <= julianday('now')
+                    THEN RAISE(ABORT, 'runtime task claim lease must be future') END;
+                SELECT CASE WHEN NOT EXISTS (
+                    SELECT 1 FROM runtime_approval_requests AS approval
+                    WHERE approval.task_id = NEW.task_id
+                      AND approval.status = 'approved'
+                      AND julianday(approval.expires_at) > julianday('now')
+                ) THEN RAISE(ABORT, 'runtime task claim requires valid approved request') END;
+                SELECT CASE WHEN EXISTS (
+                    SELECT 1 FROM runtime_task_dependencies AS dependency
+                    JOIN runtime_tasks AS prerequisite ON prerequisite.task_id = dependency.depends_on_task_id
+                    WHERE dependency.task_id = NEW.task_id AND prerequisite.status != 'completed'
+                ) THEN RAISE(ABORT, 'runtime task claim dependencies are not satisfied') END;
+                SELECT CASE WHEN NOT EXISTS (
+                    SELECT 1
+                    FROM runtime_audit_events AS audit
+                    JOIN runtime_approval_requests AS approval ON approval.approval_request_id = audit.approval_request_id
+                    WHERE audit.task_id = NEW.task_id
+                      AND audit.actor_id = NEW.claim_worker_id
+                      AND audit.event_type = 'task.claimed'
+                      AND approval.task_id = NEW.task_id
+                      AND approval.status = 'approved'
+                ) THEN RAISE(ABORT, 'runtime task claim lacks audit provenance') END;
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_tasks_claim_metadata_immutable
+            BEFORE UPDATE OF claim_worker_id, claim_token ON runtime_tasks
+            WHEN OLD.status = 'claimed'
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime active claim identity is immutable');
+            END
+            """,
+        ),
+    ),
 )
 
 

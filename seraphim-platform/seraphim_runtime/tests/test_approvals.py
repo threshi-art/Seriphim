@@ -124,8 +124,7 @@ class ApprovalRequestTests(unittest.TestCase):
     def test_terminal_task_rejects_request_creation(self) -> None:
         task = self.task()
         self.tasks.transition_status("operator-a", task.task_id, "ready")
-        self.tasks.transition_status("operator-a", task.task_id, "claimed")
-        self.tasks.transition_status("operator-a", task.task_id, "completed")
+        self.tasks.transition_status("operator-a", task.task_id, "cancelled")
         with self.assertRaises(TaskStateError):
             self.request(task=task)
 
