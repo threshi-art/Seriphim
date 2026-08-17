@@ -19,3 +19,6 @@
 | LLR-RT-002 | Runtime checkpoints shall be append-only in Layer 1 and shall preserve a structured state snapshot when supplied. |
 | LLR-RT-003 | Runtime audit records shall support first-class nullable mission and checkpoint provenance. |
 | LLR-RT-004 | Runtime Layer 1 shall expose no worker, scheduling, shell, file write/delete, or autonomous execution procedure. |
+| LLR-G2-05-001 | A file-write proposal shall bind an approved workspace-root identity, normalized relative path, current base bytes SHA-256, exact replacement bytes SHA-256, replacement size, encoding classification, preview diff where valid, reason, rollback plan, expiry, idempotency key, owner identity, and audit reference before any later execution may be considered. |
+| LLR-G2-05-002 | File-write proposals shall be append-only and immutable, owner-scoped, non-disclosing across owners, and rejected when path, content, expiry, or identity validation fails. |
+| LLR-G2-05-003 | G2-05 shall perform no file write, replace, delete, execution, or approval consumption; it may only resolve, read, hash, classify, diff, and persist immutable proposal metadata through approved Runtime storage. |
