@@ -8,6 +8,7 @@
 |---|---|
 | Baseline | `origin/main` at `3f15f939e8c82d2f172ce70c601d6b271965a500` |
 | Branch | `agent/g2-05-write-proposals` |
+| Publication | Draft PR [#105](https://github.com/threshi-art/Seriphim/pull/105), initial implementation commit `e73af917f981716f7d48cbd059d413e1faf7f845` |
 | Dependency | G2-03 merged. G2-04 remains separately held in draft PR #104 and is not a G2-05 dependency. |
 | Storage | Production proposal metadata follows the established Runtime storage policy under `%LOCALAPPDATA%\Seraphim\Runtime`; tests use `:memory:` plus isolated temporary workspace directories. |
 
@@ -32,7 +33,8 @@
 | Full platform suite | Passed: 92 tests across 21 files. |
 | Root TypeScript check | Passed. |
 | Production build | Passed in 18.16 seconds. |
-| SQLite artifact scan | Pending final pre-publication scan. |
+| SQLite artifact scan | Passed: no `.db`, `.sqlite`, `.sqlite3`, journal, WAL, or shared-memory artifact in the isolated source or publication scope. |
+| GitHub CI | Passed: `Repository policy`, `Seraphim platform`, and `EI-RAM engine` all completed successfully for the draft candidate. |
 
 ## Defects Found and Repaired
 
