@@ -517,6 +517,44 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=11,
+        name="runtime_cryptographic_audit_chain",
+        statements=(
+            "ALTER TABLE runtime_audit_events ADD COLUMN payload_json TEXT NOT NULL DEFAULT '{}' CHECK (runtime_is_canonical_json_object(payload_json) = 1)",
+            "ALTER TABLE runtime_audit_events ADD COLUMN chain_version INTEGER NOT NULL DEFAULT 1 CHECK (chain_version IN (1, 2))",
+            "CREATE INDEX runtime_audit_events_chain_version_sequence_idx ON runtime_audit_events(chain_version, event_sequence)",
+            """
+            CREATE TRIGGER runtime_audit_events_v2_insert_guard
+            BEFORE INSERT ON runtime_audit_events
+            WHEN NEW.chain_version = 2
+            BEGIN
+                SELECT CASE WHEN NEW.event_sequence != COALESCE((SELECT MAX(event_sequence) + 1 FROM runtime_audit_events), 1)
+                    THEN RAISE(ABORT, 'runtime audit sequence is not append only') END;
+                SELECT CASE WHEN NEW.previous_event_hash IS NOT (SELECT event_hash FROM runtime_audit_events ORDER BY event_sequence DESC LIMIT 1)
+                    THEN RAISE(ABORT, 'runtime audit previous hash mismatch') END;
+                SELECT CASE WHEN NEW.payload_digest != runtime_sha256(NEW.payload_json)
+                    THEN RAISE(ABORT, 'runtime audit payload digest mismatch') END;
+                SELECT CASE WHEN NEW.event_hash != runtime_audit_event_hash(NEW.event_sequence, NEW.event_id, NEW.mission_id, NEW.task_id, NEW.attempt_id, NEW.approval_request_id, NEW.actor_id, NEW.event_type, NEW.outcome, NEW.payload_digest, NEW.payload_json, NEW.previous_event_hash, NEW.created_at)
+                    THEN RAISE(ABORT, 'runtime audit event hash mismatch') END;
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_audit_events_no_update
+            BEFORE UPDATE ON runtime_audit_events
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime audit events are append only');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_audit_events_no_delete
+            BEFORE DELETE ON runtime_audit_events
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime audit events are append only');
+            END
+            """,
+        ),
+    ),
 )
 
 
@@ -546,6 +584,32 @@ def _runtime_sha256(value: object) -> str | None:
     if not isinstance(value, str):
         return None
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _runtime_audit_event_hash(
+    sequence: object, event_id: object, mission_id: object, task_id: object, attempt_id: object,
+    approval_request_id: object, actor_id: object, event_type: object, outcome: object,
+    payload_digest: object, payload_json: object, previous_event_hash: object, created_at: object,
+) -> str | None:
+    try:
+        canonical_payload = _canonical_object(payload_json)
+        record = {
+            "actor_id": str(actor_id),
+            "approval_request_id": approval_request_id,
+            "attempt_id": attempt_id,
+            "created_at": str(created_at),
+            "event_id": str(event_id),
+            "event_type": str(event_type),
+            "mission_id": mission_id,
+            "outcome": str(outcome),
+            "payload_digest": str(payload_digest),
+            "previous_event_hash": previous_event_hash,
+            "sequence": int(sequence),
+            "task_id": task_id,
+        }
+        return hashlib.sha256(json.dumps(record, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return None
 
 
 FailureInjector = Callable[[Migration, int], None]
@@ -582,6 +646,7 @@ definition is rejected rather than silently reinterpreting persisted state.
     connection.create_function("runtime_is_canonical_json_object", 1, _runtime_is_canonical_json_object, deterministic=True)
     connection.create_function("runtime_action_digest", 2, _runtime_action_digest, deterministic=True)
     connection.create_function("runtime_sha256", 1, _runtime_sha256, deterministic=True)
+    connection.create_function("runtime_audit_event_hash", 13, _runtime_audit_event_hash, deterministic=True)
     connection.execute("PRAGMA foreign_keys = ON")
     migrations = tuple(migrations)
     if len({item.version for item in migrations}) != len(migrations):
