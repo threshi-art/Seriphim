@@ -8,6 +8,9 @@ Gate 1 tasks own those behaviors.
 from __future__ import annotations
 
 import hashlib
+import json
+
+import hashlib
 import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -255,7 +258,81 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=6,
+        name="runtime_approval_request_integrity",
+        statements=(
+            "ALTER TABLE runtime_approval_requests ADD COLUMN action_class TEXT NOT NULL DEFAULT 'green' CHECK (action_class IN ('green', 'yellow', 'red'))",
+            """
+            CREATE TRIGGER runtime_approval_requests_insert_guard
+            BEFORE INSERT ON runtime_approval_requests
+            BEGIN
+                SELECT CASE WHEN NEW.status != 'pending'
+                    THEN RAISE(ABORT, 'runtime approval request must start pending') END;
+                SELECT CASE WHEN NEW.requested_by != (
+                    SELECT mission.owner_id
+                    FROM runtime_tasks AS task
+                    JOIN runtime_missions AS mission ON mission.mission_id = task.mission_id
+                    WHERE task.task_id = NEW.task_id
+                ) THEN RAISE(ABORT, 'runtime approval request owner mismatch') END;
+                SELECT CASE WHEN NEW.action_class != (SELECT risk_level FROM runtime_tasks WHERE task_id = NEW.task_id)
+                    THEN RAISE(ABORT, 'runtime approval request cannot escalate task authority') END;
+                SELECT CASE WHEN (SELECT status FROM runtime_tasks WHERE task_id = NEW.task_id) NOT IN ('pending', 'ready')
+                    THEN RAISE(ABORT, 'runtime task does not permit approval request creation') END;
+                SELECT CASE WHEN runtime_is_canonical_json_object(NEW.parameters_json) != 1
+                    THEN RAISE(ABORT, 'runtime approval parameters must be canonical JSON object') END;
+                SELECT CASE WHEN runtime_is_canonical_json_object(NEW.rollback_metadata_json) != 1
+                    THEN RAISE(ABORT, 'runtime approval rollback metadata must be canonical JSON object') END;
+                SELECT CASE WHEN NEW.action_digest != runtime_action_digest(NEW.action_class, NEW.parameters_json)
+                    THEN RAISE(ABORT, 'runtime approval action digest mismatch') END;
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_approval_requests_immutable_creation_content
+            BEFORE UPDATE OF task_id, requested_by, action_class, action_digest, parameters_json, rationale, rollback_metadata_json, expires_at, created_at ON runtime_approval_requests
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime approval request creation content is immutable');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_approval_requests_pending_state_only
+            BEFORE UPDATE OF status ON runtime_approval_requests
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime approval decisions require the G1-08 decision authority');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_approval_requests_no_delete
+            BEFORE DELETE ON runtime_approval_requests
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime approval requests are immutable');
+            END
+            """,
+        ),
+    ),
 )
+
+
+def _canonical_object(value: object) -> str:
+    parsed = json.loads(str(value))
+    if not isinstance(parsed, dict):
+        raise ValueError("value must be a JSON object")
+    return json.dumps(parsed, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
+def _runtime_is_canonical_json_object(value: object) -> int:
+    try:
+        return int(str(value) == _canonical_object(value))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return 0
+
+
+def _runtime_action_digest(action_class: object, parameters_json: object) -> str:
+    try:
+        canonical = _canonical_object(parameters_json)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return ""
+    return hashlib.sha256(f"{str(action_class)}|{canonical}".encode("utf-8")).hexdigest()
 
 
 FailureInjector = Callable[[Migration, int], None]
@@ -285,10 +362,12 @@ def apply_migrations(
 ) -> list[int]:
     """Apply each pending migration in its own SQLite transaction.
 
-    Existing versions are checked by both version and digest. A changed migration
-    definition is rejected rather than silently reinterpreting persisted state.
-    """
+Existing versions are checked by both version and digest. A changed migration
+definition is rejected rather than silently reinterpreting persisted state.
+"""
 
+    connection.create_function("runtime_is_canonical_json_object", 1, _runtime_is_canonical_json_object, deterministic=True)
+    connection.create_function("runtime_action_digest", 2, _runtime_action_digest, deterministic=True)
     connection.execute("PRAGMA foreign_keys = ON")
     migrations = tuple(migrations)
     if len({item.version for item in migrations}) != len(migrations):
