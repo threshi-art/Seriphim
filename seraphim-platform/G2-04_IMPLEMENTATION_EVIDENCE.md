@@ -24,12 +24,17 @@ The Runtime service may place a protected, JSON-only profile at `%LOCALAPPDATA%\
 | Check | Result |
 |---|---|
 | Focused pairing tests | Passed: 8 tests, including protected Desktop profile export. |
+| Protected Desktop profile provisioning tests | Passed: 3 tests for fixed loopback/origin binding, plaintext/unknown-field rejection, malformed identifier rejection, and temporary-only test paths. |
 | Desktop unit and host-policy tests | Passed: 26 tests, including live, partial, permission/cross-owner, malformed, offline, stale, and restart-recovery state behavior. |
 | Desktop TypeScript check | Passed. |
-| Full Runtime suite | Passed: 129 tests. |
-| Full platform suite | Passed: 98 tests across 21 files. |
-| Root TypeScript check and production build | Passed; production build completed in 18.77 seconds. |
+| Full Runtime suite | Passed: 132 tests. |
+| Full platform suite | Passed: 99 tests across 21 files. |
+| Root TypeScript check and production build | Passed; production build completed in 18.25 seconds. |
 | Native Windows C# build and paired manual smoke | Pending — the connected Windows Desktop sidecar was unavailable; no workaround or Windows-file mutation was attempted. |
+
+## Prepared Native Validation Package
+
+`G2-04_NATIVE_VALIDATION_CHECKLIST_PREPARED.md` records the exact Windows preflight, frozen verification, native build, DPAPI pairing-profile provisioning, paired Desktop smoke, evidence capture, and scoped contamination scan. It is explicitly **PREPARED, NOT YET EXECUTED**.
 
 ## Explicit Exclusions
 
