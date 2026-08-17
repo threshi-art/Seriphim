@@ -231,6 +231,32 @@ class PairingAuthority:
         replacement = self.issue(owner_id=credential.owner_id, origin=credential.origin, bridge_id=credential.bridge_id, lifetime=lifetime)
         return replacement
 
+    def export_desktop_profile(self, credential: PairingCredential, *, endpoint: str = "http://127.0.0.1:8765/") -> dict[str, str]:
+        """Return only DPAPI-protected pairing material for a native Desktop broker.
+
+        The Runtime service, not a WebView client, owns any later protected-file
+        placement below LOCALAPPDATA. This method never returns plaintext key
+        material and performs no filesystem operation.
+        """
+        if endpoint != "http://127.0.0.1:8765/":
+            raise PairingError("Desktop pairing endpoint must remain the Runtime loopback endpoint")
+        self._assert_active_binding(credential.pairing_id, credential.owner_id, credential.origin, credential.bridge_id)
+        row = self._connection.execute(
+            "SELECT credential_protected, expires_at FROM runtime_pairings WHERE pairing_id = ?",
+            (credential.pairing_id,),
+        ).fetchone()
+        if row is None:
+            raise PairingError("pairing is unavailable")
+        return {
+            "endpoint": endpoint,
+            "owner_id": credential.owner_id,
+            "pairing_id": credential.pairing_id,
+            "origin": credential.origin,
+            "bridge_id": credential.bridge_id,
+            "expires_at": str(row[1]),
+            "credential_protected": str(row[0]),
+        }
+
     def revoke(self, *, pairing_id: str, owner_id: str, reason: str) -> None:
         if not isinstance(reason, str) or not reason.strip():
             raise PairingError("pairing revocation reason is required")

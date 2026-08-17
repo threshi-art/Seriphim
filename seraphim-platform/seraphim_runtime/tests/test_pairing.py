@@ -45,6 +45,16 @@ class PairingAuthorityTests(unittest.TestCase):
         audit = self.connection.execute("SELECT event_type FROM runtime_audit_events ORDER BY event_sequence DESC LIMIT 1").fetchone()
         self.assertEqual("pairing.issued", audit[0])
 
+    def test_desktop_profile_exposes_only_protected_loopback_pairing_material(self) -> None:
+        credential = self.issue()
+        profile = self.authority.export_desktop_profile(credential)
+        self.assertEqual("http://127.0.0.1:8765/", profile["endpoint"])
+        self.assertEqual(credential.pairing_id, profile["pairing_id"])
+        self.assertNotIn("credential", {key for key in profile if key != "credential_protected"})
+        self.assertNotIn(credential.credential, str(profile))
+        with self.assertRaisesRegex(PairingError, "loopback"):
+            self.authority.export_desktop_profile(credential, endpoint="http://127.0.0.1:9000/")
+
     def test_signed_proof_is_bound_and_single_use(self) -> None:
         credential = self.issue()
         headers = create_request_proof(credential, method="GET", path="/v1/missions", nonce="a" * 48, timestamp=self.now.isoformat())

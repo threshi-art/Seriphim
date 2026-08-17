@@ -17,11 +17,20 @@ import {
   mockTasks
 } from "../data/mockData";
 import { checkLocalBridgeHealth } from "../services/bridgeClient";
+import { createNativeRuntimeClient, nativeRuntimeChannel } from "../services/runtimeClient";
 import { loadJson, saveJson } from "../services/localStorageService";
 import { buildMockBriefing, formatMockAssistantReply } from "../lib/operatorVoice";
 import { settingsForPersistence } from "./settingsPolicy";
 import { deriveRiskPosture } from "./riskPosture";
 import { applyApprovalDecision } from "./approvalLogic";
+import {
+  initialRuntimeDataState,
+  projectRuntimeApprovals,
+  projectRuntimeTasks,
+  refreshRuntimeData as refreshRuntimeSnapshot,
+  runtimeSnapshotIsAuthoritative
+} from "./runtimeState";
+import type { RuntimeDataState } from "../types/runtime";
 
 export type { ActiveView } from "../types/views";
 
@@ -74,8 +83,10 @@ interface SeraphimContextValue {
   projects: readonly DesktopProject[];
   sentinelChecks: SentinelCheck[];
   bridgeHealth: LocalBridgeHealth;
+  runtimeData: RuntimeDataState;
   bridgePairing: BridgePairingState;
   refreshBridgeHealth: () => Promise<void>;
+  refreshRuntimeData: () => Promise<void>;
   requestMockPairing: () => void;
   clearMockPairing: () => void;
   activityLog: ActivityEvent[];
@@ -126,6 +137,7 @@ export function SeraphimProvider({ children }: { children: React.ReactNode }) {
   );
 
   const [bridgeHealth, setBridgeHealth] = useState<LocalBridgeHealth>(mockBridgeHealth);
+  const [runtimeData, setRuntimeData] = useState<RuntimeDataState>(initialRuntimeDataState);
   const [bridgePairing, setBridgePairing] = useState<BridgePairingState>(() =>
     loadJson("seraphim_bridge_pairing", {
       status: "unpaired",
@@ -256,6 +268,25 @@ export function SeraphimProvider({ children }: { children: React.ReactNode }) {
     addLog(`Bridge health checked: ${health.status}.`, "info");
   }
 
+  async function refreshRuntimeData() {
+    const channel = nativeRuntimeChannel();
+    const client = channel ? createNativeRuntimeClient(channel) : null;
+    const refreshed = await refreshRuntimeSnapshot(client, runtimeData);
+    setRuntimeData(refreshed);
+    addLog(
+      refreshed.phase === "live"
+        ? "Live Runtime state refreshed through the native paired broker."
+        : `Runtime state refresh is ${refreshed.phase}: ${refreshed.detail ?? "no additional detail"}`,
+      refreshed.phase === "live" ? "success" : refreshed.phase === "partial" || refreshed.phase === "stale" ? "warning" : "danger"
+    );
+  }
+
+  useEffect(() => {
+    void refreshRuntimeData();
+    // The WebView broker is fixed by the native host; explicit refresh handles Runtime restarts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function requestMockPairing() {
     const tokenPreview = `mock_${crypto.randomUUID().slice(0, 8)}`;
     setBridgePairing({
@@ -275,7 +306,10 @@ export function SeraphimProvider({ children }: { children: React.ReactNode }) {
     addLog("Mock bridge pairing cleared.", "warning");
   }
 
-  const pendingApprovals = approvals.filter((item) => item.status === "pending");
+  const authoritativeRuntime = runtimeSnapshotIsAuthoritative(runtimeData);
+  const displayedTasks = authoritativeRuntime ? projectRuntimeTasks(runtimeData.snapshot) : mockTasks;
+  const displayedApprovals = authoritativeRuntime ? projectRuntimeApprovals(runtimeData.snapshot) : approvals;
+  const pendingApprovals = displayedApprovals.filter((item) => item.status === "pending");
   const pendingRed = pendingApprovals.filter((item) => item.safetyLevel === "red").length;
 
   const riskPosture = deriveRiskPosture(
@@ -284,13 +318,19 @@ export function SeraphimProvider({ children }: { children: React.ReactNode }) {
     bridgeHealth.status
   );
 
-  const nextRecommendedAction = !settings.defaultWorkspace
-    ? "Set an approved workspace path in Settings. Confidence: High."
-    : pendingApprovals.length > 0
-      ? `Review ${pendingApprovals.length} pending approval(s). Mock only; no execution.`
-      : bridgeHealth.status === "online"
-        ? "Bridge health is online. Continue mission planning or approval drills."
-        : "Start seraphim_local_bridge (bridge:dev) or continue mock drills while offline.";
+  const nextRecommendedAction = runtimeData.phase === "permission"
+    ? "Pair this Desktop host with the local Runtime before requesting owner-scoped state."
+    : runtimeData.phase === "offline"
+      ? "Start the local Runtime service; no direct SQLite fallback is permitted."
+      : runtimeData.phase === "malformed"
+        ? "Treat the Runtime payload as unsafe and inspect the local service contract."
+        : runtimeData.phase === "stale"
+          ? "Runtime data is stale. Refresh after the local Runtime service recovers."
+          : pendingApprovals.length > 0
+            ? `Observe ${pendingApprovals.length} pending Runtime approval(s). Decision controls remain disabled.`
+            : bridgeHealth.status === "online"
+              ? "Bridge health is online. Runtime reads remain limited to GET-only observation."
+              : "Continue explicitly labeled mock drills or refresh the paired local Runtime.";
 
   const value = useMemo<SeraphimContextValue>(
     () => ({
@@ -302,15 +342,17 @@ export function SeraphimProvider({ children }: { children: React.ReactNode }) {
       sendMessage,
       clearChat,
       plan: mockPlan,
-      tasks: mockTasks,
-      approvals,
+      tasks: displayedTasks,
+      approvals: displayedApprovals,
       files: mockFiles,
       memories,
       projects: mockProjects,
       sentinelChecks: mockSentinelChecks,
       bridgeHealth,
+      runtimeData,
       bridgePairing,
       refreshBridgeHealth,
+      refreshRuntimeData,
       requestMockPairing,
       clearMockPairing,
       activityLog,
@@ -333,6 +375,7 @@ export function SeraphimProvider({ children }: { children: React.ReactNode }) {
       bridgeHealth,
       bridgePairing,
       riskPosture,
+      runtimeData,
       nextRecommendedAction
     ]
   );

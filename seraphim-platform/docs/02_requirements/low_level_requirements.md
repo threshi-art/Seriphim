@@ -13,6 +13,8 @@
 | LLR-DESK-009 | Settings API key field shall be a non-secret placeholder only. |
 | LLR-DESK-010 | Bridge health client may GET `/health` only; failures yield offline/degraded. |
 | LLR-DESK-012 | Desktop WebView2 user data shall persist beneath Windows `LOCALAPPDATA`, never beside the executable in Git or OneDrive. |
+| LLR-DESK-013 | The Desktop WebView shall obtain Runtime mission, task, approval, attempt, audit-health, and service-health observations only through its native paired loopback broker; it shall never access Runtime SQLite or receive plaintext pairing credentials. |
+| LLR-DESK-014 | Desktop Runtime state shall visibly distinguish live, partial, stale, offline, permission, and malformed responses; fixtures shall remain explicitly labeled and never substitute for an unavailable authoritative Runtime response. |
 | LLR-WEB-001 | Web LLM calls shall use `server/_core/llm.ts`. |
 | LLR-WEB-002 | Web mutating procedures should write audit logs via `server/db.ts` helpers. |
 | LLR-RT-001 | Runtime mission, task, and checkpoint reads and mutations shall be scoped to the authenticated operator. |
