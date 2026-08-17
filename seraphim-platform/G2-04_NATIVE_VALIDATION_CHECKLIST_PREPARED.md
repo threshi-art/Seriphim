@@ -20,7 +20,10 @@ Run from the canonical repository root, then enter `seraphim-platform`.
 ```powershell
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$repo = 'C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT\Development\GitHub\Seriphim'
+$repo = (Get-Location).Path
+if (-not (Test-Path -LiteralPath (Join-Path $repo 'seraphim-platform'))) {
+  throw 'Run this preflight from the canonical Seriphim repository root.'
+}
 Set-Location $repo
 git fetch origin --prune
 git status --short
@@ -104,7 +107,11 @@ Capture, without secrets, the output from sections 1–3, the native publish out
 Run after the service and Desktop Companion exit. This scans only the canonical repository and the active OneDrive SeraphimGPT source boundary; it does not inspect unrelated user data.
 
 ```powershell
-$sourceBoundary = 'C:\Users\cyber\OneDrive\Documents\Projects\Programs\SeraphimGPT'
+$sourceBoundary = $env:SERAPHIM_SOURCE_BOUNDARY
+if ([string]::IsNullOrWhiteSpace($sourceBoundary)) {
+  throw 'Set SERAPHIM_SOURCE_BOUNDARY to the active Seraphim source boundary before running this scoped scan.'
+}
+$sourceBoundary = (Resolve-Path -LiteralPath $sourceBoundary -ErrorAction Stop).Path
 Get-ChildItem -LiteralPath $repo, $sourceBoundary -Recurse -Force -File -ErrorAction Stop |
   Where-Object { $_.Name -match '\.(db|sqlite|sqlite3)$|-(journal|wal|shm)$' } |
   Select-Object FullName, Length, LastWriteTime
