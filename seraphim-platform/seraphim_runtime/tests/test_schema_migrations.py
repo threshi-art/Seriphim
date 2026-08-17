@@ -73,7 +73,7 @@ class SchemaMigrationTests(unittest.TestCase):
         self.assertEqual(set(applied_versions(self.connection)), {1})
         indexes = {row[1] for row in self.connection.execute("PRAGMA index_list('runtime_missions')")}
         self.assertNotIn("runtime_missions_owner_status_idx", indexes)
-        self.assertEqual(apply_migrations(self.connection), [2, 3])
+        self.assertEqual(apply_migrations(self.connection), [migration.version for migration in MIGRATIONS if migration.version > 1])
 
     def test_digest_change_is_rejected(self) -> None:
         apply_migrations(self.connection)
