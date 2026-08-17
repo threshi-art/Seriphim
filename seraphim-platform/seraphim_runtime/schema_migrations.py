@@ -469,6 +469,54 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=10,
+        name="runtime_atomic_approval_consumption",
+        statements=(
+            "DROP TRIGGER runtime_approval_requests_terminal_status_guard",
+            """
+            CREATE TRIGGER runtime_approval_requests_terminal_status_guard
+            BEFORE UPDATE OF status ON runtime_approval_requests
+            BEGIN
+                SELECT CASE WHEN OLD.status = 'pending' AND NEW.status IN ('approved', 'rejected') AND NOT EXISTS (
+                    SELECT 1 FROM runtime_approval_decisions AS decision
+                    JOIN runtime_audit_events AS audit ON audit.approval_request_id = decision.approval_request_id
+                    WHERE decision.approval_request_id = NEW.approval_request_id
+                      AND decision.decision = NEW.status
+                      AND audit.event_type = 'approval.decided'
+                      AND audit.actor_id = decision.decided_by
+                ) THEN RAISE(ABORT, 'runtime approval terminal decision lacks audit provenance') END;
+                SELECT CASE WHEN OLD.status = 'pending' AND NEW.status = 'expired' AND NOT EXISTS (
+                    SELECT 1 FROM runtime_audit_events AS audit
+                    WHERE audit.approval_request_id = NEW.approval_request_id
+                      AND audit.event_type = 'approval.expired'
+                      AND audit.actor_id = 'runtime'
+                ) THEN RAISE(ABORT, 'runtime approval expiry lacks audit provenance') END;
+                SELECT CASE WHEN OLD.status = 'approved' AND NEW.status = 'consumed' AND NOT EXISTS (
+                    SELECT 1 FROM runtime_attempts AS attempt
+                    WHERE attempt.approval_request_id = NEW.approval_request_id
+                ) THEN RAISE(ABORT, 'runtime approval consumption requires attempt') END;
+                SELECT CASE WHEN OLD.status = 'approved' AND NEW.status = 'consumed' AND NOT EXISTS (
+                    SELECT 1 FROM runtime_audit_events AS audit
+                    WHERE audit.approval_request_id = NEW.approval_request_id
+                      AND audit.event_type = 'approval.consumed'
+                ) THEN RAISE(ABORT, 'runtime approval consumption lacks audit provenance') END;
+                SELECT CASE WHEN NOT (
+                    (OLD.status = 'pending' AND NEW.status IN ('approved', 'rejected', 'expired')) OR
+                    (OLD.status = 'approved' AND NEW.status = 'consumed')
+                ) THEN RAISE(ABORT, 'runtime approval status transition is invalid') END;
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_attempts_consumed_approval_guard
+            BEFORE INSERT ON runtime_attempts
+            BEGIN
+                SELECT CASE WHEN (SELECT status FROM runtime_approval_requests WHERE approval_request_id = NEW.approval_request_id) != 'approved'
+                    THEN RAISE(ABORT, 'runtime attempt requires approved unconsumed request') END;
+            END
+            """,
+        ),
+    ),
 )
 
 
