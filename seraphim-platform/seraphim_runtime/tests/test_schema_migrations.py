@@ -21,9 +21,13 @@ class SchemaMigrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.connection.close()
 
+    @property
+    def versions(self) -> list[int]:
+        return [migration.version for migration in MIGRATIONS]
+
     def test_fresh_database_applies_all_ordered_versions(self) -> None:
-        self.assertEqual(apply_migrations(self.connection), [1, 2])
-        self.assertEqual(set(applied_versions(self.connection)), {1, 2})
+        self.assertEqual(apply_migrations(self.connection), self.versions)
+        self.assertEqual(set(applied_versions(self.connection)), set(self.versions))
         tables = {row[0] for row in self.connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         self.assertTrue(
             {
@@ -41,9 +45,9 @@ class SchemaMigrationTests(unittest.TestCase):
         self.assertEqual(self.connection.execute("PRAGMA foreign_keys").fetchone()[0], 1)
 
     def test_repeated_execution_is_idempotent(self) -> None:
-        self.assertEqual(apply_migrations(self.connection), [1, 2])
+        self.assertEqual(apply_migrations(self.connection), self.versions)
         self.assertEqual(apply_migrations(self.connection), [])
-        self.assertEqual(self.connection.execute("SELECT COUNT(*) FROM runtime_migrations").fetchone()[0], 2)
+        self.assertEqual(self.connection.execute("SELECT COUNT(*) FROM runtime_migrations").fetchone()[0], len(self.versions))
 
     def test_interruption_rolls_back_incomplete_version_and_can_resume(self) -> None:
         def interrupt(migration: Migration, statement_index: int) -> None:
@@ -57,7 +61,7 @@ class SchemaMigrationTests(unittest.TestCase):
                 "SELECT 1 FROM sqlite_master WHERE type='table' AND name='runtime_missions'"
             ).fetchone()
         )
-        self.assertEqual(apply_migrations(self.connection), [1, 2])
+        self.assertEqual(apply_migrations(self.connection), self.versions)
 
     def test_later_version_interruption_retains_only_prior_committed_version(self) -> None:
         def interrupt(migration: Migration, statement_index: int) -> None:
@@ -69,7 +73,7 @@ class SchemaMigrationTests(unittest.TestCase):
         self.assertEqual(set(applied_versions(self.connection)), {1})
         indexes = {row[1] for row in self.connection.execute("PRAGMA index_list('runtime_missions')")}
         self.assertNotIn("runtime_missions_owner_status_idx", indexes)
-        self.assertEqual(apply_migrations(self.connection), [2])
+        self.assertEqual(apply_migrations(self.connection), [2, 3])
 
     def test_digest_change_is_rejected(self) -> None:
         apply_migrations(self.connection)
@@ -107,7 +111,7 @@ class SchemaMigrationTests(unittest.TestCase):
         apply_migrations(self.connection)
         self.assertEqual(
             self.connection.execute("SELECT value FROM runtime_schema_metadata WHERE key='schema_version'").fetchone()[0],
-            "2",
+            str(self.versions[-1]),
         )
 
 

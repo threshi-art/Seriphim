@@ -159,6 +159,19 @@ MIGRATIONS: tuple[Migration, ...] = (
             "CREATE INDEX runtime_audit_events_mission_sequence_idx ON runtime_audit_events(mission_id, event_sequence)",
         ),
     ),
+    Migration(
+        version=3,
+        name="runtime_mission_identity_and_ownership_immutability",
+        statements=(
+            """
+            CREATE TRIGGER runtime_missions_immutable_identity_and_content
+            BEFORE UPDATE OF mission_id, owner_id, title, objective, created_at ON runtime_missions
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime mission identity, ownership, and creation content are immutable');
+            END
+            """,
+        ),
+    ),
 )
 
 
