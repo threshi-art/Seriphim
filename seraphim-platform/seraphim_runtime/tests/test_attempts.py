@@ -63,6 +63,7 @@ class AttemptTests(unittest.TestCase):
         task2, request2, claim2, parameters2 = self.accepted_claim()
         with self.assertRaises(AttemptAccessError):
             self.attempts.create_from_claim("worker-b", task2.task_id, claim2.claim_token, request2.approval_request_id, "yellow", parameters2, {})
+        self.connection.execute("DROP TRIGGER runtime_tasks_claim_metadata_immutable")
         self.connection.execute("UPDATE runtime_tasks SET claim_expires_at = ? WHERE task_id = ?", ((datetime.now(UTC) - timedelta(seconds=1)).isoformat(), task2.task_id))
         self.connection.commit()
         with self.assertRaises(AttemptAccessError):
