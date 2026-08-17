@@ -172,6 +172,33 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=4,
+        name="runtime_task_creation_metadata_and_lifecycle_invariants",
+        statements=(
+            "ALTER TABLE runtime_tasks ADD COLUMN priority INTEGER NOT NULL DEFAULT 3 CHECK (priority BETWEEN 1 AND 5)",
+            "ALTER TABLE runtime_tasks ADD COLUMN required_capability TEXT NOT NULL DEFAULT 'unspecified' CHECK (length(trim(required_capability)) BETWEEN 1 AND 128)",
+            """
+            CREATE TRIGGER runtime_tasks_immutable_creation_metadata
+            BEFORE UPDATE OF task_id, mission_id, title, priority, required_capability, risk_level, created_at ON runtime_tasks
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime task creation metadata is immutable');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_tasks_legal_status_transition
+            BEFORE UPDATE OF status ON runtime_tasks
+            WHEN NOT (
+                (OLD.status = 'pending' AND NEW.status IN ('ready', 'cancelled')) OR
+                (OLD.status = 'ready' AND NEW.status IN ('claimed', 'cancelled')) OR
+                (OLD.status = 'claimed' AND NEW.status IN ('completed', 'failed', 'cancelled'))
+            )
+            BEGIN
+                SELECT RAISE(ABORT, 'illegal runtime task state transition');
+            END
+            """,
+        ),
+    ),
 )
 
 
