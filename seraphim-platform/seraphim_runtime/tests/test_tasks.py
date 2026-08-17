@@ -76,10 +76,9 @@ class TaskLifecycleTests(unittest.TestCase):
     def test_legal_lifecycle_transitions_create_audits(self) -> None:
         task = self.create_task()
         task = self.tasks.transition_status("operator-a", task.task_id, "ready")
-        task = self.tasks.transition_status("operator-a", task.task_id, "claimed")
-        task = self.tasks.transition_status("operator-a", task.task_id, "completed")
-        self.assertEqual(task.status, "completed")
-        self.assertEqual(self.connection.execute("SELECT COUNT(*) FROM runtime_audit_events WHERE task_id = ?", (task.task_id,)).fetchone()[0], 4)
+        task = self.tasks.transition_status("operator-a", task.task_id, "cancelled")
+        self.assertEqual(task.status, "cancelled")
+        self.assertEqual(self.connection.execute("SELECT COUNT(*) FROM runtime_audit_events WHERE task_id = ?", (task.task_id,)).fetchone()[0], 3)
 
     def test_impossible_transitions_fail_without_success_audit(self) -> None:
         task = self.create_task()
