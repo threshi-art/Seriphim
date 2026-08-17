@@ -10,7 +10,6 @@ from __future__ import annotations
 import hashlib
 import json
 
-import hashlib
 import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -624,6 +623,80 @@ MIGRATIONS: tuple[Migration, ...] = (
                       AND audit.event_type = 'task.retried'
                       AND audit.chain_version = 2
                 ) THEN RAISE(ABORT, 'runtime task retry lacks audit provenance') END;
+            END
+            """,
+        ),
+    ),
+    Migration(
+        version=13,
+        name="runtime_trusted_local_pairings",
+        statements=(
+            """
+            CREATE TABLE runtime_pairings (
+                pairing_id TEXT PRIMARY KEY CHECK (length(pairing_id) = 32 AND pairing_id NOT GLOB '*[^0-9a-f]*'),
+                owner_id TEXT NOT NULL,
+                origin TEXT NOT NULL CHECK (length(trim(origin)) BETWEEN 1 AND 512),
+                bridge_id TEXT NOT NULL CHECK (length(trim(bridge_id)) BETWEEN 1 AND 256),
+                credential_hash TEXT NOT NULL CHECK (length(credential_hash) = 64 AND credential_hash NOT GLOB '*[^0-9a-f]*'),
+                credential_protected TEXT NOT NULL CHECK (length(trim(credential_protected)) > 0),
+                issued_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                revoked_at TEXT,
+                revocation_reason TEXT,
+                rotation_generation INTEGER NOT NULL CHECK (rotation_generation > 0),
+                CHECK (julianday(expires_at) > julianday(issued_at)),
+                CHECK ((revoked_at IS NULL AND revocation_reason IS NULL) OR (revoked_at IS NOT NULL AND length(trim(revocation_reason)) > 0))
+            )
+            """,
+            "CREATE INDEX runtime_pairings_owner_binding_idx ON runtime_pairings(owner_id, origin, bridge_id, expires_at)",
+            """
+            CREATE TABLE runtime_pairing_nonces (
+                pairing_id TEXT NOT NULL,
+                nonce_hash TEXT NOT NULL CHECK (length(nonce_hash) = 64 AND nonce_hash NOT GLOB '*[^0-9a-f]*'),
+                used_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                PRIMARY KEY (pairing_id, nonce_hash),
+                CHECK (julianday(expires_at) > julianday(used_at)),
+                FOREIGN KEY (pairing_id) REFERENCES runtime_pairings(pairing_id) ON DELETE RESTRICT
+            )
+            """,
+            "CREATE INDEX runtime_pairing_nonces_expiry_idx ON runtime_pairing_nonces(expires_at)",
+            """
+            CREATE TRIGGER runtime_pairings_immutable_binding
+            BEFORE UPDATE OF pairing_id, owner_id, origin, bridge_id, credential_hash, credential_protected, issued_at, expires_at, rotation_generation ON runtime_pairings
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime pairing binding is immutable');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_pairings_revocation_guard
+            BEFORE UPDATE OF revoked_at, revocation_reason ON runtime_pairings
+            BEGIN
+                SELECT CASE WHEN OLD.revoked_at IS NOT NULL
+                    THEN RAISE(ABORT, 'runtime pairing revocation is terminal') END;
+                SELECT CASE WHEN NEW.revoked_at IS NULL OR NEW.revocation_reason IS NULL OR length(trim(NEW.revocation_reason)) = 0
+                    THEN RAISE(ABORT, 'runtime pairing revocation requires timestamp and reason') END;
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_pairings_no_delete
+            BEFORE DELETE ON runtime_pairings
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime pairings are append only');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_pairing_nonces_no_update
+            BEFORE UPDATE ON runtime_pairing_nonces
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime pairing nonces are replay evidence');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_pairing_nonces_no_delete
+            BEFORE DELETE ON runtime_pairing_nonces
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime pairing nonces are replay evidence');
             END
             """,
         ),

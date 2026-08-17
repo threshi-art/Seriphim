@@ -8,6 +8,7 @@ import uuid
 
 from seraphim_runtime.audit_chain import AuditChain
 from seraphim_runtime.missions import MissionRepository
+from seraphim_runtime.pairing import PairingAuthority, TestCredentialProtector, create_request_proof
 from seraphim_runtime.runtime_api import LoopbackApiConfig, RuntimeReadOnlyApi, create_loopback_server
 from seraphim_runtime.schema_migrations import apply_migrations
 from seraphim_runtime.tasks import TaskRepository
@@ -43,16 +44,34 @@ class RuntimeApiTests(unittest.TestCase):
             payload={"kind": "fixture"},
         )
         self.connection.commit()
+        self.protector = TestCredentialProtector()
+        self.pairings = PairingAuthority(self.connection, self.protector)
+        self.credential = self.pairings.issue(
+            owner_id="operator-alpha", origin="https://app.seraphim.local", bridge_id="desktop-test"
+        )
+        self._nonce_counter = 0
         self.api = RuntimeReadOnlyApi(
             LoopbackApiConfig(owner_id="operator-alpha", port=8765),
             self._new_connection,
+            pairing_authority_factory=lambda connection: PairingAuthority(connection, self.protector),
         )
 
     def tearDown(self) -> None:
         self.connection.close()
 
+    def _headers(self, path: str, owner: str = "operator-alpha") -> dict[str, str]:
+        self._nonce_counter += 1
+        headers = create_request_proof(
+            self.credential,
+            method="GET",
+            path=path,
+            nonce=f"{self._nonce_counter:048x}",
+        )
+        headers["X-Seraphim-Owner"] = owner
+        return headers
+
     def _get(self, path: str, owner: str = "operator-alpha") -> tuple[int, dict[str, object]]:
-        return self.api.get(path, {"X-Seraphim-Owner": owner})
+        return self.api.get(path, self._headers(path, owner))
 
     def _new_connection(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self._database_uri, uri=True)
@@ -81,7 +100,9 @@ class RuntimeApiTests(unittest.TestCase):
         self.assertEqual("mission_not_found", payload["error"]["code"])
 
     def test_owner_header_is_required_for_data_routes(self) -> None:
-        status, payload = self.api.get("/v1/missions", {})
+        headers = self._headers("/v1/missions")
+        del headers["X-Seraphim-Owner"]
+        status, payload = self.api.get("/v1/missions", headers)
         self.assertEqual(403, status)
         self.assertEqual("owner_scope_required", payload["error"]["code"])
 
@@ -104,7 +125,10 @@ class RuntimeApiTests(unittest.TestCase):
         self.assertEqual(404, status)
         status, _ = self._get("/v1/missions?sql=DROP%20TABLE")
         self.assertEqual(400, status)
-        server = create_loopback_server(LoopbackApiConfig(owner_id="operator-alpha", port=0), self._new_connection)
+        server = create_loopback_server(
+            LoopbackApiConfig(owner_id="operator-alpha", port=0), self._new_connection,
+            pairing_authority_factory=lambda connection: PairingAuthority(connection, self.protector),
+        )
         try:
             self.assertEqual("127.0.0.1", server.server_address[0])
         finally:
@@ -136,7 +160,10 @@ class RuntimeApiTests(unittest.TestCase):
 
     def test_all_non_get_http_methods_are_rejected_with_read_only_contract(self) -> None:
         for method in ("POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "CONNECT", "TRACE"):
-            server = create_loopback_server(LoopbackApiConfig(owner_id="operator-alpha", port=0), self._new_connection)
+            server = create_loopback_server(
+                LoopbackApiConfig(owner_id="operator-alpha", port=0), self._new_connection,
+                pairing_authority_factory=lambda connection: PairingAuthority(connection, self.protector),
+            )
             worker = threading.Thread(target=server.handle_request, daemon=True)
             worker.start()
             try:
@@ -155,12 +182,15 @@ class RuntimeApiTests(unittest.TestCase):
                 worker.join(timeout=3)
 
     def test_http_get_serves_only_owner_scoped_versioned_data(self) -> None:
-        server = create_loopback_server(LoopbackApiConfig(owner_id="operator-alpha", port=0), self._new_connection)
+        server = create_loopback_server(
+            LoopbackApiConfig(owner_id="operator-alpha", port=0), self._new_connection,
+            pairing_authority_factory=lambda connection: PairingAuthority(connection, self.protector),
+        )
         worker = threading.Thread(target=server.handle_request, daemon=True)
         worker.start()
         try:
             client = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=3)
-            client.request("GET", "/v1/missions?limit=1", headers={"X-Seraphim-Owner": "operator-alpha"})
+            client.request("GET", "/v1/missions?limit=1", headers=self._headers("/v1/missions?limit=1"))
             response = client.getresponse()
             self.assertEqual(200, response.status)
             payload = __import__("json").loads(response.read())

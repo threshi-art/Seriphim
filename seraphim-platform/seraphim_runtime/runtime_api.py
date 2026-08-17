@@ -1,8 +1,8 @@
 """G2-02: bounded, versioned, loopback-only Runtime read API.
 
 This module deliberately exposes no mutation, execution, file-write, SQL, or
-network-proxy routes. G2-03 adds paired credentials; until then every data
-endpoint requires the locally configured owner header and only binds loopback.
+network-proxy routes. G2-03 requires a signed, paired Desktop proof for every
+owner-scoped data endpoint and remains restricted to loopback.
 """
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from urllib.parse import parse_qs, urlparse
 from .audit_chain import verify_chain
 from .database import database_health
 from .schema_migrations import initialize_runtime_connection
+from .pairing import PairingAuthority, PairingContext, PairingError
 from .status import MissionStatusAccessError, MissionStatusRepository
 
 API_VERSION = "v1"
@@ -79,9 +80,15 @@ class RuntimeReadOnlyApi:
         "payload_json",
     )
 
-    def __init__(self, config: LoopbackApiConfig, connection_factory: ConnectionFactory) -> None:
+    def __init__(
+        self,
+        config: LoopbackApiConfig,
+        connection_factory: ConnectionFactory,
+        pairing_authority_factory: Callable[[sqlite3.Connection], PairingAuthority] | None = None,
+    ) -> None:
         self._config = config
         self._connection_factory = connection_factory
+        self._pairing_authority_factory = pairing_authority_factory
 
     def get(self, raw_path: str, headers: Mapping[str, str]) -> tuple[int, dict[str, Any]]:
         parsed = urlparse(raw_path)
@@ -94,8 +101,11 @@ class RuntimeReadOnlyApi:
             return self._health()
 
         try:
-            self._require_owner(headers)
+            context = self._require_pairing(headers, "GET", raw_path)
+            self._require_owner(headers, context)
             return self._authorized_get(parsed.path, parse_qs(parsed.query, keep_blank_values=True, strict_parsing=True))
+        except PairingError:
+            return self._error(HTTPStatus.UNAUTHORIZED, "pairing_required")
         except ApiAccessError:
             return self._error(HTTPStatus.FORBIDDEN, "owner_scope_required")
         except (ApiRequestError, ValueError) as error:
@@ -226,9 +236,21 @@ class RuntimeReadOnlyApi:
         if row is None:
             raise LookupError("mission not found")
 
-    def _require_owner(self, headers: Mapping[str, str]) -> None:
+    def _require_pairing(self, headers: Mapping[str, str], method: str, path: str) -> PairingContext:
+        if self._pairing_authority_factory is None:
+            raise PairingError("pairing authority is not configured")
+        connection = self._connection_factory()
+        try:
+            initialize_runtime_connection(connection)
+            return self._pairing_authority_factory(connection).authorize_request(
+                headers={str(key): str(value) for key, value in headers.items()}, method=method, path=path,
+            )
+        finally:
+            connection.close()
+
+    def _require_owner(self, headers: Mapping[str, str], context: PairingContext) -> None:
         supplied = next((value for key, value in headers.items() if key.lower() == OWNER_HEADER.lower()), None)
-        if supplied != self._config.owner_id:
+        if supplied != self._config.owner_id or context.owner_id != self._config.owner_id:
             raise ApiAccessError("owner scope required")
 
     @staticmethod
@@ -324,9 +346,13 @@ class _Handler(BaseHTTPRequestHandler):
         return
 
 
-def create_loopback_server(config: LoopbackApiConfig, connection_factory: ConnectionFactory) -> ThreadingHTTPServer:
+def create_loopback_server(
+    config: LoopbackApiConfig,
+    connection_factory: ConnectionFactory,
+    pairing_authority_factory: Callable[[sqlite3.Connection], PairingAuthority] | None = None,
+) -> ThreadingHTTPServer:
     """Create, but do not start, a server restricted to the loopback interface."""
-    api = RuntimeReadOnlyApi(config, connection_factory)
+    api = RuntimeReadOnlyApi(config, connection_factory, pairing_authority_factory)
 
     class BoundHandler(_Handler):
         pass
