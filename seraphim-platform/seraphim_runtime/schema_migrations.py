@@ -419,6 +419,56 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=9,
+        name="runtime_attempt_claim_binding_and_metadata",
+        statements=(
+            "ALTER TABLE runtime_attempts ADD COLUMN claim_expires_at TEXT",
+            "ALTER TABLE runtime_attempts ADD COLUMN input_metadata_json TEXT NOT NULL DEFAULT '{}' CHECK (runtime_is_canonical_json_object(input_metadata_json) = 1)",
+            "ALTER TABLE runtime_attempts ADD COLUMN input_metadata_digest TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000' CHECK (length(input_metadata_digest) = 64)",
+            "CREATE INDEX runtime_attempts_active_claim_idx ON runtime_attempts(task_id, worker_id, claim_token, status)",
+            """
+            CREATE TRIGGER runtime_attempts_insert_claim_guard
+            BEFORE INSERT ON runtime_attempts
+            BEGIN
+                SELECT CASE WHEN NEW.status != 'created'
+                    THEN RAISE(ABORT, 'runtime attempt must begin created') END;
+                SELECT CASE WHEN NEW.claim_expires_at IS NULL OR julianday(NEW.claim_expires_at) <= julianday('now')
+                    THEN RAISE(ABORT, 'runtime attempt requires future claim lease') END;
+                SELECT CASE WHEN NEW.input_metadata_digest != runtime_sha256(NEW.input_metadata_json)
+                    THEN RAISE(ABORT, 'runtime attempt metadata digest mismatch') END;
+                SELECT CASE WHEN NOT EXISTS (
+                    SELECT 1
+                    FROM runtime_tasks AS task
+                    JOIN runtime_approval_requests AS approval ON approval.task_id = task.task_id
+                    WHERE task.task_id = NEW.task_id
+                      AND task.status = 'claimed'
+                      AND task.claim_worker_id = NEW.worker_id
+                      AND task.claim_token = NEW.claim_token
+                      AND task.claim_expires_at = NEW.claim_expires_at
+                      AND julianday(task.claim_expires_at) > julianday('now')
+                      AND approval.approval_request_id = NEW.approval_request_id
+                      AND approval.status = 'approved'
+                      AND julianday(approval.expires_at) > julianday('now')
+                ) THEN RAISE(ABORT, 'runtime attempt does not match accepted claim') END;
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_attempts_immutable_binding
+            BEFORE UPDATE OF attempt_id, task_id, approval_request_id, worker_id, claim_token, created_at, claim_expires_at, input_metadata_json, input_metadata_digest ON runtime_attempts
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime attempt binding is immutable');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_attempts_no_delete
+            BEFORE DELETE ON runtime_attempts
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime attempts are append only');
+            END
+            """,
+        ),
+    ),
 )
 
 
@@ -442,6 +492,12 @@ def _runtime_action_digest(action_class: object, parameters_json: object) -> str
     except (TypeError, ValueError, json.JSONDecodeError):
         return ""
     return hashlib.sha256(f"{str(action_class)}|{canonical}".encode("utf-8")).hexdigest()
+
+
+def _runtime_sha256(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
 FailureInjector = Callable[[Migration, int], None]
@@ -477,6 +533,7 @@ definition is rejected rather than silently reinterpreting persisted state.
 
     connection.create_function("runtime_is_canonical_json_object", 1, _runtime_is_canonical_json_object, deterministic=True)
     connection.create_function("runtime_action_digest", 2, _runtime_action_digest, deterministic=True)
+    connection.create_function("runtime_sha256", 1, _runtime_sha256, deterministic=True)
     connection.execute("PRAGMA foreign_keys = ON")
     migrations = tuple(migrations)
     if len({item.version for item in migrations}) != len(migrations):
