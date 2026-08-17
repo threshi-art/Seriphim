@@ -199,6 +199,62 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=5,
+        name="runtime_task_dependency_immutability_and_readiness",
+        statements=(
+            """
+            CREATE TRIGGER runtime_task_dependencies_insert_guard
+            BEFORE INSERT ON runtime_task_dependencies
+            BEGIN
+                SELECT CASE WHEN NEW.task_id = NEW.depends_on_task_id
+                    THEN RAISE(ABORT, 'runtime task cannot depend on itself') END;
+                SELECT CASE WHEN (SELECT mission_id FROM runtime_tasks WHERE task_id = NEW.task_id) !=
+                                 (SELECT mission_id FROM runtime_tasks WHERE task_id = NEW.depends_on_task_id)
+                    THEN RAISE(ABORT, 'runtime task dependency must remain within one mission') END;
+                SELECT CASE WHEN (SELECT status FROM runtime_tasks WHERE task_id = NEW.task_id) != 'pending'
+                    THEN RAISE(ABORT, 'runtime task dependencies are immutable after pending state') END;
+                SELECT CASE WHEN EXISTS (
+                    WITH RECURSIVE reachable(task_id) AS (
+                        SELECT depends_on_task_id FROM runtime_task_dependencies WHERE task_id = NEW.depends_on_task_id
+                        UNION
+                        SELECT dependency.depends_on_task_id
+                        FROM runtime_task_dependencies AS dependency
+                        JOIN reachable ON dependency.task_id = reachable.task_id
+                    )
+                    SELECT 1 FROM reachable WHERE task_id = NEW.task_id
+                ) THEN RAISE(ABORT, 'runtime task dependency cycle detected') END;
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_task_dependencies_no_update
+            BEFORE UPDATE ON runtime_task_dependencies
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime task dependencies are immutable');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_task_dependencies_no_delete
+            BEFORE DELETE ON runtime_task_dependencies
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime task dependencies are immutable');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_tasks_ready_only_when_dependencies_satisfied
+            BEFORE UPDATE OF status ON runtime_tasks
+            WHEN OLD.status = 'pending' AND NEW.status = 'ready' AND EXISTS (
+                SELECT 1
+                FROM runtime_task_dependencies AS dependency
+                JOIN runtime_tasks AS prerequisite ON prerequisite.task_id = dependency.depends_on_task_id
+                WHERE dependency.task_id = NEW.task_id AND prerequisite.status != 'completed'
+            )
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime task dependencies are not satisfied');
+            END
+            """,
+        ),
+    ),
 )
 
 
