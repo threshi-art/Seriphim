@@ -156,6 +156,8 @@ class TaskRepository:
             raise TaskStateError("Unknown task state")
         if target not in _TRANSITIONS[task.status]:
             raise TaskStateError("Illegal task state transition")
+        if target == "ready" and not self._dependencies_satisfied(task.task_id):
+            raise TaskStateError("Task dependencies are not satisfied")
         now = _timestamp()
         try:
             self._connection.execute("BEGIN IMMEDIATE")
@@ -178,6 +180,13 @@ class TaskRepository:
             self._connection.rollback()
             raise
         return self.get(owner_id, task.task_id)
+
+    def _dependencies_satisfied(self, task_id: str) -> bool:
+        unsatisfied = self._connection.execute(
+            "SELECT 1 FROM runtime_task_dependencies AS dependency JOIN runtime_tasks AS prerequisite ON prerequisite.task_id = dependency.depends_on_task_id WHERE dependency.task_id = ? AND prerequisite.status != 'completed' LIMIT 1",
+            (task_id,),
+        ).fetchone()
+        return unsatisfied is None
 
     def _append_audit(self, mission_id: str, task_id: str, actor_id: str, event_type: str, outcome: str, payload: dict[str, str]) -> None:
         previous = self._connection.execute(
