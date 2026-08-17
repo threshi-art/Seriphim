@@ -5,6 +5,8 @@ import unittest
 from datetime import UTC, datetime, timedelta
 
 from seraphim_runtime.approvals import ApprovalRequestRepository
+from seraphim_runtime.attempt_outcomes import AttemptOutcomeRepository
+from seraphim_runtime.attempts import AttemptRepository
 from seraphim_runtime.claims import TaskClaimRepository
 from seraphim_runtime.decisions import ApprovalDecisionRepository
 from seraphim_runtime.dependencies import DependencyValidationError, TaskDependencyRepository
@@ -24,6 +26,8 @@ class ImmutableDependencyTests(unittest.TestCase):
         self.approvals = ApprovalRequestRepository(self.connection)
         self.decisions = ApprovalDecisionRepository(self.connection)
         self.claims = TaskClaimRepository(self.connection)
+        self.attempts = AttemptRepository(self.connection)
+        self.outcomes = AttemptOutcomeRepository(self.connection)
         self.mission = self.missions.create("operator-a", "Alpha", "objective")
         self.other_mission = self.missions.create("operator-a", "Bravo", "other objective")
 
@@ -33,16 +37,18 @@ class ImmutableDependencyTests(unittest.TestCase):
     def task(self, title: str, mission_id: str | None = None):
         return self.tasks.create("operator-a", mission_id or self.mission.mission_id, title, 2, "analysis", "yellow")
 
-    def claim_ready(self, task_id: str) -> None:
+    def claim_ready(self, task_id: str):
         request = self.approvals.create("operator-a", task_id, "yellow", {"target": "local"}, (datetime.now(UTC) + timedelta(hours=1)).isoformat(), "dependency test claim", {"procedure": "revert"})
         self.decisions.decide("operator-b", request.approval_request_id, "approved", "approved")
         claim = self.claims.claim_one("dependency-worker")
         self.assertEqual(claim.task_id, task_id)
+        return request, claim
 
     def complete(self, task_id: str) -> None:
         self.tasks.transition_status("operator-a", task_id, "ready")
-        self.claim_ready(task_id)
-        self.tasks.transition_status("operator-a", task_id, "completed")
+        request, claim = self.claim_ready(task_id)
+        attempt = self.attempts.create_from_claim("dependency-worker", task_id, claim.claim_token, request.approval_request_id, "yellow", {"target": "local"}, {"source": "dependency"})
+        self.outcomes.close("dependency-worker", attempt.attempt_id, "completed")
 
     def test_adds_immutable_same_mission_pending_dependency_and_audits(self) -> None:
         task = self.task("Task")

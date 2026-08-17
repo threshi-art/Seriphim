@@ -77,8 +77,10 @@ class AuditChain:
         payload_json = canonical_json(payload)
         timestamp = created_at or datetime.now(UTC).isoformat()
         event_id = uuid.uuid4().hex
+        owns_transaction = not self._connection.in_transaction
         try:
-            self._connection.execute("BEGIN IMMEDIATE")
+            if owns_transaction:
+                self._connection.execute("BEGIN IMMEDIATE")
             previous = self._connection.execute(
                 "SELECT event_sequence, event_hash FROM runtime_audit_events ORDER BY event_sequence DESC LIMIT 1"
             ).fetchone()
@@ -110,9 +112,11 @@ class AuditChain:
                 """,
                 (sequence, event_id, mission_id, task_id, attempt_id, approval_request_id, actor_id, event_type, outcome, payload_digest, payload_json, previous_hash, digest, timestamp),
             )
-            self._connection.commit()
+            if owns_transaction:
+                self._connection.commit()
         except Exception:
-            self._connection.rollback()
+            if owns_transaction:
+                self._connection.rollback()
             raise
         return AuditEvent(sequence, event_id, digest, previous_hash)
 

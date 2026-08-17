@@ -555,6 +555,79 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=12,
+        name="runtime_transactional_attempt_outcomes",
+        statements=(
+            "DROP TRIGGER runtime_tasks_legal_status_transition",
+            """
+            CREATE TRIGGER runtime_tasks_legal_status_transition
+            BEFORE UPDATE OF status ON runtime_tasks
+            WHEN NOT (
+                (OLD.status = 'pending' AND NEW.status IN ('ready', 'cancelled')) OR
+                (OLD.status = 'ready' AND NEW.status IN ('claimed', 'cancelled')) OR
+                (OLD.status = 'claimed' AND NEW.status IN ('ready', 'completed', 'failed', 'cancelled')) OR
+                (OLD.status = 'failed' AND NEW.status = 'ready')
+            )
+            BEGIN
+                SELECT RAISE(ABORT, 'illegal runtime task state transition');
+            END
+            """,
+            "DROP TRIGGER runtime_tasks_claim_metadata_immutable",
+            """
+            CREATE TRIGGER runtime_tasks_claim_metadata_immutable
+            BEFORE UPDATE OF claim_worker_id, claim_token, claim_expires_at ON runtime_tasks
+            WHEN OLD.status = 'claimed' AND NEW.status = 'claimed'
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime active claim identity is immutable');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_attempts_outcome_guard
+            BEFORE UPDATE OF status, finished_at ON runtime_attempts
+            BEGIN
+                SELECT CASE WHEN OLD.status != 'created'
+                    THEN RAISE(ABORT, 'runtime attempt outcome is terminal') END;
+                SELECT CASE WHEN NEW.status NOT IN ('completed', 'failed', 'cancelled', 'expired') OR NEW.finished_at IS NULL
+                    THEN RAISE(ABORT, 'runtime attempt requires terminal outcome and timestamp') END;
+                SELECT CASE WHEN NOT EXISTS (
+                    SELECT 1 FROM runtime_audit_events AS audit
+                    WHERE audit.attempt_id = NEW.attempt_id
+                      AND audit.event_type = 'attempt.' || NEW.status
+                      AND audit.chain_version = 2
+                ) THEN RAISE(ABORT, 'runtime attempt outcome lacks audit provenance') END;
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_tasks_outcome_guard
+            BEFORE UPDATE OF status, claim_worker_id, claim_token, claim_expires_at ON runtime_tasks
+            WHEN OLD.status = 'claimed' AND NEW.status IN ('ready', 'completed', 'failed', 'cancelled')
+            BEGIN
+                SELECT CASE WHEN NEW.claim_worker_id IS NOT NULL OR NEW.claim_token IS NOT NULL OR NEW.claim_expires_at IS NOT NULL
+                    THEN RAISE(ABORT, 'runtime terminal task must release claim') END;
+                SELECT CASE WHEN NOT EXISTS (
+                    SELECT 1 FROM runtime_audit_events AS audit
+                    WHERE audit.task_id = NEW.task_id
+                      AND audit.event_type = 'task.' || NEW.status
+                      AND audit.chain_version = 2
+                ) THEN RAISE(ABORT, 'runtime task outcome lacks audit provenance') END;
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_tasks_retry_guard
+            BEFORE UPDATE OF status ON runtime_tasks
+            WHEN OLD.status = 'failed' AND NEW.status = 'ready'
+            BEGIN
+                SELECT CASE WHEN NOT EXISTS (
+                    SELECT 1 FROM runtime_audit_events AS audit
+                    WHERE audit.task_id = NEW.task_id
+                      AND audit.event_type = 'task.retried'
+                      AND audit.chain_version = 2
+                ) THEN RAISE(ABORT, 'runtime task retry lacks audit provenance') END;
+            END
+            """,
+        ),
+    ),
 )
 
 
