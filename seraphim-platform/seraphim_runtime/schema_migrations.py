@@ -310,6 +310,64 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=7,
+        name="runtime_approval_decision_integrity_and_provenance",
+        statements=(
+            "ALTER TABLE runtime_audit_events ADD COLUMN approval_request_id TEXT REFERENCES runtime_approval_requests(approval_request_id) ON DELETE RESTRICT",
+            "DROP TRIGGER runtime_approval_requests_pending_state_only",
+            """
+            CREATE TRIGGER runtime_approval_decisions_insert_guard
+            BEFORE INSERT ON runtime_approval_decisions
+            BEGIN
+                SELECT CASE WHEN (SELECT status FROM runtime_approval_requests WHERE approval_request_id = NEW.approval_request_id) != 'pending'
+                    THEN RAISE(ABORT, 'runtime approval request is no longer pending') END;
+                SELECT CASE WHEN NEW.decided_by = (SELECT requested_by FROM runtime_approval_requests WHERE approval_request_id = NEW.approval_request_id)
+                    THEN RAISE(ABORT, 'runtime approval requester cannot self-approve') END;
+                SELECT CASE WHEN julianday((SELECT expires_at FROM runtime_approval_requests WHERE approval_request_id = NEW.approval_request_id)) <= julianday('now')
+                    THEN RAISE(ABORT, 'runtime approval request has expired') END;
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_approval_decisions_immutable
+            BEFORE UPDATE ON runtime_approval_decisions
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime approval decisions are immutable');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_approval_decisions_no_delete
+            BEFORE DELETE ON runtime_approval_decisions
+            BEGIN
+                SELECT RAISE(ABORT, 'runtime approval decisions are immutable');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_approval_requests_terminal_status_guard
+            BEFORE UPDATE OF status ON runtime_approval_requests
+            BEGIN
+                SELECT CASE WHEN OLD.status != 'pending'
+                    THEN RAISE(ABORT, 'runtime approval request terminal state is immutable') END;
+                SELECT CASE WHEN NEW.status IN ('approved', 'rejected') AND NOT EXISTS (
+                    SELECT 1 FROM runtime_approval_decisions AS decision
+                    JOIN runtime_audit_events AS audit ON audit.approval_request_id = decision.approval_request_id
+                    WHERE decision.approval_request_id = NEW.approval_request_id
+                      AND decision.decision = NEW.status
+                      AND audit.event_type = 'approval.decided'
+                      AND audit.actor_id = decision.decided_by
+                ) THEN RAISE(ABORT, 'runtime approval terminal decision lacks audit provenance') END;
+                SELECT CASE WHEN NEW.status = 'expired' AND NOT EXISTS (
+                    SELECT 1 FROM runtime_audit_events AS audit
+                    WHERE audit.approval_request_id = NEW.approval_request_id
+                      AND audit.event_type = 'approval.expired'
+                      AND audit.actor_id = 'runtime'
+                ) THEN RAISE(ABORT, 'runtime approval expiry lacks audit provenance') END;
+                SELECT CASE WHEN NEW.status NOT IN ('approved', 'rejected', 'expired')
+                    THEN RAISE(ABORT, 'runtime approval request terminal status is invalid') END;
+            END
+            """,
+        ),
+    ),
 )
 
 
