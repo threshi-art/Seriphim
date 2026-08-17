@@ -705,6 +705,15 @@ def applied_versions(connection: sqlite3.Connection) -> dict[int, str]:
     return {int(version): str(digest) for version, digest in connection.execute("SELECT version, digest FROM runtime_migrations")}
 
 
+def initialize_runtime_connection(connection: sqlite3.Connection) -> None:
+    """Register required deterministic SQL functions without migrating or writing state."""
+    connection.create_function("runtime_is_canonical_json_object", 1, _runtime_is_canonical_json_object, deterministic=True)
+    connection.create_function("runtime_action_digest", 2, _runtime_action_digest, deterministic=True)
+    connection.create_function("runtime_sha256", 1, _runtime_sha256, deterministic=True)
+    connection.create_function("runtime_audit_event_hash", 13, _runtime_audit_event_hash, deterministic=True)
+    connection.execute("PRAGMA foreign_keys = ON")
+
+
 def apply_migrations(
     connection: sqlite3.Connection,
     migrations: Iterable[Migration] = MIGRATIONS,
@@ -716,11 +725,7 @@ Existing versions are checked by both version and digest. A changed migration
 definition is rejected rather than silently reinterpreting persisted state.
 """
 
-    connection.create_function("runtime_is_canonical_json_object", 1, _runtime_is_canonical_json_object, deterministic=True)
-    connection.create_function("runtime_action_digest", 2, _runtime_action_digest, deterministic=True)
-    connection.create_function("runtime_sha256", 1, _runtime_sha256, deterministic=True)
-    connection.create_function("runtime_audit_event_hash", 13, _runtime_audit_event_hash, deterministic=True)
-    connection.execute("PRAGMA foreign_keys = ON")
+    initialize_runtime_connection(connection)
     migrations = tuple(migrations)
     if len({item.version for item in migrations}) != len(migrations):
         raise MigrationError("Migration versions must be unique")
