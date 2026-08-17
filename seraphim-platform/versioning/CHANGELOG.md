@@ -9,16 +9,16 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 
 ## Current status
 
-| Field                 | Value                                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| **Platform**          | Seraphim Platform v9                                                                                               |
-| **Version**           | `9.0.0-mvp`                                                                                                        |
-| **Phase**             | 0-4 (partial) + Runtime v0.1 Layer 1                                                                               |
-| **Last edit**         | 2026-08-16                                                                                                         |
-| **Last edit summary** | Publish the six-gate Seraphim Platform Completion Program                                                          |
-| **Verification**      | 91/91 tests pass; desktop publish check pass                                                                       |
-| **Operator launch**   | `START_SERAPHIM_DESKTOP.bat` → `dist\desktop\SeraphimDesktopCompanion.exe`                                         |
-| **Safety**            | Desktop MVP permits Green read-only Files via :8768; no Yellow/Red execution; Red local-agent on :8767 not default |
+| Field | Value |
+|-------|-------|
+| **Platform** | Seraphim Platform v9 |
+| **Version** | `9.0.0-mvp` |
+| **Phase** | 0-4 (partial) + Runtime v0.1 Layer 1 |
+| **Last edit** | 2026-08-17 |
+| **Last edit summary** | Publish G2-03 trusted local pairing for the bounded Runtime API |
+| **Verification** | 91/91 tests pass; desktop publish check pass |
+| **Operator launch** | `START_SERAPHIM_DESKTOP.bat` → `dist\desktop\SeraphimDesktopCompanion.exe` |
+| **Safety** | Desktop MVP permits Green read-only Files via :8768; no Yellow/Red execution; Red local-agent on :8767 not default |
 
 **Deferred:** real bridge execution (Phases 4–8), mobile cockpit (Phase 13), external release hardening (Phase 14).
 
@@ -28,6 +28,9 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 
 ### Added
 
+- G2-03 trusted local pairing for the bounded Runtime loopback API: Windows DPAPI-protected credentials, HMAC-SHA256 request proofs, 48-character single-use nonces, origin and Desktop-bridge binding, rotation, revocation, expiry, and pairing audit provenance
+- Runtime migration 13, `runtime_trusted_local_pairings`, with immutable pairing bindings and append-only replay evidence
+- G2-03 focused pairing verification covering storage protection, request binding, replay rejection, rotation, durable revocation, proof expiry, and paired API authorization
 - Authoritative 65-task engineering program across six gated milestones, including Manus execution instructions, acceptance matrix, risk register, and Codex gate report template
 - Runtime v0.1 Layer 1 durable missions, mission tasks, append-only checkpoints, protected persistence procedures, and mission/checkpoint audit provenance
 - Drizzle migration `0006_tiresome_dormammu.sql` and VC-RT-001/VC-RT-002 automated verification
@@ -38,6 +41,7 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 
 ### Changed
 
+- Owner-scoped G2-02 loopback API routes now fail closed unless presented with a current valid G2-03 paired proof; `/v1/health` remains unauthenticated and no write or execution route is introduced
 - Desktop Companion now stores WebView2 browser profiles, cache, and databases beneath Windows `LOCALAPPDATA` instead of beside the executable
 - Moved loose snapshots, temporary files, and inactive Codex/webdev artifacts into a reversible `archive/` structure
 - Expanded ignore rules for generated .NET, Java, Python, and local AI-tool artifacts
