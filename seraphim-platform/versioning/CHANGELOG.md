@@ -14,9 +14,9 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 | **Platform** | Seraphim Platform v9 |
 | **Version** | `9.0.0-mvp` |
 | **Phase** | 0-4 (partial) + Runtime v0.1 Layer 1 |
-| **Last edit** | 2026-08-17 |
-| **Last edit summary** | Publish G2-03 trusted local pairing for the bounded Runtime API |
-| **Verification** | 91/91 tests pass; desktop publish check pass |
+| **Last edit** | 2026-08-19 |
+| **Last edit summary** | Add isolated cinematic Desktop command-interface shell review draft |
+| **Verification** | 94/94 tests pass; desktop publish check pass |
 | **Operator launch** | `START_SERAPHIM_DESKTOP.bat` → `dist\desktop\SeraphimDesktopCompanion.exe` |
 | **Safety** | Desktop MVP permits Green read-only Files via :8768; no Yellow/Red execution; Red local-agent on :8767 not default |
 
@@ -28,6 +28,8 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 
 ### Added
 
+- Cinematic Desktop command-interface Slice 1: compact grouped navigation, three-region visual shell, source-aware status chrome, a keyboard-accessible visual-only command surface, responsive layout, visible focus treatment, and reduced-motion coverage
+- Cinematic UI policy regression coverage proving that the command surface is presentation-only and that source/execution-disabled labels remain visible
 - G2-03 trusted local pairing for the bounded Runtime loopback API: Windows DPAPI-protected credentials, HMAC-SHA256 request proofs, 48-character single-use nonces, origin and Desktop-bridge binding, rotation, revocation, expiry, and pairing audit provenance
 - Runtime migration 13, `runtime_trusted_local_pairings`, with immutable pairing bindings and append-only replay evidence
 - G2-03 focused pairing verification covering storage protection, request binding, replay rejection, rotation, durable revocation, proof expiry, and paired API authorization
@@ -41,6 +43,7 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 
 ### Changed
 
+- Desktop Companion presentation tokens now use restrained navy-black depth, source-aware status signaling, and semantic risk/execution cues without altering Runtime state or authority
 - Owner-scoped G2-02 loopback API routes now fail closed unless presented with a current valid G2-03 paired proof; `/v1/health` remains unauthenticated and no write or execution route is introduced
 - Desktop Companion now stores WebView2 browser profiles, cache, and databases beneath Windows `LOCALAPPDATA` instead of beside the executable
 - Moved loose snapshots, temporary files, and inactive Codex/webdev artifacts into a reversible `archive/` structure
