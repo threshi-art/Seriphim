@@ -2,13 +2,13 @@
 
 ## Status and Scope
 
-**Status: implementation plan and first-slice baseline.** This plan governs a presentation-only redesign of the Desktop Companion and establishes a compatible visual vocabulary for the web Command Center. It does not introduce Runtime writes, file operations, approval consumption, execution, remote listeners, credential rendering, or new authority.
+**Status: implementation plan and isolated Slice 1–2 review baseline.** This plan governs a presentation-only redesign of the Desktop Companion and establishes a compatible visual vocabulary for the web Command Center. It does not introduce Runtime writes, file operations, approval consumption, execution, remote listeners, credential rendering, or new authority.
 
-The local planning branch is `agent/seraphim-cinematic-ui`, created from `main` commit `3f15f939e8c82d2f172ce70c601d6b271965a500`. It is intentionally **not published as an implementation PR**. That main baseline does not yet contain G2-04’s source-aware Runtime-state contracts. G2-04 and G2-05 remain isolated on their respective draft branches.
+The local planning branch is `agent/seraphim-cinematic-ui`, created from `main` commit `3f15f939e8c82d2f172ce70c601d6b271965a500`. It is published only as an **unmerged review draft**. That main baseline does not yet contain G2-04’s source-aware Runtime-state contracts. G2-04 and G2-05 remain isolated on their respective draft branches.
 
 ## Entry Gate for Visual Implementation
 
-No cinematic UI source change may begin until G2-04’s native Windows build and paired Desktop/Runtime smoke are complete, G2-04 is merged to `main`, and a fresh cinematic branch can consume the merged `RuntimeDataState` contract. The local plan remains safe to refine, but its implementation slices are blocked rather than copied onto a pre-G2-04 baseline. This prevents a cosmetic branch from recreating, weakening, or mislabeling the live-state authority boundary.
+No cinematic UI change may create, reproduce, reinterpret, or imply G2-04 Runtime-state authority before G2-04’s native Windows build and paired Desktop/Runtime smoke are complete and its source-aware contract is merged to `main`. An isolated review-only presentation slice may continue before that gate only when it labels all existing observations truthfully as fixture or bridge-health data, adds no Runtime interaction, and remains unmerged. This prevents a cosmetic branch from recreating, weakening, or mislabeling the live-state authority boundary.
 
 > **Design north star:** Seraphim is the mission environment’s sovereign intelligence interface, not an administrative dashboard wrapped around an AI feature.
 

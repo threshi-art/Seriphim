@@ -325,6 +325,298 @@ button:hover {
   margin: 0.35rem 0 0;
 }
 
+.mission-control-view {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.mission-control-view-header {
+  margin-bottom: 1.35rem;
+}
+
+.mission-control-view-header h1 {
+  max-width: 760px;
+  font-size: clamp(2rem, 3.5vw, 3.25rem);
+  letter-spacing: -0.045em;
+}
+
+.mission-control-view-header p {
+  max-width: 740px;
+  line-height: 1.6;
+}
+
+.mission-control {
+  display: grid;
+  gap: 1rem;
+}
+
+.mission-control-hero,
+.mission-readout-card,
+.mission-queue,
+.mission-metric-card {
+  border: 1px solid var(--border);
+  background: linear-gradient(145deg, rgba(16, 27, 45, 0.96), rgba(8, 14, 25, 0.9));
+  box-shadow: var(--shadow-deep);
+}
+
+.mission-control-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  min-height: 210px;
+  overflow: hidden;
+  padding: clamp(1.25rem, 3vw, 2.35rem);
+  border-radius: 16px;
+}
+
+.mission-control-hero::before,
+.mission-control-hero::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+.mission-control-hero::before {
+  width: min(60vw, 700px);
+  height: min(60vw, 700px);
+  top: -70%;
+  right: -20%;
+  border: 1px solid rgba(94, 234, 212, 0.16);
+  border-radius: 50%;
+  box-shadow: 0 0 0 55px rgba(94, 234, 212, 0.025), 0 0 0 110px rgba(103, 183, 255, 0.018);
+}
+
+.mission-control-hero::after {
+  right: 8%;
+  bottom: 0;
+  left: 38%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(94, 234, 212, 0.8), transparent);
+}
+
+.mission-control-hero-copy,
+.mission-control-status-stack {
+  position: relative;
+  z-index: 1;
+}
+
+.mission-control-hero-copy {
+  max-width: 720px;
+}
+
+.mission-control-kicker,
+.mission-card-label,
+.mission-metric-label,
+.mission-queue-note {
+  color: #86a1bc;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.mission-control-kicker {
+  color: var(--cyan);
+}
+
+.mission-control-hero h2 {
+  margin: 0.55rem 0 0.65rem;
+  max-width: 570px;
+  font-size: clamp(1.5rem, 2.6vw, 2.4rem);
+  letter-spacing: -0.035em;
+}
+
+.mission-control-hero p,
+.mission-readout-card p,
+.mission-task-row p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.mission-control-status-stack {
+  display: grid;
+  justify-items: end;
+  gap: 0.45rem;
+}
+
+.mission-source-chip,
+.mission-card-state,
+.mission-task-status {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.26rem 0.5rem;
+  color: var(--muted);
+  font-size: 0.59rem;
+  font-weight: 800;
+  letter-spacing: 0.075em;
+}
+
+.mission-source-chip.fixture {
+  color: var(--blue);
+  border-color: rgba(103, 183, 255, 0.35);
+  background: rgba(103, 183, 255, 0.08);
+}
+
+.mission-source-chip.online { color: var(--green); border-color: rgba(82, 211, 154, 0.35); }
+.mission-source-chip.degraded { color: var(--yellow); border-color: rgba(234, 189, 100, 0.35); }
+.mission-source-chip.offline, .mission-source-chip.unknown { color: var(--red); border-color: rgba(240, 120, 134, 0.35); }
+.mission-source-chip.pending, .mission-card-state { color: #f7dca8; border-color: rgba(234, 189, 100, 0.35); }
+
+.mission-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.mission-metric-card {
+  display: grid;
+  gap: 0.36rem;
+  min-height: 138px;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.mission-metric-card strong {
+  color: var(--cyan);
+  font-size: clamp(1.45rem, 2.2vw, 2rem);
+  letter-spacing: -0.04em;
+}
+
+.mission-metric-card strong.online { color: var(--green); }
+.mission-metric-card strong.degraded { color: var(--yellow); }
+.mission-metric-card strong.offline, .mission-metric-card strong.unknown { color: var(--red); }
+.mission-metric-card .mission-metric-risk.low { color: var(--green); }
+.mission-metric-card .mission-metric-risk.moderate { color: var(--yellow); }
+.mission-metric-card .mission-metric-risk.high, .mission-metric-card .mission-metric-risk.critical { color: var(--red); }
+.mission-metric-card > span:last-child { color: var(--muted); font-size: 0.76rem; line-height: 1.45; }
+
+.mission-observation-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.mission-readout-card {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  min-height: 230px;
+  padding: 1.1rem;
+  border-radius: 12px;
+}
+
+.mission-priority-readout {
+  background: linear-gradient(145deg, rgba(17, 42, 59, 0.86), rgba(9, 17, 29, 0.96));
+}
+
+.mission-contract-readout {
+  border-color: rgba(234, 189, 100, 0.27);
+  background: linear-gradient(145deg, rgba(54, 41, 24, 0.42), rgba(11, 17, 27, 0.96));
+}
+
+.mission-card-heading,
+.mission-detail-line,
+.mission-queue-header,
+.mission-task-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mission-detail-line {
+  margin-top: auto;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border);
+  color: #71869d;
+  font-size: 0.67rem;
+  letter-spacing: 0.05em;
+}
+
+.mission-detail-line strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #c4d4e3;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mission-queue {
+  padding: 1.1rem;
+  border-radius: 12px;
+}
+
+.mission-queue-header h3 {
+  margin: 0.32rem 0 0;
+  font-size: 1.1rem;
+}
+
+.mission-queue-note {
+  color: var(--blue);
+}
+
+.mission-task-list {
+  display: grid;
+  margin-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.mission-task-row {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid rgba(148, 177, 210, 0.1);
+}
+
+.mission-task-row h4 {
+  margin: 0 0 0.28rem;
+  font-size: 0.9rem;
+}
+
+.mission-task-row p {
+  font-size: 0.76rem;
+}
+
+.mission-task-signal {
+  width: 6px;
+  height: 100%;
+  min-height: 40px;
+  border-radius: 99px;
+  background: #61748a;
+}
+
+.mission-task-signal.planning, .mission-task-signal.running { background: var(--blue); }
+.mission-task-signal.queued { background: var(--cyan); }
+.mission-task-signal.waiting_for_approval { background: var(--yellow); }
+.mission-task-signal.blocked, .mission-task-signal.failed { background: var(--red); }
+.mission-task-signal.complete { background: var(--green); }
+
+.mission-task-status {
+  align-self: center;
+  max-width: 132px;
+  color: #b1c2d1;
+  text-transform: uppercase;
+}
+
+.mission-task-status.waiting_for_approval { color: var(--yellow); border-color: rgba(234, 189, 100, 0.35); }
+.mission-task-status.blocked, .mission-task-status.failed { color: var(--red); border-color: rgba(240, 120, 134, 0.35); }
+.mission-task-status.complete { color: var(--green); border-color: rgba(82, 211, 154, 0.35); }
+
+.mission-empty-state {
+  color: var(--muted);
+  margin: 1rem 0 0;
+}
+
 .panel-card,
 .card {
   border: 1px solid var(--border);
@@ -631,6 +923,9 @@ pre {
 
   .cinematic-topbar { align-items: flex-start; flex-direction: column; }
   .cinematic-status-strip { justify-content: flex-start; }
+  .mission-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mission-observation-grid { grid-template-columns: 1fr 1fr; }
+  .mission-priority-readout { grid-column: span 2; }
 }
 
 @media (max-width: 720px) {
@@ -642,6 +937,14 @@ pre {
   .nav-group-label { display: none; }
   .nav-button { font-size: 0.74rem; }
   .main-panel { padding: 0.85rem; }
+  .mission-control-hero { align-items: flex-start; flex-direction: column; min-height: 0; }
+  .mission-control-status-stack { justify-items: start; }
+  .mission-metric-grid, .mission-observation-grid { grid-template-columns: 1fr; }
+  .mission-priority-readout { grid-column: auto; }
+  .mission-detail-line { align-items: flex-start; flex-direction: column; }
+  .mission-detail-line strong { max-width: 100%; text-align: left; }
+  .mission-task-row { grid-template-columns: 6px minmax(0, 1fr); }
+  .mission-task-status { grid-column: 2; justify-self: start; }
 }
 
 @media (prefers-reduced-motion: reduce) {
