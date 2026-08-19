@@ -2,11 +2,20 @@
 
 This directory is the public registry for Seraphim/EiRAM capabilities.
 
-`capability-manifest.json` is the canonical machine-readable inventory. Entries
-marked `packaged` have reviewed package contents in this directory; entries
-marked `specified` remain architecture records rather than installable Skills.
-A historical conversation saying that a Skill was created, installed, or
-tested is design evidence—not a substitute for reviewing the package body.
+It is also the single canonical active skills root for the wider local
+`SeraphimGPT` knowledge system. Governance records live in `_registry`.
+Historical binaries and unaudited imports remain outside the public repository;
+`_archives` and `_imports` contain non-discoverable pointers only.
+
+`capability-manifest.json` is the canonical machine-readable capability
+declaration for governed platform packages. Entries marked `packaged` have
+reviewed package contents in this directory; entries marked `specified` remain
+architecture records rather than installable Skills. The broader
+`_registry/live-skill-inventory.csv` records every active Git-tracked skill
+directory, including repository-analysis skills that are not registered as
+platform capabilities. A historical conversation saying that a Skill was
+created, installed, or tested is design evidence—not a substitute for reviewing
+the package body.
 
 ## Published packages
 
@@ -63,6 +72,9 @@ Before a package is added here:
 
 ```text
 skills/
+  _registry/
+  _archives/
+  _imports/
   investigation/
   analysis/
   editorial/
