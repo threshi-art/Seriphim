@@ -1,0 +1,17 @@
+source_path,target_or_record,disposition,verification,notes
+Seraphim/skills/analysis/agi-research-landscape,skills/analysis/agi-research-landscape,removed-after-snapshot,exact-tree-hash-match,Loose duplicate replaced by a non-discoverable pointer
+Seraphim/skills/analysis/eiram-governed-architecture,skills/analysis/eiram-governed-architecture,removed-after-snapshot,canonical-newer-than-loose-copy,Snapshot preserves the older copy missing current readiness material
+Seraphim/skills/analysis/eiram-seraphim-comparative-landscape,skills/analysis/eiram-seraphim-comparative-landscape,removed-after-snapshot,exact-tree-hash-match,Loose duplicate replaced by a non-discoverable pointer
+Seraphim/skills/analysis/research-repo-culling,skills/analysis/research-repo-culling,removed-after-snapshot,exact-tree-hash-match,Loose duplicate replaced by a non-discoverable pointer
+Development/GitHub/Seriphim,skills/_registry/migration-map.csv,retained-as-secondary-git-checkout,22-exact-skill-tree-matches,Repository has unrelated working changes and must be reconciled as a whole
+Research/AGI/EI-RAM/Agent Skills/breadcrumb_skill.zip,archive/skill-consolidation-2026-08-18/eiram-original-exports/breadcrumb_skill.zip,copied-and-source-retained,sha256-match,Historical export remains outside public Git
+Research/AGI/EI-RAM/Agent Skills/eiram_datacollect_skill.zip,archive/skill-consolidation-2026-08-18/eiram-original-exports/eiram_datacollect_skill.zip,copied-and-source-retained,sha256-match,Historical export remains outside public Git
+Research/AGI/EI-RAM/Agent Skills/eiram_skill.zip,archive/skill-consolidation-2026-08-18/eiram-original-exports/eiram_skill.zip,copied-and-source-retained,sha256-match,Historical export remains outside public Git
+Research/AGI/EI-RAM/Agent Skills/eiram-editorial-intelligence.zip,archive/skill-consolidation-2026-08-18/eiram-original-exports/eiram-editorial-intelligence.zip,copied-and-source-retained,sha256-match,Historical export remains outside public Git
+Research/AGI/EI-RAM/Agent Skills/skill.zip,archive/skill-consolidation-2026-08-18/eiram-original-exports/skill.zip,copied-and-source-retained,sha256-match,Historical export remains outside public Git
+Research/AGI/EI-RAM/Agent Skills/skill(5)youtube.zip,archive/skill-consolidation-2026-08-18/eiram-original-exports/skill(5)youtube.zip,copied-and-source-retained,sha256-match,Historical export remains outside public Git
+Research/AGI/EI-RAM/Agent Skills/skill(6)youtube.zip,archive/skill-consolidation-2026-08-18/eiram-original-exports/skill(6)youtube.zip,copied-and-source-retained,sha256-match,Historical export remains outside public Git
+Research/AGI/EI-RAM/Agent Skills/skill(7)youtube.zip,archive/skill-consolidation-2026-08-18/eiram-original-exports/skill(7)youtube.zip,copied-and-source-retained,sha256-match,Historical export remains outside public Git
+Seraphim/archive/tool-artifacts/skill.zip,archive/skill-consolidation-2026-08-18/tool-artifacts/authorized-reverse-engineering.zip,copied-and-source-retained,sha256-match,Unreviewed artifact remains quarantined
+Seraphim/Exports/MANUS_SKILL_HARVEST.tar.gz,archive/skill-consolidation-2026-08-18/imports/manus-harvest/MANUS_SKILL_HARVEST.tar.gz,copied-and-source-retained,sha256-match,Import candidates remain quarantined and non-discoverable
+Seraphim/skills,archive/skill-consolidation-2026-08-18/loose-tree-snapshots/seraphim-loose-skills-2026-08-18.zip,snapshotted-and-replaced-with-pointer,4-skill-files-confirmed-in-snapshot,No active SKILL.md remains in the loose tree
