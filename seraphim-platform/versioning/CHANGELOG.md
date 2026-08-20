@@ -15,8 +15,8 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 | **Version** | `9.0.0-mvp` |
 | **Phase** | 0-4 (partial) + Runtime v0.1 Layer 1 |
 | **Last edit** | 2026-08-19 |
-| **Last edit summary** | Add isolated read-only cinematic Mission Control canvas review slice |
-| **Verification** | 95/95 tests pass; Desktop TypeScript, tests, and production bundle pass |
+| **Last edit summary** | Add stacked truthful cinematic Context and Intelligence Pane review slice |
+| **Verification** | 97/97 tests pass; Desktop TypeScript, tests, and production bundle pass |
 | **Operator launch** | `START_SERAPHIM_DESKTOP.bat` → `dist\desktop\SeraphimDesktopCompanion.exe` |
 | **Safety** | Desktop MVP permits Green read-only Files via :8768; no Yellow/Red execution; Red local-agent on :8767 not default |
 
@@ -28,6 +28,8 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 
 ### Added
 
+- Cinematic Desktop command-interface Slice 3 on a stacked review branch: adaptive Context and Intelligence Pane, reusable source-labelled Seraphim Insight card, compact intelligence feed, compact sensor/camera-state tiles, review risks, fixture-derived recommendation, unavailable Runtime open-loop state, and compact non-mutating local activity stream
+- Explicit Slice 3 source classifications for `FIXTURE`, `NOT CONNECTED`, `FUTURE COGNITIVE MESH`, and `LOCAL BRIDGE OBSERVATION`, including no fabricated live Runtime, EiRAM, prediction, memory, camera, sensor, or cognitive-mesh claims
 - Cinematic Desktop command-interface Slice 2: a dominant read-only Mission Control canvas with compact fixture-task, approval, risk, workspace, mock-pairing, and local bridge-health observations
 - Explicit Mission Control source labels for fixture-backed review data, the observed local bridge state, execution-disabled posture, and the pending G2-04 Runtime-data contract; the canvas does not infer unavailable Runtime states
 - Cinematic Desktop command-interface Slice 1: compact grouped navigation, three-region visual shell, source-aware status chrome, a keyboard-accessible visual-only command surface, responsive layout, visible focus treatment, and reduced-motion coverage
@@ -45,6 +47,7 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 
 ### Changed
 
+- The 4K layout now expands the central Mission Control canvas while retaining a compact contextual intelligence rail; the footer event stream is a read-only local UI record rather than a mutable control
 - Cinematic review evidence and implementation plan now distinguish an allowed isolated review-only presentation slice from the still-blocked G2-04 Runtime-state integration gate
 - Desktop Companion presentation tokens now use restrained navy-black depth, source-aware status signaling, and semantic risk/execution cues without altering Runtime state or authority
 - Owner-scoped G2-02 loopback API routes now fail closed unless presented with a current valid G2-03 paired proof; `/v1/health` remains unauthenticated and no write or execution route is introduced
