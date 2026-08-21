@@ -14,9 +14,9 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 | **Platform** | Seraphim Platform v9 |
 | **Version** | `9.0.0-mvp` |
 | **Phase** | 0-4 (partial) + Runtime v0.1 Layer 1 |
-| **Last edit** | 2026-08-17 |
-| **Last edit summary** | Stage G2-04 Desktop live Runtime observation for native validation |
-| **Verification** | 91/91 tests pass; desktop publish check pass |
+| **Last edit** | 2026-08-21 |
+| **Last edit summary** | Clear prior Runtime state after owner-scope denial or pairing revocation |
+| **Verification** | 100/100 Platform tests pass; Desktop TypeScript, Desktop tests, and production bundle pass; native validation remains blocked |
 | **Operator launch** | `START_SERAPHIM_DESKTOP.bat` → `dist\desktop\SeraphimDesktopCompanion.exe` |
 | **Safety** | Desktop MVP permits Green read-only Files via :8768; no Yellow/Red execution; Red local-agent on :8767 not default |
 
@@ -43,6 +43,7 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 
 ### Changed
 
+- G2-04 owner-scope or pairing-revocation denial now clears prior Desktop Runtime snapshots and presents `permission` rather than retaining another owner's data as `stale`
 - Global and feature-level Desktop copy now distinguishes observed Runtime data from explicit mock fixtures while retaining the execution and file-mutation freeze
 - Owner-scoped G2-02 loopback API routes now fail closed unless presented with a current valid G2-03 paired proof; `/v1/health` remains unauthenticated and no write or execution route is introduced
 - Desktop Companion now stores WebView2 browser profiles, cache, and databases beneath Windows `LOCALAPPDATA` instead of beside the executable
