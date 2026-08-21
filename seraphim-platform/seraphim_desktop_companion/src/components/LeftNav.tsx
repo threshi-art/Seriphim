@@ -1,11 +1,6 @@
 import { DESKTOP_NAV_ITEMS } from "../config/navigation";
-import { useSeraphim, type ActiveView } from "../state/SeraphimState";
-
-const GROUPS: ReadonlyArray<{ label: string; ids: readonly ActiveView[] }> = [
-  { label: "COMMAND", ids: ["dashboard", "chat", "projects"] },
-  { label: "OPERATIONS", ids: ["tasks", "approvals", "files", "memory"] },
-  { label: "SYSTEM", ids: ["local_bridge", "sentinel", "logs", "settings", "documentation"] }
-];
+import { useSeraphim } from "../state/SeraphimState";
+import { DESKTOP_NAV_GROUPS } from "../config/navigation";
 
 export function LeftNav() {
   const { activeView, setActiveView } = useSeraphim();
@@ -23,7 +18,7 @@ export function LeftNav() {
       <div className="mock-banner">EXECUTION DISABLED · REVIEW MODE</div>
 
       <nav aria-label="Desktop destinations">
-        {GROUPS.map((group) => (
+        {DESKTOP_NAV_GROUPS.map((group) => (
           <section className="nav-group" key={group.label} aria-label={group.label}>
             <div className="nav-group-label">{group.label}</div>
             {group.ids.map((id) => {

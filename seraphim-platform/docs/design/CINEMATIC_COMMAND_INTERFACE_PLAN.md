@@ -2,7 +2,7 @@
 
 ## Status and Scope
 
-**Status: implementation plan and isolated Slice 1–2 review baseline.** This plan governs a presentation-only redesign of the Desktop Companion and establishes a compatible visual vocabulary for the web Command Center. It does not introduce Runtime writes, file operations, approval consumption, execution, remote listeners, credential rendering, or new authority.
+**Status: implementation plan with isolated Slice 1–4 review drafts.** This plan governs a presentation-only redesign of the Desktop Companion and establishes a compatible visual vocabulary for the web Command Center. It does not introduce Runtime writes, file operations, approval consumption, execution, remote listeners, credential rendering, or new authority.
 
 The local planning branch is `agent/seraphim-cinematic-ui`, created from `main` commit `3f15f939e8c82d2f172ce70c601d6b271965a500`. It is published only as an **unmerged review draft**. That main baseline does not yet contain G2-04’s source-aware Runtime-state contracts. G2-04 and G2-05 remain isolated on their respective draft branches.
 
@@ -52,6 +52,8 @@ No cinematic UI change may create, reproduce, reinterpret, or imply G2-04 Runtim
 | 3. Context and insights | Right context pane for recommendation, confidence, risk, source/freshness, and open loops using present state contracts | `MissionPanel.tsx`, `ActivityLog.tsx`, CSS | No fabricated analysis or authority; empty data uses compact truthful states. |
 | 4. Specialist destination groups | Contextual groups and consistent view headers for intelligence, build, memory, and system | Navigation, view headers, shared components | All existing destinations remain discoverable and keyboard accessible. |
 | 5. Responsive polish | 1440p/4K priorities plus practical narrower layouts and accessibility | `App.css`, targeted tests | Canvas stays dominant; panes collapse progressively; focus and reduced-motion checks pass. |
+
+Slice 4 has been implemented as a separate stacked review branch. It preserves the dashboard canvas, groups every existing destination exactly once, and adds specialist destination context without changing route semantics or the underlying source/authority contract.
 
 ## Slice 1 Boundary and Tests
 
