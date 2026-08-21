@@ -10,7 +10,8 @@ describe("G2-05 immutable proposal policy", () => {
     );
 
     expect(source).toContain("resolve_relative");
-    expect(source).toContain("target.read_bytes()");
+    expect(source).toContain("os.O_RDONLY | no_follow");
+    expect(source).toContain("stat.S_ISREG(metadata.st_mode)");
     expect(source).toContain("runtime_file_write_proposals");
     expect(source).not.toMatch(/\.write_bytes\(|\.write_text\(|\.unlink\(|os\.replace\(|shutil\.|import subprocess|from subprocess|subprocess\.|Popen\(|Process\.Start/);
   });
