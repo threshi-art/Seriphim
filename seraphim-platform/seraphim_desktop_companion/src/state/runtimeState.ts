@@ -42,8 +42,17 @@ export async function refreshRuntimeData(
     const runtimeError = error instanceof RuntimeClientError
       ? error
       : new RuntimeClientError("Runtime read failed without a safe error envelope.", 0, "runtime_unavailable");
+    const phase = errorPhase(runtimeError);
+    if (phase === "permission") {
+      return {
+        phase,
+        snapshot: null,
+        observedAt,
+        detail: runtimeError.message
+      };
+    }
     return {
-      phase: previous.snapshot ? "stale" : errorPhase(runtimeError),
+      phase: previous.snapshot ? "stale" : phase,
       snapshot: previous.snapshot,
       observedAt: previous.observedAt,
       detail: runtimeError.message

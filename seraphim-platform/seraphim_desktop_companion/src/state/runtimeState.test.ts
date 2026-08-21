@@ -71,6 +71,17 @@ describe("G2-04 Runtime data state", () => {
     expect(result.snapshot).toBeNull();
   });
 
+  it("clears a prior owner-scoped snapshot when a later read is denied or pairing is revoked", async () => {
+    const live = await refreshRuntimeData(clientFor(livePayload), initialRuntimeDataState, observedAt);
+    const denied = await refreshRuntimeData(clientFor(() => {
+      throw new RuntimeClientError("Runtime pairing no longer permits this owner.", 403, "owner_scope_required");
+    }), live, "2026-08-17T12:05:00+00:00");
+
+    expect(denied.phase).toBe("permission");
+    expect(denied.snapshot).toBeNull();
+    expect(denied.observedAt).toBe("2026-08-17T12:05:00+00:00");
+  });
+
   it("labels invalid Runtime contract data as malformed and rejects it", async () => {
     const result = await refreshRuntimeData(clientFor((path) => path === "/v1/health"
       ? { api_version: "v1", mode: "write_enabled" }
