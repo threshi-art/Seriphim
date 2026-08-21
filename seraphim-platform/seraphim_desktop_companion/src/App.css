@@ -1082,6 +1082,30 @@ button:hover {
   }
 }
 
+@media (min-width: 2400px) {
+  .app-shell {
+    grid-template-columns: 286px minmax(0, 1fr) 470px;
+    grid-template-rows: minmax(0, 1fr) 132px;
+  }
+
+  .mission-control-view {
+    max-width: 3200px;
+    gap: 1rem;
+  }
+
+  .mission-control-hero {
+    min-height: 250px;
+  }
+
+  .mission-control-hero-copy {
+    max-width: 860px;
+  }
+
+  .cinematic-context-pane {
+    padding: 1.3rem;
+  }
+}
+
 .panel-card,
 .card {
   border: 1px solid var(--border);
