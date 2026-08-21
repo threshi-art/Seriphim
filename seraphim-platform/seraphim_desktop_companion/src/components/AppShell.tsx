@@ -3,6 +3,7 @@ import { ActivityLog } from "./ActivityLog";
 import { CommandSurface } from "./CommandSurface";
 import { LeftNav } from "./LeftNav";
 import { MissionPanel } from "./MissionPanel";
+import { SpecialistViewHeader } from "./SpecialistViewHeader";
 import { ApprovalsView } from "../views/ApprovalsView";
 import { ChatView } from "../views/ChatView";
 import { DashboardView } from "../views/DashboardView";
@@ -72,6 +73,7 @@ export function AppShell() {
         <div className="cinematic-source-note" role="note">
           FIXTURE-BACKED REVIEW SHELL — Runtime reads remain separately gated and source-labelled.
         </div>
+        <SpecialistViewHeader activeView={activeView} />
         {renderActiveView(activeView)}
       </main>
       <MissionPanel />

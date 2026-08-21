@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { CINEMATIC_VIEW_CONTEXT, DESKTOP_NAV_GROUPS, DESKTOP_VIEW_IDS } from "../seraphim_desktop_companion/src/config/navigation";
 
 const root = new URL("..", import.meta.url).pathname;
 const commandSurface = readFileSync(`${root}/seraphim_desktop_companion/src/components/CommandSurface.tsx`, "utf8");
@@ -11,6 +12,7 @@ const intelligenceFeed = readFileSync(`${root}/seraphim_desktop_companion/src/co
 const sensorTiles = readFileSync(`${root}/seraphim_desktop_companion/src/components/SensorStateTiles.tsx`, "utf8");
 const contextFixtures = readFileSync(`${root}/seraphim_desktop_companion/src/data/cinematicContextFixtures.ts`, "utf8");
 const activityLog = readFileSync(`${root}/seraphim_desktop_companion/src/components/ActivityLog.tsx`, "utf8");
+const specialistHeader = readFileSync(`${root}/seraphim_desktop_companion/src/components/SpecialistViewHeader.tsx`, "utf8");
 const css = readFileSync(`${root}/seraphim_desktop_companion/src/App.css`, "utf8");
 
 describe("cinematic UI review-shell policy", () => {
@@ -47,6 +49,19 @@ describe("cinematic UI review-shell policy", () => {
     expect(activityLog).toContain("LOCAL UI EVENT LOG");
     expect(activityLog).toContain("Runtime audit events remain separately gated");
     expect(activityLog).not.toMatch(/clearLogs|approveRequest|rejectRequest|sendMessage|fetch\(/);
+  });
+
+  it("keeps every specialist destination discoverable through presentation-only navigation groups", () => {
+    const groupedIds = DESKTOP_NAV_GROUPS.flatMap((group) => group.ids);
+    expect(new Set(groupedIds)).toEqual(new Set(DESKTOP_VIEW_IDS));
+    expect(groupedIds).toHaveLength(DESKTOP_VIEW_IDS.length);
+    expect(Object.keys(CINEMATIC_VIEW_CONTEXT).sort()).toEqual([...DESKTOP_VIEW_IDS].sort());
+  });
+
+  it("keeps specialist destination headers descriptive and free of authority paths", () => {
+    expect(specialistHeader).toContain("PRESENTATION ONLY");
+    expect(specialistHeader).toContain("VIEW-SCOPED CONTEXT");
+    expect(specialistHeader).not.toMatch(/sendMessage|approveRequest|rejectRequest|fetch\(|refreshBridgeHealth|requestMockPairing/);
   });
 
   it("includes visible keyboard focus and a reduced-motion mode", () => {

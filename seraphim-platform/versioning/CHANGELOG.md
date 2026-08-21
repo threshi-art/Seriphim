@@ -14,9 +14,9 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 | **Platform** | Seraphim Platform v9 |
 | **Version** | `9.0.0-mvp` |
 | **Phase** | 0-4 (partial) + Runtime v0.1 Layer 1 |
-| **Last edit** | 2026-08-19 |
-| **Last edit summary** | Add stacked truthful cinematic Context and Intelligence Pane review slice |
-| **Verification** | 97/97 tests pass; Desktop TypeScript, tests, and production bundle pass |
+| **Last edit** | 2026-08-21 |
+| **Last edit summary** | Add stacked cinematic specialist destinations and contextual view-header review slice |
+| **Verification** | 99/99 tests pass; Desktop TypeScript, tests, and production bundle pass |
 | **Operator launch** | `START_SERAPHIM_DESKTOP.bat` → `dist\desktop\SeraphimDesktopCompanion.exe` |
 | **Safety** | Desktop MVP permits Green read-only Files via :8768; no Yellow/Red execution; Red local-agent on :8767 not default |
 
@@ -28,6 +28,8 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 
 ### Added
 
+- Cinematic Desktop command-interface Slice 4 on a separate stacked review branch: all twelve existing destinations are grouped as Command, Operations, Intelligence, Build, and System, with a reusable contextual specialist-destination header for every non-dashboard view
+- Slice 4 navigation and header policy coverage proving every destination remains discoverable exactly once and that the new context header is explicitly presentation-only
 - Cinematic Desktop command-interface Slice 3 on a stacked review branch: adaptive Context and Intelligence Pane, reusable source-labelled Seraphim Insight card, compact intelligence feed, compact sensor/camera-state tiles, review risks, fixture-derived recommendation, unavailable Runtime open-loop state, and compact non-mutating local activity stream
 - Explicit Slice 3 source classifications for `FIXTURE`, `NOT CONNECTED`, `FUTURE COGNITIVE MESH`, and `LOCAL BRIDGE OBSERVATION`, including no fabricated live Runtime, EiRAM, prediction, memory, camera, sensor, or cognitive-mesh claims
 - Cinematic Desktop command-interface Slice 2: a dominant read-only Mission Control canvas with compact fixture-task, approval, risk, workspace, mock-pairing, and local bridge-health observations
@@ -47,6 +49,7 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 
 ### Changed
 
+- The cinematic design plan now records the completed separate Slice 4 review implementation while retaining the unmerged G2-04 native-validation hold and all source/authority limits
 - The 4K layout now expands the central Mission Control canvas while retaining a compact contextual intelligence rail; the footer event stream is a read-only local UI record rather than a mutable control
 - Cinematic review evidence and implementation plan now distinguish an allowed isolated review-only presentation slice from the still-blocked G2-04 Runtime-state integration gate
 - Desktop Companion presentation tokens now use restrained navy-black depth, source-aware status signaling, and semantic risk/execution cues without altering Runtime state or authority
