@@ -14,9 +14,9 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 | **Platform** | Seraphim Platform v9 |
 | **Version** | `9.0.0-mvp` |
 | **Phase** | 0-4 (partial) + Runtime v0.1 Layer 1 |
-| **Last edit** | 2026-08-17 |
-| **Last edit summary** | Stage G2-05 immutable file-write proposal validation candidate |
-| **Verification** | 91/91 tests pass; desktop publish check pass |
+| **Last edit** | 2026-08-21 |
+| **Last edit summary** | Bind proposal target reads through a fail-closed no-follow descriptor |
+| **Verification** | 137 Runtime tests pass, including post-resolution symlink-swap and no-follow-unavailable cases |
 | **Operator launch** | `START_SERAPHIM_DESKTOP.bat` → `dist\desktop\SeraphimDesktopCompanion.exe` |
 | **Safety** | Desktop MVP permits Green read-only Files via :8768; no Yellow/Red execution; Red local-agent on :8767 not default |
 
@@ -43,6 +43,7 @@ Version metadata: `versioning/VERSION.json` (refreshed by `pnpm versioning:refre
 
 ### Changed
 
+- G2-05 proposal target reads now use a fail-closed no-follow descriptor and descriptor type check, preventing a post-resolution symlink swap from binding outside-root bytes
 - File-write work remains proposal-only; no target mutation, delete, replace, execution, approval consumption, or production activation has been introduced
 - Owner-scoped G2-02 loopback API routes now fail closed unless presented with a current valid G2-03 paired proof; `/v1/health` remains unauthenticated and no write or execution route is introduced
 - Desktop Companion now stores WebView2 browser profiles, cache, and databases beneath Windows `LOCALAPPDATA` instead of beside the executable

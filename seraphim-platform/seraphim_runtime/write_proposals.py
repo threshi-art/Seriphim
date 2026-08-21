@@ -9,8 +9,10 @@ from __future__ import annotations
 import difflib
 import hashlib
 import json
+import os
 import re
 import sqlite3
+import stat
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -147,15 +149,11 @@ class FileWriteProposalRepository:
             target = resolve_relative(root, request_path)
         except WorkspaceError as error:
             raise ProposalValidationError(f"proposal target is outside approved workspace: {error}") from error
-        if not target.exists() or not target.is_file():
-            raise ProposalValidationError("proposal target must be an existing regular file")
         try:
             target.relative_to(root)
         except ValueError as error:  # defensive post-resolve containment proof
             raise ProposalValidationError("proposal target resolves outside approved workspace") from error
-        base_bytes = target.read_bytes()
-        if len(base_bytes) > self.MAX_TARGET_BYTES:
-            raise ProposalValidationError("base file size exceeds the proposal limit")
+        base_bytes = self._read_bound_target(target)
         base_sha256 = _sha256(base_bytes)
         if expected_base_sha256 is not None:
             if not isinstance(expected_base_sha256, str) or _SHA256.fullmatch(expected_base_sha256) is None:
@@ -229,6 +227,33 @@ class FileWriteProposalRepository:
                 continue
             raise ProposalValidationError("approved workspace root is inside a forbidden repository or OneDrive boundary")
         return resolved
+
+    def _read_bound_target(self, target: Path) -> bytes:
+        """Read one regular target without following a final path swap or symlink."""
+        no_follow = getattr(os, "O_NOFOLLOW", None)
+        if not isinstance(no_follow, int):
+            raise ProposalValidationError("safe no-follow proposal reads are unavailable on this host")
+        try:
+            descriptor = os.open(target, os.O_RDONLY | no_follow)
+        except OSError as error:
+            raise ProposalValidationError("proposal target changed or cannot be safely opened") from error
+        try:
+            metadata = os.fstat(descriptor)
+            if not stat.S_ISREG(metadata.st_mode):
+                raise ProposalValidationError("proposal target must be an existing regular file")
+            chunks: list[bytes] = []
+            total = 0
+            while True:
+                chunk = os.read(descriptor, min(65_536, self.MAX_TARGET_BYTES + 1 - total))
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > self.MAX_TARGET_BYTES:
+                    raise ProposalValidationError("base file size exceeds the proposal limit")
+                chunks.append(chunk)
+            return b"".join(chunks)
+        finally:
+            os.close(descriptor)
 
     def _preview(self, path: str, base_text: str | None, replacement_text: str | None) -> str | None:
         if base_text is None or replacement_text is None:
