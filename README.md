@@ -40,6 +40,19 @@ validated predictive accuracy, or completed satellite applications.
   private Agent memory
 - Restricted or copyrighted reference libraries and unaudited Skill archives
 
+## Repository boundary
+
+This repository is the **curated public source boundary** for the Seraphim
+platform. Larger private working trees, runtime state, local bridge data,
+research collections, build output, and machine-specific evidence may exist,
+but they are not mirrored here and must not be mechanically synchronized into
+this repository. Public changes enter through reviewed branches with explicit
+provenance, privacy, asset, and verification checks.
+
+The GitHub repository retains the historical spelling `Seriphim`; product
+material primarily uses `Seraphim`. Renaming remains a separate governed change
+because it affects remotes, links, automation, and active review branches.
+
 ## Cognitive architecture
 
 The public architecture foundation documents the intended capability model.

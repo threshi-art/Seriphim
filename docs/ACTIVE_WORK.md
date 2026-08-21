@@ -48,7 +48,7 @@ migration and requires a new repository-specific evidence pass.
 
 ## Open verification gaps
 
-- The managed-server handoff at `/home/ubuntu/seraphim/SERAPHIM_WORK_TO_DATE_HANDOFF_2026-08-18.md` and checkpoint `813f6d40` were reported in `Seraphim latest`; they were not accessible in this local pass.
+- A managed-server work-to-date handoff and checkpoint `813f6d40` were reported in `Seraphim latest`; the handoff artifact was not available within this reviewed repository checkout.
 - PR #104, PR #105, and the G2-04 validation worktree were not verified from the canonical local checkout.
 - The chat inventory is bounded to the project's tasks visible within the app's 50-most-recent-task result. Any older project tasks remain preserved but unclassified.
 - The `Seraphim` runtime tree and the public `Seriphim` repository have different purposes and should not be mechanically synchronized without a scoped reconciliation plan.
