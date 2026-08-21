@@ -9,13 +9,13 @@
 The relay is a Windows-local stdio MCP server located outside OneDrive and outside the Seraphim repository:
 
 ```text
-C:\Users\cyber\AppData\Local\Seraphim\Synapse\
+%LOCALAPPDATA%\Seraphim\Synapse\
 ```
 
 Its exact future process command is:
 
 ```text
-"C:\Program Files\nodejs\node.exe" "C:\Users\cyber\AppData\Local\Seraphim\Synapse\server.mjs"
+"C:\Program Files\nodejs\node.exe" "%LOCALAPPDATA%\Seraphim\Synapse\server.mjs"
 ```
 
 The relay exposes only `send_message`, `read_messages`, and `heartbeat`, with fixed `SERAPHIM` and `MANUS` identities. Its message types are `MESSAGE`, `PING`, and `PONG`. Durable relay records remain confined to `synapse.db` and append-only `audit.jsonl` under the same `%LOCALAPPDATA%` directory.
