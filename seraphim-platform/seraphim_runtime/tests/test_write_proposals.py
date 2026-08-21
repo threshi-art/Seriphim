@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import sqlite3
 import tempfile
 import unittest
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest.mock import patch
 
 from seraphim_runtime.schema_migrations import apply_migrations
 from seraphim_runtime.write_proposals import (
@@ -75,6 +77,36 @@ class FileWriteProposalTests(unittest.TestCase):
                 self.skipTest("Symlink creation is unavailable in this test environment")
             with self.assertRaises(ProposalValidationError):
                 self.create(root, "link.txt", idempotency_key="symlink")
+
+    def test_rejects_post_resolution_symlink_swap_without_binding_outside_bytes(self) -> None:
+        if not hasattr(os, "O_NOFOLLOW"):
+            self.skipTest("Host does not expose a no-follow descriptor flag")
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as outside_directory:
+            root = Path(directory)
+            target = root / "notes.txt"
+            target.write_bytes(b"inside\n")
+            outside = Path(outside_directory) / "outside.txt"
+            outside.write_bytes(b"outside\n")
+            native_open = os.open
+
+            def swap_then_open(path, flags, *args):
+                target.unlink()
+                target.symlink_to(outside)
+                return native_open(path, flags, *args)
+
+            with patch("seraphim_runtime.write_proposals.os.open", side_effect=swap_then_open):
+                with self.assertRaisesRegex(ProposalValidationError, "cannot be safely opened"):
+                    self.create(root, idempotency_key="post-resolution-swap")
+            self.assertEqual(b"outside\n", outside.read_bytes())
+            self.assertEqual(0, self.connection.execute("SELECT COUNT(*) FROM runtime_file_write_proposals").fetchone()[0])
+
+    def test_fails_closed_when_the_host_cannot_perform_no_follow_target_reads(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "notes.txt").write_bytes(b"inside\n")
+            with patch("seraphim_runtime.write_proposals.os.O_NOFOLLOW", None):
+                with self.assertRaisesRegex(ProposalValidationError, "safe no-follow"):
+                    self.create(root, idempotency_key="no-no-follow")
 
     def test_rejects_stale_base_hash_and_preserves_line_endings_in_preview(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
