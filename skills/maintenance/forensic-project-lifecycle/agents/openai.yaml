@@ -1,0 +1,4 @@
+interface:
+  display_name: "Forensic Project Lifecycle"
+  short_description: "Preserve, implement, verify, package, and reconcile high-stakes projects"
+  default_prompt: "Use $forensic-project-lifecycle to preserve the originals, trace every requirement, execute in verified stages, and produce a clean auditable handoff."

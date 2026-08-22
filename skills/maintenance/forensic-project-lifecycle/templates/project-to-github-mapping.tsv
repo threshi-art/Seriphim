@@ -1,0 +1,2 @@
+local_family	local_path	local_git_state	canonical_repository	repository_visibility	repository_role	github_project_board	lifecycle	publication_boundary	mismatch_or_duplicate	privacy_or_provenance_risk	proposed_action	explicit_exclusions	approval_status	preservation_path	verification_path	final_status
+[Project]	[Path]	[Branch/dirty/divergence]	[owner/repo or local only]	[Public/Private/None]	[Dedicated/Umbrella/Derivative/Local only]	[Board]	[Lifecycle]	[Boundary]	[Finding]	[Risk]	[Action]	[Not authorized]	[Pending]	[Bundle/export]	[Evidence]	[Pending]

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Game Dev"
+  short_description: "Build verified Babylon.js games through a staged Manus WebDev workflow"
+  default_prompt: "Use $game-dev to plan, build, visually verify, and publish this browser game through the governed Babylon.js workflow."

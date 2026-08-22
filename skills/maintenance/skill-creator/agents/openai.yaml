@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill Creator"
+  short_description: "Create or refine portable, validated agent skills"
+  default_prompt: "Use $skill-creator to design, structure, validate, and package this reusable agent skill."

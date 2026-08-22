@@ -13,15 +13,18 @@ reviewed package contents in this directory; entries marked `specified` remain
 architecture records rather than installable Skills. The broader
 `_registry/live-skill-inventory.csv` records every active Git-tracked skill
 directory, including repository-analysis skills that are not registered as
-platform capabilities. A historical conversation saying that a Skill was
-created, installed, or tested is design evidence—not a substitute for reviewing
-the package body.
+platform capabilities. `_registry/installed-manus-skill-catalog.csv` records the
+public disposition of all 48 packages in the owner-authorized private local
+snapshot without publishing rights-restricted or unlicensed package bodies. A
+historical conversation saying that a Skill was created, installed, or tested
+is design evidence—not a substitute for reviewing the package body.
 
 ## Published packages
 
-Twenty-two reviewed public packages are currently available. Four are normalized
-archive exports, seven are reviewed live-agent exports, and eleven are explicitly
-labeled reconstructed public editions.
+Twenty-six reviewed public packages are currently available. Four are normalized
+archive exports, seven are reviewed live-agent exports, eleven are explicitly
+labeled reconstructed public editions, and four are owner-directed or licensed
+imports reviewed for portability and redistribution.
 
 | Skill | Role | Package |
 |---|---|---|
@@ -46,6 +49,10 @@ labeled reconstructed public editions.
 | Technical Project Manager | Technical delivery owner | `engineering/technical-project-manager/` |
 | AI Solutions Engineer | AI-system design owner | `engineering/ai-solutions-engineer/` |
 | Technical Lead | Engineering execution owner | `engineering/technical-lead/` |
+| Game Dev | Staged Babylon.js game workflow; Manus WebDev required | `engineering/game-dev/` |
+| Forensic Project Lifecycle | Forensic execution, traceability, packaging, continuity, and reconciliation | `maintenance/forensic-project-lifecycle/` |
+| Skill Creator | Portable skill scaffolding and validation; Python and PyYAML required | `maintenance/skill-creator/` |
+| ImageGen | Visual-deliverable router; generation depends on the host runtime | `orchestration/imagegen/` |
 | Cybersecurity Specialist | Defensive security owner | `security/cybersecurity-specialist/` |
 
 Each directory is the installable package root. Copy only the selected package

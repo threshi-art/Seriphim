@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "forensic-lifecycle-positive",
+      "synthetic": true,
+      "target_skill": "forensic-project-lifecycle",
+      "kind": "positive",
+      "prompt": "Preserve the supplied skeleton, trace every requirement, implement in tested stages, and build a clean submission archive with rollback evidence.",
+      "expected": {"primary": "forensic-project-lifecycle", "state": "planned"}
+    },
+    {
+      "id": "forensic-lifecycle-negative",
+      "synthetic": true,
+      "target_skill": "forensic-project-lifecycle",
+      "kind": "negative",
+      "prompt": "Define a compiler token in one sentence.",
+      "expected": {"primary": "direct-response", "state": "answer"}
+    },
+    {
+      "id": "forensic-lifecycle-overlap",
+      "synthetic": true,
+      "target_skill": "forensic-project-lifecycle",
+      "kind": "overlap",
+      "prompt": "Audit this repository and local submission, preserve the originals, reconcile the mismatch, and verify the final package.",
+      "expected": {"primary": "forensic-project-lifecycle", "supporting": ["workspace-auditor", "repo-surgeon"], "state": "planned"}
+    },
+    {
+      "id": "game-dev-positive",
+      "synthetic": true,
+      "target_skill": "game-dev",
+      "kind": "positive",
+      "prompt": "Build and visually verify a playable Babylon.js browser game from this natural-language brief.",
+      "expected": {"primary": "game-dev", "state": "planned"}
+    },
+    {
+      "id": "game-dev-negative",
+      "synthetic": true,
+      "target_skill": "game-dev",
+      "kind": "negative",
+      "prompt": "Define the API boundaries for a conventional enterprise records platform.",
+      "expected": {"primary": "software-architect", "state": "answer"}
+    },
+    {
+      "id": "game-dev-overlap",
+      "synthetic": true,
+      "target_skill": "game-dev",
+      "kind": "overlap",
+      "prompt": "Create a browser game and generate a coherent visual target, textures, interface art, and verification captures.",
+      "expected": {"primary": "game-dev", "supporting": ["imagegen"], "state": "planned"}
+    },
+    {
+      "id": "imagegen-positive",
+      "synthetic": true,
+      "target_skill": "imagegen",
+      "kind": "positive",
+      "prompt": "Choose the correct production method and create a readable branded infographic with exact supplied text.",
+      "expected": {"primary": "imagegen", "state": "planned"}
+    },
+    {
+      "id": "imagegen-negative",
+      "synthetic": true,
+      "target_skill": "imagegen",
+      "kind": "negative",
+      "prompt": "Summarize this paragraph without creating any visual output.",
+      "expected": {"primary": "direct-response", "state": "answer"}
+    },
+    {
+      "id": "imagegen-overlap",
+      "synthetic": true,
+      "target_skill": "imagegen",
+      "kind": "overlap",
+      "prompt": "Generate the art direction and production assets for the browser game while the game workflow owns implementation.",
+      "expected": {"primary": "game-dev", "supporting": ["imagegen"], "state": "planned"}
+    },
+    {
+      "id": "skill-creator-positive",
+      "synthetic": true,
+      "target_skill": "skill-creator",
+      "kind": "positive",
+      "prompt": "Turn this repeated workflow into a concise portable agent skill with scripts, references, templates, and validation.",
+      "expected": {"primary": "skill-creator", "state": "planned"}
+    },
+    {
+      "id": "skill-creator-negative",
+      "synthetic": true,
+      "target_skill": "skill-creator",
+      "kind": "negative",
+      "prompt": "Rewrite this technical article with stronger evidence discipline and clearer prose.",
+      "expected": {"primary": "eiram-editorial-intelligence", "state": "answer"}
+    },
+    {
+      "id": "skill-creator-overlap",
+      "synthetic": true,
+      "target_skill": "skill-creator",
+      "kind": "overlap",
+      "prompt": "Package the validated forensic project workflow as a reusable agent skill and preserve its lifecycle safeguards.",
+      "expected": {"primary": "skill-creator", "supporting": ["forensic-project-lifecycle"], "state": "planned"}
+    }
+  ]
+}

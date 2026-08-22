@@ -784,6 +784,134 @@
         ],
         "last_verified": "2026-08-11"
       }
+    },
+    {
+      "id": "forensic-project-lifecycle",
+      "name": "Forensic Project Lifecycle",
+      "category": "maintenance",
+      "status": "packaged",
+      "owner_role": "primary",
+      "public_package": true,
+      "package_path": "skills/maintenance/forensic-project-lifecycle",
+      "provenance": "owner-directed-task-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_imported_skill_packages.py",
+      "runtime_contract": {
+        "capability_id": "forensic-project-lifecycle",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "read_write",
+        "authorization_scope": [
+          "forensic_project_execution",
+          "requirements_traceability",
+          "artifact_packaging",
+          "repository_reconciliation"
+        ],
+        "approval_requirement": "explicit_confirmation_for_external_or_destructive_actions",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material",
+          "owner_authorized_local_workspace"
+        ],
+        "last_verified": "2026-08-22"
+      }
+    },
+    {
+      "id": "game-dev",
+      "name": "Game Dev",
+      "category": "engineering",
+      "status": "packaged",
+      "owner_role": "primary",
+      "public_package": true,
+      "package_path": "skills/engineering/game-dev",
+      "provenance": "licensed-upstream-adaptation",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_imported_skill_packages.py",
+      "runtime_contract": {
+        "capability_id": "game-dev",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "write",
+        "authorization_scope": [
+          "browser_game_development",
+          "visual_asset_generation",
+          "deployment_preparation"
+        ],
+        "approval_requirement": "deployment_confirmation_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material",
+          "generated_assets"
+        ],
+        "last_verified": "2026-08-22"
+      }
+    },
+    {
+      "id": "imagegen",
+      "name": "ImageGen",
+      "category": "orchestration",
+      "status": "packaged",
+      "owner_role": "router",
+      "public_package": true,
+      "package_path": "skills/orchestration/imagegen",
+      "provenance": "licensed-runtime-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_imported_skill_packages.py",
+      "runtime_contract": {
+        "capability_id": "imagegen",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "write",
+        "authorization_scope": [
+          "visual_routing",
+          "visual_generation",
+          "visual_editing"
+        ],
+        "approval_requirement": "user_scope_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material",
+          "generated_assets"
+        ],
+        "last_verified": "2026-08-22"
+      }
+    },
+    {
+      "id": "skill-creator",
+      "name": "Skill Creator",
+      "category": "maintenance",
+      "status": "packaged",
+      "owner_role": "primary",
+      "public_package": true,
+      "package_path": "skills/maintenance/skill-creator",
+      "provenance": "licensed-runtime-export",
+      "version": "1.0.0",
+      "validation": "tests/skills/test_imported_skill_packages.py",
+      "runtime_contract": {
+        "capability_id": "skill-creator",
+        "version": "1.0.0",
+        "architectural_type": "portable_skill",
+        "available_runtime": "repository_only",
+        "current_status": "packaged",
+        "read_or_write": "write",
+        "authorization_scope": [
+          "skill_scaffolding",
+          "skill_validation",
+          "skill_packaging"
+        ],
+        "approval_requirement": "target_path_required",
+        "data_boundary": [
+          "public_repository_content",
+          "operator_provided_material"
+        ],
+        "last_verified": "2026-08-22"
+      }
     }
   ]
 }

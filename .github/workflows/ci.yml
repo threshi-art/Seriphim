@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install public Skill test dependencies
+        run: python -m pip install PyYAML==6.0.2
       - name: Verify architecture, repository hygiene, and public Skills
         run: >-
           python -m unittest
@@ -26,6 +28,8 @@ jobs:
           tests.skills.test_public_orchestration_skills
           tests.skills.test_public_specialized_skills
           tests.skills.test_public_operational_skills
+          tests.skills.test_imported_skill_packages
+          tests.skills.test_skill_repository_governance
 
   seraphim-platform:
     name: Seraphim platform
