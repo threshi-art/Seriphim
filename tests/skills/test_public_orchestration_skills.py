@@ -38,6 +38,12 @@ class SkillEcosystemGovernorTests(unittest.TestCase):
         assert_valid_skill(self, package, "skill-ecosystem-governor")
 
 
+class ExecutionPropulsionTests(unittest.TestCase):
+    def test_package_is_portable_and_complete(self):
+        package = ROOT / "skills" / "orchestration" / "execution-propulsion"
+        assert_valid_skill(self, package, "execution-propulsion")
+
+
 class OrchestrationCohortTests(unittest.TestCase):
     EXPECTED_PACKAGES = {
         "context-sentinel": "skills/orchestration/context-sentinel",
