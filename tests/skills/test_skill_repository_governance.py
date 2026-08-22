@@ -50,7 +50,7 @@ class SkillRepositoryGovernanceTests(unittest.TestCase):
             packages[name] = (skill_file.parent.relative_to(ROOT)).as_posix()
 
         inventory = read_csv("live-skill-inventory.csv")
-        self.assertEqual(26, len(inventory))
+        self.assertEqual(27, len(inventory))
         self.assertEqual(packages, {row["skill_name"]: row["canonical_path"] for row in inventory})
 
         manifest = json.loads(

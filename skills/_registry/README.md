@@ -6,7 +6,7 @@ making historical or imported packages discoverable as active skills.
 ## Authority
 
 - `capability-manifest.json` remains the machine-readable capability authority.
-- `live-skill-inventory.csv` records the 26 active Git-tracked packages.
+- `live-skill-inventory.csv` records the 27 active Git-tracked packages.
 - `archive-skill-inventory.csv` records 79 entries found inside historical
   exports and the MANUS harvest.
 - `artifact-checksums.csv` records the eleven preserved binary artifacts.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Execution Propulsion"
+  short_description: "Turns next steps into safe forward motion"
+  default_prompt: "Use $execution-propulsion to advance this task through the next safe action."
