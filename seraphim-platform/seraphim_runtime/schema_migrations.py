@@ -701,6 +701,68 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=14,
+        name="runtime_immutable_file_write_proposals",
+        statements=(
+            """
+            CREATE TABLE runtime_file_write_proposals (
+                proposal_id TEXT PRIMARY KEY CHECK (length(proposal_id) = 32 AND proposal_id NOT GLOB '*[^0-9a-f]*'),
+                owner_id TEXT NOT NULL CHECK (length(trim(owner_id)) BETWEEN 1 AND 256),
+                workspace_root_id TEXT NOT NULL CHECK (length(workspace_root_id) = 64 AND workspace_root_id NOT GLOB '*[^0-9a-f]*'),
+                relative_path TEXT NOT NULL CHECK (length(trim(relative_path)) BETWEEN 1 AND 2048 AND instr(relative_path, char(0)) = 0 AND relative_path NOT LIKE '/%' AND instr(relative_path, ':') = 0 AND relative_path NOT LIKE '%..%'),
+                base_sha256 TEXT NOT NULL CHECK (length(base_sha256) = 64 AND base_sha256 NOT GLOB '*[^0-9a-f]*'),
+                replacement_sha256 TEXT NOT NULL CHECK (length(replacement_sha256) = 64 AND replacement_sha256 NOT GLOB '*[^0-9a-f]*'),
+                replacement_size INTEGER NOT NULL CHECK (replacement_size BETWEEN 0 AND 1048576),
+                base_encoding TEXT NOT NULL CHECK (base_encoding IN ('utf-8', 'binary')),
+                replacement_encoding TEXT NOT NULL CHECK (replacement_encoding IN ('utf-8', 'binary')),
+                preview_diff TEXT,
+                reason TEXT NOT NULL CHECK (length(trim(reason)) BETWEEN 1 AND 2048),
+                rollback_plan TEXT NOT NULL CHECK (length(trim(rollback_plan)) BETWEEN 1 AND 4096),
+                expires_at TEXT NOT NULL,
+                idempotency_key TEXT NOT NULL CHECK (length(trim(idempotency_key)) BETWEEN 1 AND 256),
+                proposal_digest TEXT NOT NULL CHECK (length(proposal_digest) = 64 AND proposal_digest NOT GLOB '*[^0-9a-f]*'),
+                audit_event_id TEXT NOT NULL UNIQUE,
+                created_at TEXT NOT NULL,
+                UNIQUE(owner_id, idempotency_key),
+                CHECK (julianday(expires_at) > julianday(created_at)),
+                FOREIGN KEY (audit_event_id) REFERENCES runtime_audit_events(event_id) ON DELETE RESTRICT
+            )
+            """,
+            "CREATE INDEX runtime_file_write_proposals_owner_expiry_idx ON runtime_file_write_proposals(owner_id, expires_at)",
+            """
+            CREATE TRIGGER runtime_file_write_proposals_insert_guard
+            BEFORE INSERT ON runtime_file_write_proposals
+            BEGIN
+                SELECT CASE WHEN NOT EXISTS (
+                    SELECT 1 FROM runtime_audit_events AS audit
+                    WHERE audit.event_id = NEW.audit_event_id
+                      AND audit.actor_id = NEW.owner_id
+                      AND audit.event_type = 'file_write_proposal.created'
+                      AND audit.outcome = 'accepted'
+                      AND audit.chain_version = 2
+                      AND json_extract(audit.payload_json, '$.proposal_id') = NEW.proposal_id
+                      AND json_extract(audit.payload_json, '$.proposal_digest') = NEW.proposal_digest
+                      AND json_extract(audit.payload_json, '$.workspace_root_id') = NEW.workspace_root_id
+                ) THEN RAISE(ABORT, 'file write proposal lacks exact audit provenance') END;
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_file_write_proposals_no_update
+            BEFORE UPDATE ON runtime_file_write_proposals
+            BEGIN
+                SELECT RAISE(ABORT, 'file write proposals are immutable');
+            END
+            """,
+            """
+            CREATE TRIGGER runtime_file_write_proposals_no_delete
+            BEFORE DELETE ON runtime_file_write_proposals
+            BEGIN
+                SELECT RAISE(ABORT, 'file write proposals are append only');
+            END
+            """,
+        ),
+    ),
 )
 
 
