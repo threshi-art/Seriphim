@@ -26,6 +26,8 @@ jobs:
           tests.skills.test_public_orchestration_skills
           tests.skills.test_public_specialized_skills
           tests.skills.test_public_operational_skills
+          tests.skills.test_imported_skill_packages
+          tests.skills.test_skill_repository_governance
 
   seraphim-platform:
     name: Seraphim platform

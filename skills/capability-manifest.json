@@ -833,7 +833,7 @@
         "capability_id": "game-dev",
         "version": "1.0.0",
         "architectural_type": "portable_skill",
-        "available_runtime": "manus_webdev_required",
+        "available_runtime": "repository_only",
         "current_status": "packaged",
         "read_or_write": "write",
         "authorization_scope": [
@@ -865,7 +865,7 @@
         "capability_id": "imagegen",
         "version": "1.0.0",
         "architectural_type": "portable_skill",
-        "available_runtime": "environment_dependent",
+        "available_runtime": "repository_only",
         "current_status": "packaged",
         "read_or_write": "write",
         "authorization_scope": [
@@ -897,7 +897,7 @@
         "capability_id": "skill-creator",
         "version": "1.0.0",
         "architectural_type": "portable_skill",
-        "available_runtime": "python_and_pyyaml",
+        "available_runtime": "repository_only",
         "current_status": "packaged",
         "read_or_write": "write",
         "authorization_scope": [
