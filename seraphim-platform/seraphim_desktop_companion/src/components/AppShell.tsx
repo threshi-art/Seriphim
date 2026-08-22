@@ -1,6 +1,6 @@
-import { useSeraphim } from "../state/SeraphimState";
-import type { ActiveView } from "../state/SeraphimState";
+import { useSeraphim, type ActiveView } from "../state/SeraphimState";
 import { ActivityLog } from "./ActivityLog";
+import { CommandSurface } from "./CommandSurface";
 import { LeftNav } from "./LeftNav";
 import { MissionPanel } from "./MissionPanel";
 import { ApprovalsView } from "../views/ApprovalsView";
@@ -50,12 +50,30 @@ function renderActiveView(activeView: ActiveView) {
 }
 
 export function AppShell() {
-  const { activeView } = useSeraphim();
+  const { activeView, bridgeHealth, riskPosture } = useSeraphim();
+  const bridgeLabel = bridgeHealth.status === "online" ? "LOCAL READS AVAILABLE" : "LOCAL READS UNAVAILABLE";
 
   return (
     <div className="app-shell">
       <LeftNav />
-      <main className="main-panel">{renderActiveView(activeView)}</main>
+      <main className="main-panel">
+        <header className="cinematic-topbar">
+          <div className="cinematic-topbar-copy">
+            <span className="eyebrow">SERAPHIM / COMMAND INTERFACE</span>
+            <strong>Operational review surface</strong>
+          </div>
+          <div className="cinematic-status-strip" aria-label="Current review status">
+            <span className={`status-signal ${bridgeHealth.status}`}>{bridgeLabel}</span>
+            <span className={`status-signal risk-${riskPosture}`}>RISK {riskPosture.toUpperCase()}</span>
+            <span className="status-signal execution-disabled">EXECUTION DISABLED</span>
+          </div>
+        </header>
+        <CommandSurface />
+        <div className="cinematic-source-note" role="note">
+          FIXTURE-BACKED REVIEW SHELL — Runtime reads remain separately gated and source-labelled.
+        </div>
+        {renderActiveView(activeView)}
+      </main>
       <MissionPanel />
       <ActivityLog />
     </div>
