@@ -1,0 +1,4 @@
+interface:
+  display_name: "ImageGen"
+  short_description: "Route visual requests to the correct generation or rendering workflow"
+  default_prompt: "Use $imagegen to choose the right visual production method and deliver an accurate, medium-appropriate result."

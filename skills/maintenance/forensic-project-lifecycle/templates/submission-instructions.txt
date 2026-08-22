@@ -1,0 +1,40 @@
+[PROJECT] SUBMISSION INSTRUCTIONS
+
+SUBMISSION DIRECTORY
+[Absolute local path]
+
+UPLOAD THESE FILES
+1. [Source archive filename]
+   Size: [Bytes]
+   SHA-256: [Hash]
+2. [Documentation filename]
+   Size: [Bytes]
+   SHA-256: [Hash]
+
+DO NOT UPLOAD UNLESS REQUESTED
+- Original instruction files or archives
+- Working workspace, baseline, tests, evidence, screenshots, logs, coverage, or generated files
+- check-my-work or reviewer-only bundles
+- Audit and instruction support records
+- Credentials, browser/session data, local paths, caches, executables, or object files
+
+BEFORE UPLOAD
+1. Confirm the sync client shows both submission files locally available.
+2. Compare filenames, sizes, and SHA-256 values with this record.
+3. Do not edit, rename, extract, or recompress the verified files.
+4. If a hash differs, preserve the changed file under a timestamped UNVERIFIED name and restore the known verified copy only after review.
+
+UPLOAD
+1. Upload the two listed files separately unless the portal explicitly requires one outer archive.
+2. Confirm the portal shows both exact filenames and expected sizes.
+3. Open or download the uploaded attachments when possible to confirm readability.
+4. Complete the final submit action only after all attachments are verified.
+
+LOCAL RECORDS
+Final audit: [Path]
+Package verification: [Path]
+Offline backup: [Path]
+Reviewer instructions: [Path]
+
+KNOWN LIMITATIONS OR SPECIAL NOTES
+[None or exact note]

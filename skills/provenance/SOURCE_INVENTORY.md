@@ -58,6 +58,27 @@ account identifiers, or private source material. The Evaluation Harness omits
 generated Python bytecode and retains only source, rubric, configuration, and
 synthetic fixtures.
 
+## Owner-directed and licensed imports
+
+Four additional packages were selected from an owner-authorized snapshot of 48
+installed skills after license, portability, privacy, dependency, and structural
+review:
+
+| Public package | Provenance class | Public treatment |
+|---|---|---|
+| Forensic Project Lifecycle | Owner-authored task export | Trigger normalized; complete deterministic utilities and templates retained under the repository license |
+| Game Dev | MIT-licensed upstream adaptation | License and notice preserved; one machine-specific asset path generalized; Manus WebDev dependency stated explicitly |
+| ImageGen | Apache-2.0 licensed runtime export | License preserved; trigger and public interface metadata normalized |
+| Skill Creator | Apache-2.0 licensed runtime export | License preserved; generated `.DS_Store` omitted; fixed sandbox paths replaced by the portable `AGENT_SKILLS_HOME` contract |
+
+The complete 48-skill snapshot is preserved only in the owner’s private local
+workspace. `_registry/installed-manus-skill-catalog.csv` records every name and
+disposition without reproducing excluded bodies. One licensed package remains
+deferred for substantial portability work, one capability already has an
+independently reviewed public edition, two packages explicitly reserve all
+rights, and forty packages have no bundled redistribution evidence. Those
+forty-four package bodies are not published by this change.
+
 ## Reconstructed public editions
 
 The following packages were reconstructed from the public routing architecture,

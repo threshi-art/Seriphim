@@ -31,6 +31,7 @@ class SkillRepositoryGovernanceTests(unittest.TestCase):
         required = {
             "README.md",
             "live-skill-inventory.csv",
+            "installed-manus-skill-catalog.csv",
             "archive-skill-inventory.csv",
             "artifact-checksums.csv",
             "migration-map.csv",
@@ -50,7 +51,7 @@ class SkillRepositoryGovernanceTests(unittest.TestCase):
             packages[name] = (skill_file.parent.relative_to(ROOT)).as_posix()
 
         inventory = read_csv("live-skill-inventory.csv")
-        self.assertEqual(26, len(inventory))
+        self.assertEqual(len(packages), len(inventory))
         self.assertEqual(packages, {row["skill_name"]: row["canonical_path"] for row in inventory})
 
         manifest = json.loads(
