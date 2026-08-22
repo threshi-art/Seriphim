@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install public Skill test dependencies
+        run: python -m pip install PyYAML==6.0.2
       - name: Verify architecture, repository hygiene, and public Skills
         run: >-
           python -m unittest
