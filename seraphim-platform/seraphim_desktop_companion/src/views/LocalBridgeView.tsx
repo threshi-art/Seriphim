@@ -3,10 +3,9 @@ import { useSeraphim } from "../state/SeraphimState";
 export function LocalBridgeView() {
   const {
     bridgeHealth,
-    bridgePairing,
     refreshBridgeHealth,
-    requestMockPairing,
-    clearMockPairing,
+    runtimeData,
+    refreshRuntimeData,
     settings
   } = useSeraphim();
 
@@ -15,11 +14,12 @@ export function LocalBridgeView() {
       <header className="view-header">
         <div>
           <h1>Local Bridge</h1>
-          <p>Phase 3 health endpoint. Execution disabled until approval gates are verified.</p>
+          <p>Bridge health plus paired Runtime observation. Execution and file mutation remain disabled.</p>
         </div>
-        <button type="button" onClick={() => void refreshBridgeHealth()}>
-          Check Health
-        </button>
+        <div className="button-row">
+          <button type="button" onClick={() => void refreshBridgeHealth()}>Check Bridge</button>
+          <button type="button" className="secondary-button" onClick={() => void refreshRuntimeData()}>Refresh Runtime</button>
+        </div>
       </header>
 
       <div className="card">
@@ -48,54 +48,33 @@ export function LocalBridgeView() {
         )}
 
         <div className="pairing-box">
-          <h3>Operator Pairing (mock)</h3>
+          <h3>Runtime Pairing and Read Access</h3>
           <div className="detail-row">
-            <span>Status</span>
-            <strong>{bridgePairing.status}</strong>
+            <span>Read state</span>
+            <strong>{runtimeData.phase}</strong>
           </div>
-          {bridgePairing.tokenPreview && (
+          {runtimeData.observedAt && (
             <div className="detail-row">
-              <span>Token preview</span>
-              <strong>{bridgePairing.tokenPreview}</strong>
+              <span>Last Runtime observation</span>
+              <strong>{runtimeData.observedAt}</strong>
             </div>
           )}
-          {bridgePairing.pairedAt && (
-            <div className="detail-row">
-              <span>Paired at</span>
-              <strong>{bridgePairing.pairedAt}</strong>
-            </div>
-          )}
-          <div className="button-row">
-            <button type="button" onClick={requestMockPairing}>
-              Request Mock Pairing
-            </button>
-            <button type="button" className="secondary-button" onClick={clearMockPairing}>
-              Clear Pairing
-            </button>
-          </div>
           <p className="muted">
-            Phase 3 placeholder only. Real pairing tokens will require bridge verification and audit.
+            Credentials remain in the native Windows broker and are never rendered, placed in localStorage, or exposed to WebView content. A missing, expired, or revoked pairing remains fail-closed.
           </p>
+          {runtimeData.detail && <p className="warning-box">{runtimeData.detail}</p>}
         </div>
 
-        <h3>Planned Capabilities</h3>
+        <h3>Bridge Capabilities</h3>
         <ul>
-          {(bridgeHealth.capabilities.length > 0
-            ? bridgeHealth.capabilities
-            : [
-                "workspace_read_planned",
-                "file_diff_planned",
-                "powershell_sentinel_planned",
-                "terminal_approval_planned"
-              ]
-          ).map((capability) => (
+          {bridgeHealth.capabilities.map((capability) => (
             <li key={capability}>{capability}</li>
           ))}
         </ul>
 
         <p className="warning-box">
-          Real local execution is disabled in this MVP. Health check only performs GET /health.
-          Port map: Argus Vigil 8765, local-agent 8767 (legacy Red), bridge 8768.
+          Runtime reads are limited to signed GET requests on 127.0.0.1:8765. The Desktop does not open SQLite, create Runtime records, decide approvals, write files, delete files, or execute commands.
+          Port map: Runtime 8765, local-agent 8767 (legacy Red), workspace bridge 8768.
         </p>
       </div>
     </section>

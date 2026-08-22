@@ -1,6 +1,6 @@
 import type { RiskLevel, SafetyLevel } from "./agent";
 
-export type ApprovalStatus = "pending" | "approved" | "rejected";
+export type ApprovalStatus = "pending" | "approved" | "rejected" | "expired" | "consumed";
 
 export type ApprovalActionType =
   | "file_create"
@@ -14,7 +14,9 @@ export type ApprovalActionType =
 
 export interface ApprovalRequest {
   id: string;
-  actionType: ApprovalActionType;
+  actionType?: ApprovalActionType;
+  actionLabel?: string;
+  source?: "mock" | "runtime";
   title: string;
   reason: string;
   target: string;

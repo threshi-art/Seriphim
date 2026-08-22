@@ -12,19 +12,19 @@ Keep WebView2 user data beneath `%LOCALAPPDATA%\Seraphim\DesktopCompanion\WebVie
 
 ### G2-02 — Expose a bounded local Runtime API
 
-**Status:** dependency-blocked. **Dependencies:** G1-15.
+**Status:** complete via PR #102. **Dependencies:** G1-15.
 
 Expose versioned localhost endpoints for health, missions, tasks, approvals, attempts, audit verification, and status. Use schema validation, response limits, and no execution endpoints. **Verify:** contract, malformed-request, limit, and offline tests. **Accept:** the Desktop can observe Runtime authority without direct database access.
 
 ### G2-03 — Implement trusted local pairing
 
-**Status:** dependency-blocked. **Dependencies:** G2-02.
+**Status:** complete via PR #103. **Dependencies:** G2-02.
 
 Replace mock pairing with operator-present, expiring, least-privilege credentials stored using Windows-protected facilities. Bind credentials to bridge identity and rotate/revoke them. **Verify:** replay, expiry, wrong-origin, restart, revoke, and secret-storage tests. **Accept:** an unpaired process cannot read or mutate Runtime state.
 
 ### G2-04 — Replace authoritative Desktop mock state
 
-**Status:** dependency-blocked. **Dependencies:** G2-02, G2-03.
+**Status:** implementation validation. **Dependencies:** G2-02, G2-03. Desktop unit, Runtime, platform, TypeScript, and production-build verification pass; native Windows C# build and paired smoke validation remain pending Desktop sidecar availability.
 
 Bind missions, tasks, approvals, attempts, audit health, and bridge status to live APIs while retaining explicit offline/demo fixtures only where documented. **Verify:** UI contract, offline, stale, loading, error, and ownership tests. **Accept:** live data is never presented as mock and mock data is never presented as live.
 

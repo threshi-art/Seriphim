@@ -2,7 +2,7 @@ import { DESKTOP_NAV_ITEMS } from "../config/navigation";
 import { useSeraphim } from "../state/SeraphimState";
 
 export function LeftNav() {
-  const { activeView, setActiveView } = useSeraphim();
+  const { activeView, setActiveView, runtimeData } = useSeraphim();
 
   return (
     <aside className="left-nav">
@@ -14,7 +14,9 @@ export function LeftNav() {
         </div>
       </div>
 
-      <div className="mock-banner">MOCK EXECUTION ONLY</div>
+      <div className="mock-banner">
+        {runtimeData.snapshot ? `RUNTIME ${runtimeData.phase.toUpperCase()} • EXECUTION DISABLED` : "RUNTIME UNAVAILABLE • EXECUTION DISABLED"}
+      </div>
 
       <nav>
         {DESKTOP_NAV_ITEMS.map((item) => (
