@@ -12,7 +12,7 @@ import { LocalBridgeView } from "../views/LocalBridgeView";
 import { LogsView } from "../views/LogsView";
 import { MemoryView } from "../views/MemoryView";
 import { ProjectsView } from "../views/ProjectsView";
-import { SentinelView } from "../views/SentinelView";
+import { SentinelControlView } from "../views/SentinelControlView";
 import { SettingsView } from "../views/SettingsView";
 import { TasksView } from "../views/TasksView";
 
@@ -35,7 +35,7 @@ function renderActiveView(activeView: ActiveView) {
     case "local_bridge":
       return <LocalBridgeView />;
     case "sentinel":
-      return <SentinelView />;
+      return <SentinelControlView />;
     case "settings":
       return <SettingsView />;
     case "logs":
